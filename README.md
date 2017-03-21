@@ -1,1 +1,1 @@
-Cheng Lou is a JavaScript library for building user interfaces.
+Cheng Lou is a Friendly Syntax & Toolchain Powered by OCaml.
