@@ -15,9 +15,13 @@
     body {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      grid-template-rows: masonry;
       gap: 12px;
       margin: 20px 20px;
+    }
+    @media only screen and (max-width: 800px) {
+      body {
+        grid-template-columns: repeat(3, 1fr);
+      }
     }
     img {
       width: 100%;
