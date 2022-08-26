@@ -10,7 +10,7 @@
 <body>
   <style>
     html {
-      background-color: rgb(8, 11, 22);
+      background-color: rgb(17, 20, 32);
     }
     body {
       display: grid;
@@ -25,14 +25,21 @@
         grid-template-columns: repeat(3, 1fr);
       }
     }
+    @media only screen and (max-width: 600px) {
+      body {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
     img {
       width: 100%;
     }
     div {
       display: inline-block;
-      box-shadow: 0 4px 16px rgba(128, 128, 128, 0.26);
-      border-radius: 16px;
       overflow: hidden;
+      background-color: rgba(255, 255, 255, 0.027);
+      border: 1px solid rgb(35, 35, 35);
+      border-radius: 16px;
+      box-shadow: 0 4px 28px 0 rgba(0, 0, 0, 0.4);
     }
     p {
       padding: 0 12px;
