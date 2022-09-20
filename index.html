@@ -30,10 +30,14 @@
     }
     img {
       width: 100%;
+      cursor: zoom-in;
+      transition: all 0.25s;
+      border-radius: 16px 16px 0 0;
+      transform-origin: top left;
     }
     div {
       display: inline-block;
-      overflow: hidden;
+      /*overflow: hidden;*/
       background-color: rgb(24, 26, 38);
       border: 1px solid rgb(35, 35, 35);
       border-radius: 16px;
@@ -718,32 +722,96 @@
 
 
 <script>
-let cards = [...document.body.querySelectorAll('div')]
-let inputs = {
-  pointerXY: {pageX: 0, pageY: 0}
-}
-window.addEventListener('pointermove', (e) => {
-  inputs.pointerXY.pageX = e.pageX; inputs.pointerXY.pageY = e.pageY // can exceed document bounds, e.g. dragging reports back out-of-bound values
-  scheduleRender()
-})
-cards.forEach(card => {
-  // card.style.position = 'absolute'
-})
+  let focused = null
 
-let scheduled = false
-function scheduleRender() {
-  if (scheduled) return;
-  scheduled = true
+  document.body.addEventListener('click', (e) => {
+    let {innerHeight, innerWidth} = window
+    let node = e.target
+    let images = document.querySelectorAll('img')
+    if (node.tagName === 'IMG') {
+      for (let i = 0; i < images.length; i++) {
+        let image = images[i]
+        if (image === node) {
+          if (i === focused) {
+            let imageOld = images[focused]
+            imageOld.style.transform = 'scale(1)'
+            imageOld.style.borderRadius = '16px 16px 0 0'
+            imageOld.style.cursor = 'zoom-in'
+            imageOld.style.boxShadow = 'none'
+            imageOld.parentNode.style.zIndex = 0
+            focused = null
+          } else {
+            let ar = image.offsetWidth / image.offsetHeight
+            let heightMax = innerHeight - 80
+            let widthMax = innerWidth - 80
+            let h1 = heightMax, w1 = heightMax * ar
+            let w2 = widthMax, h2 = widthMax / ar
+            let scale = Math.min(h1, h2) / image.offsetHeight
+            let hReal = scale * image.offsetHeight
+            let wReal = scale * image.offsetWidth
 
-  requestAnimationFrame(function render() {
-    for (let i = 0; i < cards.length; i++) {
-      let card = cards[i]
-      // card.style.
+            let deltaX = ((innerWidth - wReal) / 2 - image.offsetLeft)
+            let deltaY = ((innerHeight - hReal) / 2)
+            image.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(${scale})`
+            image.style.borderRadius = '0px'
+            image.style.cursor = 'zoom-out'
+            image.style.boxShadow = '0 4px 60px 0 rgba(0, 0, 0, 1)'
+            image.parentNode.style.zIndex = 1
+            window.scrollTo({top: image.parentNode.offsetTop, behavior: 'smooth'})
+            if (focused != null) {
+              let imageOld = images[focused]
+              imageOld.style.transform = 'scale(1)'
+              imageOld.style.borderRadius = '16px 16px 0 0'
+              imageOld.style.cursor = 'zoom-in'
+              imageOld.style.boxShadow = 'none'
+              imageOld.parentNode.style.zIndex = 0
+            }
+            focused = i
+          }
+
+          break
+        }
+      }
+    } else {
+      if (focused != null) {
+        let imageOld = images[focused]
+        imageOld.style.transform = 'scale(1)'
+        imageOld.style.borderRadius = '16px 16px 0 0'
+        imageOld.style.cursor = 'zoom-in'
+        imageOld.style.boxShadow = 'none'
+        imageOld.parentNode.style.zIndex = 0
+      }
+      focused = null
     }
   })
-}
 
-scheduleRender()
+  // let cards = [...document.body.querySelectorAll('div')]
+  // let inputs = {
+  //   pointerXY: {pageX: 0, pageY: 0}
+  // }
+  // window.addEventListener('pointermove', (e) => {
+  //   inputs.pointerXY.pageX = e.pageX; inputs.pointerXY.pageY = e.pageY // can exceed document bounds, e.g. dragging reports back out-of-bound values
+  //   scheduleRender()
+  // })
+  // cards.forEach(card => {
+  //   // card.style.position = 'absolute'
+  // })
+
+  // let scheduled = false
+  // function scheduleRender() {
+  //   if (scheduled) return;
+  //   scheduled = true
+
+  //   requestAnimationFrame(function render() {
+  //     for (let i = 0; i < cards.length; i++) {
+  //       let card = cards[i]
+  //       // card.style.
+  //     }
+  //   })
+  // }
+
+  // scheduleRender()
+
 </script>
 
 </body>
