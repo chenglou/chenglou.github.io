@@ -716,6 +716,36 @@
 <p>three-body problem, cinematic</p>
 </div>
 
+
+<script>
+let cards = [...document.body.querySelectorAll('div')]
+let inputs = {
+  pointerXY: {pageX: 0, pageY: 0}
+}
+window.addEventListener('pointermove', (e) => {
+  inputs.pointerXY.pageX = e.pageX; inputs.pointerXY.pageY = e.pageY // can exceed document bounds, e.g. dragging reports back out-of-bound values
+  scheduleRender()
+})
+cards.forEach(card => {
+  // card.style.position = 'absolute'
+})
+
+let scheduled = false
+function scheduleRender() {
+  if (scheduled) return;
+  scheduled = true
+
+  requestAnimationFrame(function render() {
+    for (let i = 0; i < cards.length; i++) {
+      let card = cards[i]
+      // card.style.
+    }
+  })
+}
+
+scheduleRender()
+</script>
+
 </body>
 
 </html>
