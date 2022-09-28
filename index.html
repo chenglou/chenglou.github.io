@@ -7,10 +7,19 @@
   <meta property="og:image" content="https://mj-gallery.com/cdn-cgi/image/format=webp/9c8420b0-4a42-45c9-8d87-414a89f7b304/grid_0.webp"/>
   <style>
     html {
+      /*background-image: url(https://grainy-gradients.vercel.app/noise.svg);*/
       background-color: rgb(17, 20, 32);
     }
     body {
       margin: 0;
+    }
+    .box {
+      position: absolute;
+      box-sizing: border-box;
+      background-color: rgb(24, 26, 38);
+      border: 1px solid rgb(35, 35, 35);
+      border-radius: 16px;
+      box-shadow: 0 4px 28px 0 rgba(0, 0, 0, 0.4);
     }
 /*    body {
       display: grid;
@@ -856,35 +865,38 @@ let sizes = [
   {w: 1408, h: 1792},
 ]
 
-let {innerWidth, innerHeight} = window
-let spaceLeft = 16
-let spaceTop = 16
-let maxW = (innerWidth - 0) / 4 - spaceLeft * 2
-let maxH = maxW - spaceTop * 2
+window.addEventListener('resize', render)
 
-for (let i = 0; i < sizes.length; i++) {
-  let size = sizes[i]
-  let rect = document.createElement('div')
-  let ar = size.w / size.h
-  let w = Math.min(size.w, maxW)
-  let h = Math.min(size.h, maxH)
-  w = Math.min(h * ar, w)
-  h = w / ar
-  let top = spaceTop + (spaceTop + maxH) * Math.floor(i / 4) + (maxH - h) / 2
-  let left = spaceLeft + innerWidth / 4 * (i % 4) + (maxW - w) / 2
+function render() {
+  let {innerWidth, innerHeight} = window
+  let spaceLeft = 16
+  let spaceTop = 16
+  let cols = innerWidth < 600 ? 2 : innerWidth < 800 ? 3 : 4
+  let maxW = (innerWidth - 0) / cols - spaceLeft * 2
+  let maxH = maxW - spaceTop * 2
 
-  rect.style.position = 'absolute'
-  rect.style.boxSizing = 'border-box'
-  rect.style.width = `${w}px`
-  rect.style.height = `${h}px`
-  rect.style.top = `${top}px`
-  rect.style.left = `${left}px`
-  rect.style.border = '1px solid white'
-  // rect.style.backgroundColor = 'white'
-  rect.style.borderRadius = '12px'
-  document.body.appendChild(rect)
+  document.body.textContent = ''
+
+  for (let i = 0; i < sizes.length; i++) {
+    let size = sizes[i]
+    let rect = document.createElement('div')
+    let ar = size.w / size.h
+    let w = Math.min(size.w, maxW)
+    let h = Math.min(size.h, maxH)
+    w = Math.min(h * ar, w)
+    h = w / ar
+    let top = spaceTop + (spaceTop + maxH) * Math.floor(i / cols) + (maxH - h) / 2
+    let left = spaceLeft + innerWidth / cols * (i % cols) + (maxW - w) / 2
+
+    rect.className = 'box'
+    rect.style.width = `${w}px`
+    rect.style.height = `${h}px`
+    rect.style.top = `${top}px`
+    rect.style.left = `${left}px`
+    document.body.appendChild(rect)
+  }
 }
-
+render()
 
 // let scheduled = false
 // function scheduleRender() {
