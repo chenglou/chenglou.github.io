@@ -17,13 +17,14 @@
       max-width: 1600px;
       place-items: center;
       padding: 0 12px 0 12px;
+      overflow-x: hidden; /* image transforms overflow body. TODO: not working */
     }
-    @media only screen and (max-width: 800px) {
+    @media (max-width: 800px) {
       body {
         grid-template-columns: repeat(3, 1fr);
       }
     }
-    @media only screen and (max-width: 600px) {
+    @media (max-width: 600px) {
       body {
         grid-template-columns: repeat(2, 1fr);
       }
@@ -34,14 +35,18 @@
       transition: all 0.25s;
       border-radius: 16px 16px 0 0;
       transform-origin: top left;
+      min-height: 100px; /* ugh for lazy loading. Probably safe min height */
+      user-select: none;
+      -webkit-user-select: none;
     }
-    div {
+    figure {
+      margin: 0; /* reset */
       display: inline-block;
-      /*overflow: hidden;*/
       background-color: rgb(24, 26, 38);
       border: 1px solid rgb(35, 35, 35);
       border-radius: 16px;
       box-shadow: 0 4px 28px 0 rgba(0, 0, 0, 0.4);
+      transition: transform 0.25s;
     }
     p {
       padding: 0 12px;
@@ -55,737 +60,836 @@
       color: rgb(122, 126, 130);
       padding-right: 2px;
     }
+    #veil {
+      transition: all 0.25s;
+      background-color: rbga(0, 0, 0, 0);
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
   </style>
 </head>
 
 <body>
 
-<div>
-<img src="https://mj-gallery.com/596808d3-8550-497b-bbf7-e16df6ba9a43/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/596808d3-8550-497b-bbf7-e16df6ba9a43/grid_0.png" />
 <p>5 centimeters per second, unity cel shading, curvilinear lens</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/5c059f02-01ae-4606-8e81-a39df281b97b/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/5c059f02-01ae-4606-8e81-a39df281b97b/grid_0.png" />
 <p>5 centimeters per second, trains, unity cel shading render, fisheye</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/90a1b52f-5e4f-4d8b-99af-3c5cd59bf434/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/90a1b52f-5e4f-4d8b-99af-3c5cd59bf434/grid_0.png" />
 <p>irridescent terrine</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/e20f7450-a289-44d5-9b83-b5a0b9fedc37/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/e20f7450-a289-44d5-9b83-b5a0b9fedc37/grid_0.png" />
 <p>rainbow cloud bent toward the mountain, makoto shinkai</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/6b777018-edb8-4a76-be36-8a78652a3199/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/6b777018-edb8-4a76-be36-8a78652a3199/grid_0.png" />
 <p>the happiest anthropomorphic mushroom dancing in morning dew with her friends, 3D game concept art render, volumetric lighting</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/3d637738-3996-46d0-b2c3-0af14863322b/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/3d637738-3996-46d0-b2c3-0af14863322b/grid_0.png" />
 <p>the happiest mushroom growing in the morning dew with her friends, 3D game concept art render, volumetric lighting</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/a437c15a-5e3e-42b7-9299-3b1188b40020/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/a437c15a-5e3e-42b7-9299-3b1188b40020/grid_0.png" />
 <p>galaxy rainbow, high resolution fisheye lens, long exposure photography</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/60d99de5-dd01-4f3d-870d-2f957a409d91/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/60d99de5-dd01-4f3d-870d-2f957a409d91/grid_0.png" />
 <p>confucius performing the miracle of turning water into boba in front of his family, chinese ink painting</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/81600ebb-7d32-4660-a3ec-34c6684926a9/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/81600ebb-7d32-4660-a3ec-34c6684926a9/grid_0.png" />
 <p>wormhole portal to moon in a mirror, god rays</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/932eae0c-ed04-4616-8750-e8d29d4cc78b/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/932eae0c-ed04-4616-8750-e8d29d4cc78b/grid_0.png" />
 <p>silver filligree pearl-encrusted tissue box, intricate details, resting on purple velvet fabric, 8k macrophotography</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/fcb1286b-fc40-46bb-a3ce-51bed7232622/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/fcb1286b-fc40-46bb-a3ce-51bed7232622/grid_0.png" />
 <p>daft punk style mirror helmet reflecting planet earth, man in tuxedo looking down against a galaxy background, dynamic angle</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/3dae2556-b910-4a9c-8c41-0578472b8e7f/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/3dae2556-b910-4a9c-8c41-0578472b8e7f/grid_0.png" />
 <p>white tshirt with words "I heart MJ"</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cb5f8b4c-e6dc-4bc0-827f-c330093f2827/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cb5f8b4c-e6dc-4bc0-827f-c330093f2827/grid_0.png" />
 <p>peacock feather eyed human portrait, dynamic angle, extremely detailed 8k</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/da3cc4f1-2024-40fd-83b6-36c41fa6ca66/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/da3cc4f1-2024-40fd-83b6-36c41fa6ca66/grid_0.png" />
 <p>silver filligree pearl-encrusted tissue box, intricate details, resting on purple velvet fabric, 8k macrophotography</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/dc2ca067-e202-49d3-ac0c-b60f14ea5b3d/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/dc2ca067-e202-49d3-ac0c-b60f14ea5b3d/grid_0.png" />
 <p>magnificent gilded palace hallway, high ornamented ceiling, tall murals with display artifacts, luxurious crimson ornaments, extremely detailed, golden volumetric lighting, well lit, 8k render, low angle, sumptuous scale</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/05447686-85b8-49a3-8ed7-d3ee5b0ebe0c/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/05447686-85b8-49a3-8ed7-d3ee5b0ebe0c/grid_0.png" />
 <p>Lu Bu riding his motorcycle into the battlefield, traditional chinese painting</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/6228d5ef-c902-484a-a8b5-4cfc696bd07d/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/6228d5ef-c902-484a-a8b5-4cfc696bd07d/grid_0.png" />
 <p>warrior Lu Bu in slick corporate suit closing a real estate deal, low angle</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/4bc25b4f-87e2-432b-b0ff-ed4cbab67951/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/4bc25b4f-87e2-432b-b0ff-ed4cbab67951/grid_0.png" />
 <p>art nouveau bento lunch</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/06b16ea2-3f09-45fe-b4ab-66db853f4583/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/06b16ea2-3f09-45fe-b4ab-66db853f4583/grid_0.png" />
 <p>colorful vibrant micro ecosystem growing on an iphone</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/f14eb017-5655-4013-8b9f-b22c3edf35d8/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/f14eb017-5655-4013-8b9f-b22c3edf35d8/grid_0.png" />
 <p>art nouveau iOS springboard square icons grid interface</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/52e76a58-1d26-455f-92d9-d79f50931453/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/52e76a58-1d26-455f-92d9-d79f50931453/grid_0.png" />
 <p>art nouveau ios icon, detailed, square, floral, 3D render</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/4408292b-2828-40cf-a81d-9a186a43e53e/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/4408292b-2828-40cf-a81d-9a186a43e53e/grid_0.png" />
 <p>real buildings on a giant monopoly board table, cards, hyperrealistic, tilt shift</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/fbd2c6b6-eb92-4ce8-89e9-c0e040296c4c/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/fbd2c6b6-eb92-4ce8-89e9-c0e040296c4c/grid_0.png" />
 <p>audrey hepburn in female darth vader suit</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/f951cb42-775f-4e54-be98-58e651e18d30/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/f951cb42-775f-4e54-be98-58e651e18d30/grid_0.png" />
 <p>audrey hepburn in female vader suit, elegant pose, pipe saber</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/4f17d6e2-fd63-484b-977d-e27916d5d5d1/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/4f17d6e2-fd63-484b-977d-e27916d5d5d1/grid_0.png" />
 <p>audrey hepburn in female vader suit, elegant pose, pipe saber</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/f73be0ac-6c25-4b7a-a878-8fe13a6d69d9/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/f73be0ac-6c25-4b7a-a878-8fe13a6d69d9/grid_0.png" />
 <p>pikachu in a gacha ball</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/e3542b15-1f1c-446a-8f3b-1418760477c0/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/e3542b15-1f1c-446a-8f3b-1418760477c0/grid_0.png" />
 <p>pikachu in a gacha ball</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/ed43f1b8-88fb-43eb-b0cc-7e785ecb6b41/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/ed43f1b8-88fb-43eb-b0cc-7e785ecb6b41/grid_0.png" />
 <p>sagrada familia corn</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/e59e0649-140e-4c6a-aa91-4697dd402729/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/e59e0649-140e-4c6a-aa91-4697dd402729/grid_0.png" />
 <p>tetris world :: tetris T block, octane renderer, god ray, sky</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/719c4930-70c3-4855-b212-8f8e14c4c3c0/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/719c4930-70c3-4855-b212-8f8e14c4c3c0/grid_0.png" />
 <p>hyperrealistic tetris blocks dropping down in grid formation, octane render, bottom-up perspective, sky, god ray</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/8ea1568b-2dca-4279-96e3-2d52fd276597/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/8ea1568b-2dca-4279-96e3-2d52fd276597/grid_0.png" />
 <p>river of flamey hair, faded colored manga, xxxholic style</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/ad4ad020-52d1-4305-ad23-306647acc495/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/ad4ad020-52d1-4305-ad23-306647acc495/grid_0.png" />
 <p>giant mosquito queen sitting relaxing near incense, xxxholic style</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/43d51329-276e-4260-8bd5-53220ff4b023/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/43d51329-276e-4260-8bd5-53220ff4b023/grid_0.png" />
 <p>iridescent damascus steel clover</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/884ff494-0be6-44ad-96c6-a7504cbfbd50/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/884ff494-0be6-44ad-96c6-a7504cbfbd50/grid_0.png" />
 <p>iridescent damascus steel leaf</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/3781e6d1-a1d5-42e9-b490-49c0981d2aab/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/3781e6d1-a1d5-42e9-b490-49c0981d2aab/grid_0.png" />
 <p>festival, colorful smokes, giant balls, dark blue sky, dancing people in colorful flowing clothes, chaotic dreamy</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/30d2ccee-488e-47ff-b9b6-17f1997faa10/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/30d2ccee-488e-47ff-b9b6-17f1997faa10/grid_0.png" />
 <p>amigurumi baby shark in a woven basket, autumn forest morning, dust particle shining in sunlight, high resolution, macrophotography</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/dcad37ca-642e-41c4-975d-92eb50c4a2f8/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/dcad37ca-642e-41c4-975d-92eb50c4a2f8/grid_0.png" />
 <p>Everything everywhere all at once</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/c3e0d7e3-cf2d-471c-ae00-94ab4813d312/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/c3e0d7e3-cf2d-471c-ae00-94ab4813d312/grid_0.png" />
 <p>quiet garden path, woman sitting in a chair, another empty chair</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/7f740b3c-86d4-42ba-91c8-230da6ab348d/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/7f740b3c-86d4-42ba-91c8-230da6ab348d/grid_0.png" />
 <p>united starbucks of america</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/a765e305-43c1-47a9-a145-63cb0ad15fea/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/a765e305-43c1-47a9-a145-63cb0ad15fea/grid_0.png" />
 <p>portrait of a smiling young asian woman, double eyelids, big eyes, long brown hair with side swept bang, round face, thin yellow headband, white shirt with lightblue sailor collar, high resolution</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/b1c0c023-658a-4a9d-aae0-885014704bbf/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/b1c0c023-658a-4a9d-aae0-885014704bbf/grid_0.png" />
 <p>portrait of a smiling young asian woman, double eyelids, big eyes, long brown hair with side swept bang, round face, optimistic smile, thin yellow headband, white shirt with lightblue sailor collar</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/16f75d7e-4308-4f66-b910-7a6a0ca3329e/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/16f75d7e-4308-4f66-b910-7a6a0ca3329e/grid_0.png" />
 <p>jeff bezos as one punch man, shiny bald head, epic, powerful, high resolution hyperrealistic</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/c7991998-c193-47c0-bc28-96c9de7b2d4f/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/c7991998-c193-47c0-bc28-96c9de7b2d4f/grid_0.png" />
 <p>portrait of a young asian woman, double eyelids, big eyes, long brown hair with side swept bang, heart-shaped face, optimistic smile, wearing a yellow head band, wearing a white shirt with lightblue sailor collar</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/ff2f9fd1-3bc5-469e-b2b1-054987122eda/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/ff2f9fd1-3bc5-469e-b2b1-054987122eda/grid_0.png" />
 <p>portrait of a smiling young asian woman, double eyelids, big eyes, long brown hair with side swept bang, round face, thin tied yellow head band, dark cardigan over white shirt</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/0bde6126-2b0d-4e43-9d6a-99c678599ffa/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/0bde6126-2b0d-4e43-9d6a-99c678599ffa/grid_0.png" />
 <p>portrait of a young asian woman, double eyelids, big downturn eyes, long brown hair with side bang, heart-shaped face, optimistic smile, wearing a yellow head band, wearing a white shirt with blue sailor uniform collar</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/47809a3c-92e1-4584-ae48-e0addb59a7ba/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/47809a3c-92e1-4584-ae48-e0addb59a7ba/grid_0.png" />
 <p>older Steve Jobs, long beard, wrinkled face, confident weary smile, monochrome hyperrealistic portrait</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/9d0769cc-09f3-4ca2-8614-c9a4eabb13be/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/9d0769cc-09f3-4ca2-8614-c9a4eabb13be/grid_0.png" />
 <p>older Steve Jobs, long beard, wrinkled face, confident weary smile, monochrome hyperrealistic portrait</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/0ae13cc6-e11f-4d8d-9521-64bfd76c8797/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/0ae13cc6-e11f-4d8d-9521-64bfd76c8797/grid_0.png" />
 <p>KFC double down, 8 layers of fried chicken, 7 layers of bacon and cheese</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/9fe01d22-c281-4f1a-bb5c-5fa22066900e/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/9fe01d22-c281-4f1a-bb5c-5fa22066900e/grid_0.png" />
 <p>little red riding gundam</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/734f2a21-cdbc-4c54-b832-0b4206879f42/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/734f2a21-cdbc-4c54-b832-0b4206879f42/grid_0.png" />
 <p>lightning waterfall from heaven to earth river, hyperrealistic render</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/153a8b3e-59dc-4b92-89ab-640bf683af76/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/153a8b3e-59dc-4b92-89ab-640bf683af76/grid_0.png" />
 <p>trump burger, satirical comic style</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/73e9cb44-fa63-4198-a9b3-cd4004f91654/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/73e9cb44-fa63-4198-a9b3-cd4004f91654/grid_0.png" />
 <p>giant robot mecha, Ukiyo-e hokusai</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/6fea9fd0-a4f0-4b79-886b-ec1ecba3ee81/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/6fea9fd0-a4f0-4b79-886b-ec1ecba3ee81/grid_0.png" />
 <p>giant robot mecha, Ukiyo-e hokusai</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/a248d49c-749d-49f8-a114-32d809d3d496/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/a248d49c-749d-49f8-a114-32d809d3d496/grid_0.png" />
 <p>flight of paper dragons, tolkiens, rendering</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cc56ea37-74ca-4ca8-bfc1-96bfc8e5a383/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cc56ea37-74ca-4ca8-bfc1-96bfc8e5a383/grid_0.png" />
 <p>smoke bonsai sculpture, hilltop, macrophotography, 8k octane render</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/e08b34f6-d03d-4f1e-aa05-e6a1120e5000/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/e08b34f6-d03d-4f1e-aa05-e6a1120e5000/grid_0.png" />
 <p>smoke sculpture maiden silhouette, 8k octane render</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/1b843b1d-2451-42ed-a933-76817ef2b736/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/1b843b1d-2451-42ed-a933-76817ef2b736/grid_0.png" />
 <p>marble smoke sculpture maiden silhouette, 8k octane render</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/8f0e0675-ac0a-4615-b222-934de426edc7/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/8f0e0675-ac0a-4615-b222-934de426edc7/grid_0.png" />
 <p>origami crane made of concrete</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdc70000-2af2-42c3-9db3-86fe266ebb0a/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdc70000-2af2-42c3-9db3-86fe266ebb0a/grid_0.png" />
 <p>mapo tofu, fake toy rendering, closed-up diorama, hyperrealistic 8k</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/76faee1f-354d-4420-b6d9-39719dbb8d20/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/76faee1f-354d-4420-b6d9-39719dbb8d20/grid_0.png" />
 <p>thick yellow fog invading a small winter town in the morning, yellow sky, diorama</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/e2ce8a73-ab2d-4540-9732-fc4f528c0ca8/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/e2ce8a73-ab2d-4540-9732-fc4f528c0ca8/grid_0.png" />
 <p>thick yellow fog invading a small town in winter, diorama</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/2a6be313-344d-40ff-b750-ee6e044fafb8/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/2a6be313-344d-40ff-b750-ee6e044fafb8/grid_0.png" />
 <p>melting black vinyl on a modern minimalistic white turntable, 8k octane render</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/ce63122a-5285-417a-9816-b5425c0ff6a8/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/ce63122a-5285-417a-9816-b5425c0ff6a8/grid_0.png" />
 <p>melting vinyl on a modern pearl white turntable, 8k octane render</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/3801b82d-294c-4f3f-9c01-68290aed8c37/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/3801b82d-294c-4f3f-9c01-68290aed8c37/grid_0.png" />
 <p>coke sirup dripping down icicle in winter, 45mm film</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/6a02df80-6058-4cd9-b583-88f0ede64551/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/6a02df80-6058-4cd9-b583-88f0ede64551/grid_0.png" />
 <p>kimono omakase</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/6898bb0e-2f05-4a41-8bfb-4250a66d8869/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/6898bb0e-2f05-4a41-8bfb-4250a66d8869/grid_0.png" />
 <p>white seashell shaped apartment interior, light wood floor, futuristic, warm, rendering</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/32301d78-6ea6-43af-a095-08eb0f7575e8/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/32301d78-6ea6-43af-a095-08eb0f7575e8/grid_0.png" />
 <p>white seashell residential apartments, futuristic, 3/4 perspective, photorealistic</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/536b3830-d144-470b-8c6e-f25f947edc8e/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/536b3830-d144-470b-8c6e-f25f947edc8e/grid_0.png" />
 <p>swarm of ladybugs flying toward the Milky Way, bottom up perspective, expressionism, Van Gogh</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/f28fcde8-881d-4a75-b827-54f7e535ba44/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/f28fcde8-881d-4a75-b827-54f7e535ba44/grid_0.webp" />
 <p>marshmallow modern mansion</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/883264da-082c-484c-9eba-ecd0553df0f9/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/883264da-082c-484c-9eba-ecd0553df0f9/grid_0.webp" />
 <p>straw castle</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/fc444028-779c-44f6-ac74-08fb62e5469a/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/fc444028-779c-44f6-ac74-08fb62e5469a/grid_0.webp" />
 <p>chinese new year on Neptune, in the style of Salvador Dali</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/515684a7-715c-48cf-b330-3595fb26e1de/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/515684a7-715c-48cf-b330-3595fb26e1de/grid_0.webp" />
 <p>dandelion boat</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/0c2c63d0-3749-4ae5-998d-7d3338b98cb9/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/0c2c63d0-3749-4ae5-998d-7d3338b98cb9/grid_0.webp" />
 <p>koi silk</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/901578e9-79a1-43fc-a939-b7c04f5acc0e/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/901578e9-79a1-43fc-a939-b7c04f5acc0e/grid_0.webp" />
 <p>koi silk</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/bd00d75a-8c11-46bd-a1c6-b43f35a13d5f/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/bd00d75a-8c11-46bd-a1c6-b43f35a13d5f/grid_0.webp" />
 <p>they're not mountains; they're waves!</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/fc0e3851-6c92-4181-892b-88cadcce6823/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/fc0e3851-6c92-4181-892b-88cadcce6823/grid_0.webp" />
 <p>Apple logo if Tim Cook drew it</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/e35f28a6-4dfc-4248-851b-8d60cfc6b676/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/e35f28a6-4dfc-4248-851b-8d60cfc6b676/grid_0.webp" />
 <p>detailed schematic of instructions on using a pencil</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/3205212f-e5d7-44ba-a2e2-e72d44311e4f/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/3205212f-e5d7-44ba-a2e2-e72d44311e4f/grid_0.webp" />
 <p>meiji era painting of a banana katana, ink</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/9f184005-9007-4a93-ab6f-49df2a56d8b7/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/9f184005-9007-4a93-ab6f-49df2a56d8b7/grid_0.webp" />
 <p>Asian farmer kid sitting on old pavement, books on a white sheet, old grainy photo</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/5a78f6fe-efea-485d-b0e6-b87c39a50b81/grid_0.png" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/5a78f6fe-efea-485d-b0e6-b87c39a50b81/grid_0.png" />
 <p>spinning space station, in the style of Christopher Nolan, 65mm film</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/6f8b0f56-1b88-449c-96e2-bd91d4344cdb/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/6f8b0f56-1b88-449c-96e2-bd91d4344cdb/grid_0.webp" />
 <p>Asian farmer kid casting a fishing net, in a muddy rice field, sunrise</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/184a98ed-291c-4c27-a711-c8be863095b6/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/184a98ed-291c-4c27-a711-c8be863095b6/grid_0.webp" />
 <p>glistening gold coins in a dull dark blue trash bag in a dumpster</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/e5fc9b09-dc4e-4410-8bf8-0a03bcfa9235/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/e5fc9b09-dc4e-4410-8bf8-0a03bcfa9235/grid_0.webp" />
 <p>watermelon grape, photo</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/693d46f6-0f48-4578-9bb3-8c252a931f8c/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/693d46f6-0f48-4578-9bb3-8c252a931f8c/grid_0.webp" />
 <p>grainy monochrome photo of an interstellar spaceship in 1950, high resolution</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/a0101172-7c41-4e19-9c64-53442943eb12/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/a0101172-7c41-4e19-9c64-53442943eb12/grid_0.webp" />
 <p>withered flowers inside a coke bottle</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/175ba7de-87f5-4620-9589-fa3a509f9c61/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/175ba7de-87f5-4620-9589-fa3a509f9c61/grid_0.webp" />
 <p>closed up gold and green leaf pattern on a fancy gate door, 8k depth of field</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/12e9f165-9e0f-4773-8e11-54209e5c02c7/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/12e9f165-9e0f-4773-8e11-54209e5c02c7/grid_0.webp" />
 <p>macrophotography of flower pattern sculpture, bas-relief, 8k octane renderer</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/29bc75c5-65f2-448f-9c6c-560c9e439ed5/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/29bc75c5-65f2-448f-9c6c-560c9e439ed5/grid_0.webp" />
 <p>macrophotography of flower pattern sculpture, bas-relief, 8k octane renderer</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/62174480-a054-4f49-a278-76b90744afd4/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/62174480-a054-4f49-a278-76b90744afd4/grid_0.webp" />
 <p>sea of fog over cherry blossom, tilt shift photography</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/c346fa1b-fc5f-49c8-960e-5156947e29bd/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/c346fa1b-fc5f-49c8-960e-5156947e29bd/grid_0.webp" />
 <p>sea of fog over cherry blossom, tilt shift photography</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/7a9b5e5b-7ef2-49d1-8664-a917cce1f784/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/7a9b5e5b-7ef2-49d1-8664-a917cce1f784/grid_0.webp" />
 <p>sushi made of stone, 8k octane renderer</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/cfd9b144-dc17-40fe-aab7-3b7bb6d6b52a/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/cfd9b144-dc17-40fe-aab7-3b7bb6d6b52a/grid_0.webp" />
 <p>impossible sushi</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/b317c31b-185f-457a-8f09-c8d088f4c9dd/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/b317c31b-185f-457a-8f09-c8d088f4c9dd/grid_0.webp" />
 <p>photo of snowman on fire, depth of field, 8k</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/64f077d2-ded9-4291-8116-2a7e4edd74f5/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/64f077d2-ded9-4291-8116-2a7e4edd74f5/grid_0.webp" />
 <p>photo of snowman on fire, depth of field, 8k</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/e987bfc2-0a52-46b9-add6-9537518398d5/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/e987bfc2-0a52-46b9-add6-9537518398d5/grid_0.webp" />
 <p>storm in a teacup, diorama</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/586f0bf8-639e-401c-8622-33d1e9736cdb/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/586f0bf8-639e-401c-8622-33d1e9736cdb/grid_0.webp" />
 <p>storm in a teacup, origami</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/226e635a-d41e-41da-92b1-eac02c4196e5/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/226e635a-d41e-41da-92b1-eac02c4196e5/grid_0.webp" />
 <p>pretty girl</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/0f3ea9a2-ad79-491c-87db-3bf7d7bb0547/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/0f3ea9a2-ad79-491c-87db-3bf7d7bb0547/grid_0.webp" />
 <p>the word "ReScript", clear font, perfect kerning</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/9c0a4fea-ae34-4c07-8e77-4aa7a9d5bdc5/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/9c0a4fea-ae34-4c07-8e77-4aa7a9d5bdc5/grid_0.webp" />
 <p>the four bunnies of apocalypse, dystopian, artstation, high quality render</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/9826680f-5cd4-4548-9a39-60eb091e58f2/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/9826680f-5cd4-4548-9a39-60eb091e58f2/grid_0.webp" />
 <p>infinity gauntlet spaceship</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/af2a7c0a-be8f-458d-a582-6c5a0f00e406/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/af2a7c0a-be8f-458d-a582-6c5a0f00e406/grid_0.webp" />
 <p>infinity gauntlet spaceship</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/a9b5bd52-5989-42ef-b6f1-90ff75201727/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/a9b5bd52-5989-42ef-b6f1-90ff75201727/grid_0.webp" />
 <p>city made of human internal parts, bird eye view</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/05562c53-fe19-4ec6-a3df-8f1e3f507fc7/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/05562c53-fe19-4ec6-a3df-8f1e3f507fc7/grid_0.webp" />
 <p>liver organ doing karate, Impressionism</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/9105e83a-4bf4-4cad-a002-091b6c2e807c/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/9105e83a-4bf4-4cad-a002-091b6c2e807c/grid_0.webp" />
 <p>baby bear thanos</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/28b40b6b-2c31-4f89-b9aa-cbeeed53f899/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/28b40b6b-2c31-4f89-b9aa-cbeeed53f899/grid_0.webp" />
 <p>one wooden rocket with metal plates fixtures, children crayon drawing on paper</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/815449fd-8fc5-4991-964b-93351a0f6826/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/815449fd-8fc5-4991-964b-93351a0f6826/grid_0.webp" />
 <p>steampunk fish</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/cbe6dc5b-5401-441e-80f3-47b4b7cc2915/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/cbe6dc5b-5401-441e-80f3-47b4b7cc2915/grid_0.webp" />
 <p>haruhi suzumiya</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/ac8bdf8a-d7ff-4a97-a0ea-3f52eee22e5d/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/ac8bdf8a-d7ff-4a97-a0ea-3f52eee22e5d/grid_0.webp" />
 <p>she sells sea shells by the sea shore</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/08e8ca60-e330-4a0f-b677-ccf7e5f17bc1/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/08e8ca60-e330-4a0f-b677-ccf7e5f17bc1/grid_0.webp" />
 <p>pearl necklace on red dress, 8k sculpture, cinematic, octane renderer</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/5c32d5f8-861c-493f-b98e-4fb0a4734d7a/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/5c32d5f8-861c-493f-b98e-4fb0a4734d7a/grid_0.webp" />
 <p>floating house on a lake, photorealistic, peaceful</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/554959ca-cdfc-4013-bbdf-98fac4b595e3/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/554959ca-cdfc-4013-bbdf-98fac4b595e3/grid_0.webp" />
 <p>macrophotography of butterfly with flower petal wings, abstract</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/ec0a09bd-c053-47a3-804d-5b46a960a964/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/ec0a09bd-c053-47a3-804d-5b46a960a964/grid_0.webp" />
 <p>do not go gentle into that good night</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/aba2dcec-9852-41c5-af2a-4e56d356306d/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/aba2dcec-9852-41c5-af2a-4e56d356306d/grid_0.webp" />
 <p>dreamy crystal butterfly, shifted perspective</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/cf77943e-dc69-49cb-897e-4efc9b3d4cc6/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/cf77943e-dc69-49cb-897e-4efc9b3d4cc6/grid_0.webp" />
 <p>crystal butterfly in a dream</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/9c8420b0-4a42-45c9-8d87-414a89f7b304/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/9c8420b0-4a42-45c9-8d87-414a89f7b304/grid_0.webp" />
 <p>eclipse in a bottle</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/49fc4fed-d20b-4706-b1fb-2f40eaa39c83/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/49fc4fed-d20b-4706-b1fb-2f40eaa39c83/grid_0.webp" />
 <p>eclipse in a bottle</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/b04bc443-9667-4a25-9c0d-87a6add2c9b3/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/b04bc443-9667-4a25-9c0d-87a6add2c9b3/grid_0.webp" />
 <p>chocolate cake keyboard</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/fb422f6e-d87a-45a7-b6e8-1b8f70f2bd61/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/fb422f6e-d87a-45a7-b6e8-1b8f70f2bd61/grid_0.webp" />
 <p>old stamp of a futuristic city in birds eye view, instagram filter</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/88be2db6-c39f-436b-89c5-753698855fc6/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/88be2db6-c39f-436b-89c5-753698855fc6/grid_0.webp" />
 <p>old stamp of a futuristic city in birds eye view, instagram filter</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/6f359cb3-0976-4945-8cfd-f56b70ad7527/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/6f359cb3-0976-4945-8cfd-f56b70ad7527/grid_0.webp" />
 <p>cyberpunk haruhi suzumiya, anime style</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/6154dfaf-bbf1-4bec-bf4c-d4f2825fc103/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/6154dfaf-bbf1-4bec-bf4c-d4f2825fc103/grid_0.webp" />
 <p>iphone inside a capped glass bottle lying horizontally on an old table</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/1890c313-dbae-4f2f-b8f6-f2c9735ff190/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/1890c313-dbae-4f2f-b8f6-f2c9735ff190/grid_0.webp" />
 <p>asian girl eating a soup dumpling in a fancy chinese restaurant, closed-up impressionism, peaceful</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/74db9b64-2af6-4499-bfea-09b76ff8eedc/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/74db9b64-2af6-4499-bfea-09b76ff8eedc/grid_0.webp" />
 <p>futuristic solarpunk city, bird's eyes view, traditional red asian buildings wrapped in green vegetations, unreal engine</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/ea29a59f-2c0c-43d3-bcea-9c080d1b78ea/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/ea29a59f-2c0c-43d3-bcea-9c080d1b78ea/grid_0.webp" />
 <p>golden retriever puppy wearing a helmet, against a beautiful galaxy, octane renderer</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/e69d238a-4d71-4fe3-9f4b-5a3ac471f5b2/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/e69d238a-4d71-4fe3-9f4b-5a3ac471f5b2/grid_0.webp" />
 <p>pretty dress blowing in the wind</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/0417c327-5eac-441e-923f-9736dcd8e380/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/0417c327-5eac-441e-923f-9736dcd8e380/grid_0.webp" />
 <p>closed up macrophotography of a bowl of asian dessert</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/0740ff12-0b35-4905-8dad-bf550a84cb27/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/0740ff12-0b35-4905-8dad-bf550a84cb27/grid_0.webp" />
 <p>closed up macrophotography of a bowl of asian dessert</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/8aa7fd74-73ea-4831-a48a-ce9edc67d414/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/8aa7fd74-73ea-4831-a48a-ce9edc67d414/grid_0.webp" />
 <p>asian girl in straw hat and white dress, clear sunny sky, sunflower field, portrait photography</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/8ee2a580-a6a1-4356-81d1-40e9bc01f5e2/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/8ee2a580-a6a1-4356-81d1-40e9bc01f5e2/grid_0.webp" />
 <p>so much depends upon a red wheel barrow glazed with rain water beside the white chickens</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/e21ccdd0-4efe-4058-b176-d96c6c673642/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/e21ccdd0-4efe-4058-b176-d96c6c673642/grid_0.webp" />
 <p>three-body problem, cinematic</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/19a138c9-8d56-471f-bc08-351fda122b5e/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/19a138c9-8d56-471f-bc08-351fda122b5e/grid_0.webp" />
 <p>three-body problem, cinematic</p>
-</div>
+</figure>
 
-<div>
-<img src="https://mj-gallery.com/cdn-cgi/image/format=webp/14465d26-a41e-4cc7-9a70-c7de8a0e28b3/grid_0.webp" />
+<figure>
+<img loading="lazy" src="https://mj-gallery.com/cdn-cgi/image/format=webp/14465d26-a41e-4cc7-9a70-c7de8a0e28b3/grid_0.webp" />
 <p>three-body problem, cinematic</p>
-</div>
+</figure>
 
+<div id="veil"></div>
 
 <script>
   let focused = null
+  let veil = document.querySelector('#veil')
 
   document.body.addEventListener('click', (e) => {
     let {innerHeight, innerWidth} = window
-    let node = e.target
-    let images = document.querySelectorAll('img')
-    if (node.tagName === 'IMG') {
-      for (let i = 0; i < images.length; i++) {
-        let image = images[i]
-        if (image === node) {
-          if (i === focused) {
-            let imageOld = images[focused]
-            imageOld.style.transform = 'scale(1)'
-            imageOld.style.borderRadius = '16px 16px 0 0'
-            imageOld.style.cursor = 'zoom-in'
-            imageOld.style.boxShadow = 'none'
-            imageOld.parentNode.style.zIndex = 0
-            focused = null
-          } else {
-            let ar = image.offsetWidth / image.offsetHeight
-            let heightMax = innerHeight - 80
-            let widthMax = innerWidth - 80
-            let h1 = heightMax, w1 = heightMax * ar
-            let w2 = widthMax, h2 = widthMax / ar
-            let scale = Math.min(h1, h2) / image.offsetHeight
-            let hReal = scale * image.offsetHeight
-            let wReal = scale * image.offsetWidth
+    let heightMax = innerHeight - 120
+    let widthMax = innerWidth - 120
+    let columnsCount = innerWidth >= 800 ? 4 : innerWidth >= 600 ? 3 : 2 // ugh
+    let images = [...document.querySelectorAll('img')].slice(0)
 
-            let deltaX = ((innerWidth - wReal) / 2 - image.offsetLeft)
-            let deltaY = ((innerHeight - hReal) / 2)
-            image.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(${scale})`
-            image.style.borderRadius = '0px'
-            image.style.cursor = 'zoom-out'
-            image.style.boxShadow = '0 4px 60px 0 rgba(0, 0, 0, 1)'
-            image.parentNode.style.zIndex = 1
-            window.scrollTo({top: image.parentNode.offsetTop, behavior: 'smooth'})
-            if (focused != null) {
-              let imageOld = images[focused]
-              imageOld.style.transform = 'scale(1)'
-              imageOld.style.borderRadius = '16px 16px 0 0'
-              imageOld.style.cursor = 'zoom-in'
-              imageOld.style.boxShadow = 'none'
-              imageOld.parentNode.style.zIndex = 0
-            }
-            focused = i
-          }
-
-          break
-        }
+    let imageClicked
+    let imagesData = []
+    for (let i = 0; i < images.length; i++) {
+      let image = images[i]
+      let data = {
+        width: image.offsetWidth,
+        height: image.offsetHeight,
+        left: image.offsetLeft,
+        top: image.offsetTop,
+        parentTop: image.parentNode.offsetTop,
       }
-    } else {
-      if (focused != null) {
-        let imageOld = images[focused]
-        imageOld.style.transform = 'scale(1)'
-        imageOld.style.borderRadius = '16px 16px 0 0'
-        imageOld.style.cursor = 'zoom-in'
-        imageOld.style.boxShadow = 'none'
-        imageOld.parentNode.style.zIndex = 0
+      imagesData.push(data)
+      if (image === e.target && i !== focused) {
+        let ar = data.width / data.height
+        let h1 = heightMax, w1 = heightMax * ar
+        let w2 = widthMax, h2 = widthMax / ar
+        let scale = Math.min(h1, h2) / data.height
+        let hReal = scale * data.height
+        let wReal = scale * data.width
+        let deltaX = (innerWidth - wReal) / 2 - data.left
+        let deltaY = (innerHeight - hReal) / 2
+        imageClicked = {i, deltaX, deltaY, scale, wReal, hReal}
       }
-      focused = null
     }
+
+    // finished DOM reads. Only writes now
+
+    for (let i = 0; i < images.length; i++) {
+      let image = images[i]
+      let data = imagesData[i]
+
+      let deltaX, deltaY
+      if (imageClicked) {
+        if (Math.floor(i / columnsCount) === Math.floor(imageClicked.i / columnsCount)) { // same row
+          deltaY = 0
+          if (i < imageClicked.i) {
+            deltaX = -100
+          } else if (i > imageClicked.i) {
+            deltaX = 150
+          } else {
+            deltaX = 0
+          }
+        } else if (i < imageClicked.i) { // row above
+          deltaX = 0
+          deltaY = -200
+        } else { // row below
+          deltaX = 0
+          deltaY = 200
+        }
+      } else {
+        deltaX = 0
+        deltaY = 0
+      }
+      deltaX = 0
+
+      image.style.transform = 'none'
+      image.style.borderRadius = '16px 16px 0 0'
+      image.style.cursor = 'zoom-in'
+      image.style.boxShadow = 'none'
+      image.parentNode.style.zIndex = 0
+      image.parentNode.style.transform = `translate(${deltaX}px, ${deltaY}px)`
+    }
+
+    if (imageClicked) {
+      let image = images[imageClicked.i]
+          image.style.transform = `translate(${imageClicked.deltaX}px, ${imageClicked.deltaY}px) scale(${imageClicked.scale})`
+          image.style.borderRadius = '0px'
+          image.style.cursor = 'zoom-out'
+          image.style.boxShadow = '0 4px 60px 0 rgba(0, 0, 0, 1)'
+          image.parentNode.style.zIndex = 2
+          image.parentNode.style.transform = 'none'
+
+      veil.style.backgroundColor = 'rgba(0, 0, 0, 0.4)'
+
+      window.scrollTo({top: imagesData[imageClicked.i].parentTop, behavior: 'smooth'})
+      focused = imageClicked.i
+    } else {
+      focused = null
+      veil.style.backgroundColor = 'rgba(0, 0, 0, 0)'
+    }
+
+    // if (node.tagName === 'IMG') {
+    //   for (let i = 0; i < images.length; i++) {
+    //     let image = images[i]
+    //     if (image === node) {
+    //       if (i === focused) {
+    //         let imageOld = images[focused]
+    //         imageOld.style.transform = 'scale(1)'
+    //         imageOld.style.borderRadius = '16px 16px 0 0'
+    //         imageOld.style.cursor = 'zoom-in'
+    //         imageOld.style.boxShadow = 'none'
+    //         imageOld.parentNode.style.zIndex = 0
+    //         veil.style.backgroundColor = 'rgba(0, 0, 0, 0)'
+    //         focused = null
+    //       } else {
+    //         let ar = image.offsetWidth / image.offsetHeight
+    //         let heightMax = innerHeight - 80
+    //         let widthMax = innerWidth - 80
+    //         let h1 = heightMax, w1 = heightMax * ar
+    //         let w2 = widthMax, h2 = widthMax / ar
+    //         let scale = Math.min(h1, h2) / image.offsetHeight
+    //         let hReal = scale * image.offsetHeight
+    //         let wReal = scale * image.offsetWidth
+
+    //         let deltaX = ((innerWidth - wReal) / 2 - image.offsetLeft)
+    //         let deltaY = ((innerHeight - hReal) / 2)
+    //         image.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(${scale})`
+    //         image.style.borderRadius = '0px'
+    //         image.style.cursor = 'zoom-out'
+    //         image.style.boxShadow = '0 4px 60px 0 rgba(0, 0, 0, 1)'
+    //         image.parentNode.style.zIndex = 2
+    //         veil.style.backgroundColor = 'rgba(0, 0, 0, 0.4)'
+
+    //         window.scrollTo({top: image.parentNode.offsetTop, behavior: 'smooth'})
+    //         if (focused != null) {
+    //           let imageOld = images[focused]
+    //           imageOld.style.transform = 'scale(1)'
+    //           imageOld.style.borderRadius = '16px 16px 0 0'
+    //           imageOld.style.cursor = 'zoom-in'
+    //           imageOld.style.boxShadow = 'none'
+    //           imageOld.parentNode.style.zIndex = 0
+    //         }
+    //         focused = i
+    //       }
+    //     }
+    //   }
+    // } else {
+    //   if (focused != null) {
+    //     let imageOld = images[focused]
+    //     imageOld.style.transform = 'scale(1)'
+    //     imageOld.style.borderRadius = '16px 16px 0 0'
+    //     imageOld.style.cursor = 'zoom-in'
+    //     imageOld.style.boxShadow = 'none'
+    //     imageOld.parentNode.style.zIndex = 0
+    //     veil.style.backgroundColor = 'rgba(0, 0, 0, 0)'
+    //   }
+    //   focused = null
+    // }
   })
 
-  // let cards = [...document.body.querySelectorAll('div')]
+  // let cards = [...document.body.querySelectorAll('figure')]
   // let inputs = {
   //   pointerXY: {pageX: 0, pageY: 0}
   // }
