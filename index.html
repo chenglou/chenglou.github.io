@@ -10,6 +10,9 @@
       background-color: rgb(17, 20, 32);
     }
     body {
+      margin: 0;
+    }
+/*    body {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 20px;
@@ -51,11 +54,11 @@
       color: rgb(122, 126, 130);
       padding-right: 2px;
     }
-  </style>
+*/  </style>
 </head>
 
 <body>
-
+<!--
 <div>
 <img src="https://mj-gallery.com/596808d3-8550-497b-bbf7-e16df6ba9a43/grid_0.png" />
 <p>5 centimeters per second, unity cel shading, curvilinear lens</p>
@@ -715,35 +718,185 @@
 <img src="https://mj-gallery.com/cdn-cgi/image/format=webp/14465d26-a41e-4cc7-9a70-c7de8a0e28b3/grid_0.webp" />
 <p>three-body problem, cinematic</p>
 </div>
-
-
+ -->
 <script>
-let cards = [...document.body.querySelectorAll('div')]
-let inputs = {
-  pointerXY: {pageX: 0, pageY: 0}
+
+let sizes = [
+  {w: 2048, h: 1024},
+  {w: 2048, h: 1024},
+  {w: 1024, h: 1024},
+  {w: 2048, h: 1024},
+  {w: 1664, h: 2432},
+  {w: 1408, h: 2816},
+  {w: 2048, h: 1024},
+  {w: 2304, h: 1536},
+  {w: 1024, h: 1024},
+  {w: 2304, h: 1536},
+  {w: 1024, h: 1536},
+  {w: 2048, h: 2048},
+  {w: 1664, h: 2432},
+  {w: 2304, h: 1536},
+  {w: 2048, h: 1152},
+  {w: 1792, h: 1024},
+  {w: 1024, h: 1792},
+  {w: 1536, h: 1024},
+  {w: 2304, h: 1536},
+  {w: 1536, h: 2688},
+  {w: 2048, h: 2048},
+  {w: 2304, h: 1664},
+  {w: 1664, h: 2432},
+  {w: 1664, h: 2432},
+  {w: 1664, h: 2432},
+  {w: 2048, h: 2048},
+  {w: 2048, h: 2048},
+  {w: 1024, h: 1792},
+  {w: 1024, h: 1792},
+  {w: 1024, h: 1792},
+  {w: 2048, h: 1024},
+  {w: 1536, h: 1024},
+  {w: 1536, h: 1024},
+  {w: 1536, h: 1024},
+  {w: 1792, h: 1024},
+  {w: 2304, h: 1536},
+  {w: 2304, h: 1536},
+  {w: 1664, h: 2432},
+  {w: 1024, h: 1024},
+  {w: 1664, h: 2432},
+  {w: 1664, h: 2432},
+  {w: 1664, h: 2432},
+  {w: 1664, h: 2432},
+  {w: 1664, h: 2432},
+  {w: 1664, h: 2432},
+  {w: 1664, h: 2432},
+  {w: 1664, h: 2432},
+  {w: 1664, h: 2432},
+  {w: 1024, h: 1024},
+  {w: 1024, h: 1536},
+  {w: 1024, h: 1024},
+  {w: 1536, h: 1024},
+  {w: 1024, h: 1536},
+  {w: 2048, h: 1024},
+  {w: 1024, h: 1792},
+  {w: 1024, h: 1536},
+  {w: 1024, h: 1536},
+  {w: 1024, h: 1024},
+  {w: 1280, h: 1024},
+  {w: 1024, h: 1792},
+  {w: 1792, h: 1024},
+  {w: 1024, h: 1536},
+  {w: 1024, h: 1536},
+  {w: 1024, h: 2048},
+  {w: 1536, h: 1024},
+  {w: 2304, h: 1536},
+  {w: 1536, h: 1024},
+  {w: 1792, h: 1024},
+  {w: 1792, h: 1024},
+  {w: 1024, h: 1024},
+  {w: 1024, h: 1280},
+  {w: 1792, h: 1024},
+  {w: 1536, h: 2688},
+  {w: 1536, h: 2688},
+  {w: 2048, h: 1152},
+  {w: 1024, h: 1024},
+  {w: 1792, h: 1024},
+  {w: 1024, h: 1024},
+  {w: 1792, h: 1024},
+  {w: 1792, h: 1024},
+  {w: 1792, h: 1024},
+  {w: 1536, h: 1024},
+  {w: 1024, h: 1024},
+  {w: 1536, h: 1024},
+  {w: 1024, h: 1024},
+  {w: 2048, h: 1024},
+  {w: 1024, h: 2048},
+  {w: 1024, h: 2048},
+  {w: 2688, h: 1536},
+  {w: 1792, h: 1024},
+  {w: 1792, h: 1024},
+  {w: 1920, h: 1280},
+  {w: 1792, h: 1024},
+  {w: 1792, h: 1024},
+  {w: 1024, h: 1024},
+  {w: 1024, h: 1024},
+  {w: 1024, h: 1024},
+  {w: 1024, h: 1024},
+  {w: 2304, h: 1024},
+  {w: 1024, h: 1024},
+  {w: 2048, h: 2048},
+  {w: 2304, h: 1024},
+  {w: 1024, h: 1024},
+  {w: 1024, h: 1024},
+  {w: 1792, h: 1024},
+  {w: 2048, h: 2048},
+  {w: 1024, h: 1024},
+  {w: 896, h: 512},
+  {w: 2048, h: 2048},
+  {w: 1792, h: 1024},
+  {w: 1792, h: 1024},
+  {w: 1280, h: 1024},
+  {w: 2048, h: 1152},
+  {w: 1664, h: 1664},
+  {w: 1152, h: 2048},
+  {w: 1536, h: 2688},
+  {w: 1664, h: 1664},
+  {w: 1664, h: 1664},
+  {w: 1024, h: 1024},
+  {w: 1664, h: 1664},
+  {w: 2304, h: 1024},
+  {w: 2304, h: 1024},
+  {w: 2304, h: 1024},
+  {w: 1536, h: 1536},
+  {w: 1664, h: 1664},
+  {w: 1664, h: 1664},
+  {w: 1024, h: 1024},
+  {w: 2048, h: 1152},
+  {w: 1024, h: 1024},
+  {w: 1408, h: 1792},
+  {w: 1408, h: 1792},
+  {w: 1408, h: 1792},
+]
+
+let {innerWidth, innerHeight} = window
+let spaceLeft = 16
+let spaceTop = 16
+let maxW = (innerWidth - 0) / 4 - spaceLeft * 2
+let maxH = maxW - spaceTop * 2
+
+for (let i = 0; i < sizes.length; i++) {
+  let size = sizes[i]
+  let rect = document.createElement('div')
+  let ar = size.w / size.h
+  let w = Math.min(size.w, maxW)
+  let h = Math.min(size.h, maxH)
+  w = Math.min(h * ar, w)
+  h = w / ar
+  let top = spaceTop + (spaceTop + maxH) * Math.floor(i / 4) + (maxH - h) / 2
+  let left = spaceLeft + innerWidth / 4 * (i % 4) + (maxW - w) / 2
+
+  rect.style.position = 'absolute'
+  rect.style.boxSizing = 'border-box'
+  rect.style.width = `${w}px`
+  rect.style.height = `${h}px`
+  rect.style.top = `${top}px`
+  rect.style.left = `${left}px`
+  rect.style.border = '1px solid white'
+  // rect.style.backgroundColor = 'white'
+  rect.style.borderRadius = '12px'
+  document.body.appendChild(rect)
 }
-window.addEventListener('pointermove', (e) => {
-  inputs.pointerXY.pageX = e.pageX; inputs.pointerXY.pageY = e.pageY // can exceed document bounds, e.g. dragging reports back out-of-bound values
-  scheduleRender()
-})
-cards.forEach(card => {
-  // card.style.position = 'absolute'
-})
 
-let scheduled = false
-function scheduleRender() {
-  if (scheduled) return;
-  scheduled = true
 
-  requestAnimationFrame(function render() {
-    for (let i = 0; i < cards.length; i++) {
-      let card = cards[i]
-      // card.style.
-    }
-  })
-}
+// let scheduled = false
+// function scheduleRender() {
+//   if (scheduled) return;
+//   scheduled = true
 
-scheduleRender()
+//   requestAnimationFrame(function render() {
+
+//   })
+// }
+
+// scheduleRender()
 </script>
 
 </body>
