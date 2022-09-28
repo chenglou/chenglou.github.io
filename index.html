@@ -865,50 +865,47 @@ let sizes = [
   {w: 1408, h: 1792},
 ]
 
-window.addEventListener('resize', render)
+window.addEventListener('resize', scheduleRender)
 
-function render() {
-  let {innerWidth, innerHeight} = window
-  let spaceLeft = 16
-  let spaceTop = 16
-  let cols = innerWidth < 600 ? 2 : innerWidth < 800 ? 3 : 4
-  let maxW = (innerWidth - 0) / cols - spaceLeft * 2
-  let maxH = maxW - spaceTop * 2
+let scheduled = false
+function scheduleRender() {
+  if (scheduled) return;
+  scheduled = true
 
-  document.body.textContent = ''
+  requestAnimationFrame(function render() {
+    let {innerWidth, innerHeight} = window
+    let spaceLeft = 16
+    let spaceTop = 16
+    let cols = innerWidth < 600 ? 2 : innerWidth < 800 ? 3 : 4
+    let maxW = (innerWidth - 0) / cols - spaceLeft * 2
+    let maxH = maxW - spaceTop * 2
 
-  for (let i = 0; i < sizes.length; i++) {
-    let size = sizes[i]
-    let rect = document.createElement('div')
-    let ar = size.w / size.h
-    let w = Math.min(size.w, maxW)
-    let h = Math.min(size.h, maxH)
-    w = Math.min(h * ar, w)
-    h = w / ar
-    let top = spaceTop + (spaceTop + maxH) * Math.floor(i / cols) + (maxH - h) / 2
-    let left = spaceLeft + innerWidth / cols * (i % cols) + (maxW - w) / 2
+    document.body.textContent = ''
 
-    rect.className = 'box'
-    rect.style.width = `${w}px`
-    rect.style.height = `${h}px`
-    rect.style.top = `${top}px`
-    rect.style.left = `${left}px`
-    document.body.appendChild(rect)
-  }
+    for (let i = 0; i < sizes.length; i++) {
+      let size = sizes[i]
+      let rect = document.createElement('div')
+      let ar = size.w / size.h
+      let w = Math.min(size.w, maxW)
+      let h = Math.min(size.h, maxH)
+      w = Math.min(h * ar, w)
+      h = w / ar
+      let top = spaceTop + (spaceTop + maxH) * Math.floor(i / cols) + (maxH - h) / 2
+      let left = spaceLeft + innerWidth / cols * (i % cols) + (maxW - w) / 2
+
+      rect.className = 'box'
+      rect.style.width = `${w}px`
+      rect.style.height = `${h}px`
+      rect.style.top = `${top}px`
+      rect.style.left = `${left}px`
+      document.body.appendChild(rect)
+    }
+
+    scheduled = false
+  })
 }
-render()
 
-// let scheduled = false
-// function scheduleRender() {
-//   if (scheduled) return;
-//   scheduled = true
-
-//   requestAnimationFrame(function render() {
-
-//   })
-// }
-
-// scheduleRender()
+scheduleRender()
 </script>
 
 </body>
