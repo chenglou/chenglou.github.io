@@ -12,7 +12,7 @@
       background-color: rgb(17, 20, 32);
     }
     body {
-      overflow-x: hidden;
+      overflow: hidden;
       margin: 0;
     }
     .box {
@@ -191,7 +191,7 @@ let data = [
 ]
 
 window.addEventListener('resize', scheduleRender)
-window.addEventListener('scroll', scheduleRender)
+window.addEventListener('scroll', scheduleRender, true)
 
 let gapLeft = 16
 let gapTop = 16
@@ -229,8 +229,16 @@ let boxes; {
   })
 }
 
+let container = document.createElement('div')
+container.style.position = 'relative'
+container.style.overflowX = 'hidden'
+container.style.overflowY = 'scroll'
+container.style.width = '100vw'
+container.style.height = '100vh'
+
 let dummyPlaceholder = document.createElement('div')
-document.body.appendChild(dummyPlaceholder)
+container.appendChild(dummyPlaceholder)
+document.body.appendChild(container)
 
 // === state
 let scheduled = false
@@ -241,7 +249,7 @@ function scheduleRender() {
 
   requestAnimationFrame(function render() {
     let {innerWidth, innerHeight} = window
-    let scrollTop = window.scrollY
+    let scrollTop = container.scrollTop
 
     let scheduleNextRender = false
 
@@ -260,7 +268,7 @@ function scheduleRender() {
       w = Math.min(h * ar, w)
       h = w / ar
       let top = rowTop + (maxH - h) / 2 // center vertically
-      let left = gapLeft + innerWidth / cols * (i % cols) + (maxW - w) / 2 // center horizontally
+      let left = gapLeft + innerWidth / cols * (i % cols) + (maxW - w) / 2 +400// center horizontally
 
       let speed = 5
       let dW = (w - box.w) / speed
@@ -285,8 +293,8 @@ function scheduleRender() {
         node.style.left = `${box.left}px`
         let img = node.children[0]
         img.style.cursor = 'zoom-in'
-        if (node.parentNode == null) document.body.appendChild(node) // if previously absent, add
-      } else if (node.parentNode != null) document.body.removeChild(node) // if previously present, remove
+        if (node.parentNode == null) container.appendChild(node) // if previously absent, add
+      } else if (node.parentNode != null) container.removeChild(node) // if previously present, remove
 
       if (i % cols === cols - 1 || i === data.length - 1) {
         rowTop += maxH + gapTop
