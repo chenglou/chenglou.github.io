@@ -19,9 +19,10 @@
       position: absolute;
       box-sizing: border-box;
       background-color: rgb(24, 26, 38);
-      border: 1px solid rgb(35, 35, 35);
       border-radius: 16px;
-      box-shadow: 0 4px 28px 0 rgba(0, 0, 0, 0.4);
+      box-shadow:
+        0 0px 2px 0 rgba(255, 255, 255, 0.2),
+        0 4px 28px 0 rgba(0, 0, 0, 0.4);
       overflow: hidden;
     }
     .box img {
@@ -232,7 +233,7 @@ let dummyPlaceholder = document.createElement('div')
 document.body.appendChild(dummyPlaceholder)
 
 // === state
-let prevAdded = new Set()
+let prevNodes = new Set()
 let scheduled = false
 
 function scheduleRender() {
@@ -244,15 +245,13 @@ function scheduleRender() {
     let scrollTop = window.scrollY
 
     let scheduleNextRender = false
+
     let cols = colsF(innerWidth)
     let maxW = (innerWidth - 0) / cols - gapLeft * 2
     let maxH = maxW - gapTop * 2
 
-    // wipe everything except script tag and dummy
-    // while (document.body.children.length > 2) document.body.removeChild(document.body.lastChild)
-
-    let totalHeight = 0
-    let added = new Set()
+    let rowTop = gapTop
+    let newNodes = new Set()
     for (let i = 0; i < data.length; i++) {
       let size = data[i]
       let box = boxes[i]
@@ -262,8 +261,8 @@ function scheduleRender() {
       let h = Math.min(size.h, maxH)
       w = Math.min(h * ar, w)
       h = w / ar
-      let top = gapTop + (gapTop + maxH) * Math.floor(i / cols) + (maxH - h) / 2
-      let left = gapLeft + innerWidth / cols * (i % cols) + (maxW - w) / 2
+      let top = rowTop + (maxH - h) / 2 // center vertically
+      let left = gapLeft + innerWidth / cols * (i % cols) + (maxW - w) / 2 // center horizontally
 
       let speed = 5
       let dW = (w - box.w) / speed
@@ -280,33 +279,33 @@ function scheduleRender() {
         scheduleNextRender = true
       }
 
+      let node = box.node
       if (box.top <= scrollTop + innerHeight && box.top + box.h >= scrollTop) { // visible range
-        let node = box.node
-            node.style.width = `${box.w}px`
-            node.style.height = `${box.h}px`
-            node.style.top = `${box.top}px`
-            node.style.left = `${box.left}px`
+        node.style.width = `${box.w}px`
+        node.style.height = `${box.h}px`
+        node.style.top = `${box.top}px`
+        node.style.left = `${box.left}px`
         let img = node.children[0]
         img.style.cursor = 'zoom-in'
 
-        added.add(node)
+        newNodes.add(node)
       }
 
-      if (i === data.length - 1) totalHeight = top + h + gapTop
+      if (i % cols === cols - 1 || i === data.length - 1) {
+        rowTop += maxH + gapTop
+      }
     }
 
-    for (let node of added) {
-      if (!prevAdded.has(node)) document.body.appendChild(node)
+    for (let node of newNodes) {
+      if (!prevNodes.has(node)) document.body.appendChild(node)
     }
-    for (let node of prevAdded) {
-      if (!added.has(node)) document.body.removeChild(node)
+    for (let node of prevNodes) {
+      if (!newNodes.has(node)) document.body.removeChild(node)
     }
 
-    prevAdded = added
+    prevNodes = newNodes
 
-
-    // dummyPlaceholder.style.height = `${Math.ceil(data.length  cols) * (maxH + )}px`
-    dummyPlaceholder.style.height = `${totalHeight}px`
+    dummyPlaceholder.style.height = `${rowTop}px`
 
     // === prepare for next frame
     scheduled = false
