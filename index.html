@@ -233,7 +233,6 @@ let dummyPlaceholder = document.createElement('div')
 document.body.appendChild(dummyPlaceholder)
 
 // === state
-let prevNodes = new Set()
 let scheduled = false
 
 function scheduleRender() {
@@ -251,7 +250,6 @@ function scheduleRender() {
     let maxH = maxW - gapTop * 2
 
     let rowTop = gapTop
-    let newNodes = new Set()
     for (let i = 0; i < data.length; i++) {
       let size = data[i]
       let box = boxes[i]
@@ -287,23 +285,13 @@ function scheduleRender() {
         node.style.left = `${box.left}px`
         let img = node.children[0]
         img.style.cursor = 'zoom-in'
-
-        newNodes.add(node)
-      }
+        if (node.parentNode == null) document.body.appendChild(node) // if previously absent, add
+      } else if (node.parentNode != null) document.body.removeChild(node) // if previously present, remove
 
       if (i % cols === cols - 1 || i === data.length - 1) {
         rowTop += maxH + gapTop
       }
     }
-
-    for (let node of newNodes) {
-      if (!prevNodes.has(node)) document.body.appendChild(node)
-    }
-    for (let node of prevNodes) {
-      if (!newNodes.has(node)) document.body.removeChild(node)
-    }
-
-    prevNodes = newNodes
 
     dummyPlaceholder.style.height = `${rowTop}px`
 
