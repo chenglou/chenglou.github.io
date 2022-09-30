@@ -200,15 +200,6 @@ function colsF(innerWidth) {
 let active = null
 let zIndex = 1
 
-window.addEventListener('resize', scheduleRender)
-window.addEventListener('scroll', scheduleRender)
-window.addEventListener('keydown', (e) => {
-  if (e.code === 'Escape') {
-    active = null
-    scheduleRender()
-  }
-})
-
 let boxes; {
   let {innerWidth, innerHeight} = window
   let cols = colsF(innerWidth)
@@ -238,6 +229,35 @@ let boxes; {
   })
 }
 
+window.addEventListener('resize', scheduleRender)
+window.addEventListener('scroll', scheduleRender)
+window.addEventListener('keydown', (e) => {
+  // TODO: cleanup, zIndex increase
+  if (e.code === 'Escape') {
+    active = null
+    scheduleRender()
+  } else if (e.code === 'ArrowLeft') {
+    if (active == null) {
+      active = 0
+      boxes[active].node.style.zIndex = zIndex++
+      scheduleRender()
+    } else if (active > 0) {
+      active--
+      boxes[active].node.style.zIndex = zIndex++
+      scheduleRender()
+    }
+  } else if (e.code === 'ArrowRight') {
+    if (active == null) {
+      active = 0
+      boxes[active].node.style.zIndex = zIndex++
+      scheduleRender()
+    } else if (active < data.length - 1) {
+      active++
+      boxes[active].node.style.zIndex = zIndex++
+      scheduleRender()
+    }
+  }
+})
 window.addEventListener('click', (e) => {
   if (e.target.tagName === 'IMG') {
     let node = e.target.parentNode
@@ -301,9 +321,10 @@ function scheduleRender() {
         top = rowTop + maxHRegular + gapTop
         left = gapLeft + 100 + (maxW - w) / 2 // center horizontally
       }
-      maxHRow = Math.max(maxHRow, h)
       if (i === active) {
         maxHRow = Math.max(maxHRow, h + maxHRegular + gapTop)
+      } else {
+        maxHRow = Math.max(maxHRow, maxH)
       }
 
       let speed = 5
