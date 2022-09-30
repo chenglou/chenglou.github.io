@@ -316,7 +316,7 @@ function scheduleRender() {
       let ar = size.w / size.h
 
       let maxW = (innerWidth - 0) / cols - gapLeft * 2
-      let maxH = maxW - gapTop * 2
+      let maxH = maxW - gapTop * 2 + 100 // TODO: adjust this better
       let maxHRegular = maxH
       if (i === active) {
         maxW = innerWidth - gapLeft * 2 - 200
