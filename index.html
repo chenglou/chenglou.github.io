@@ -207,6 +207,9 @@ function colsF(innerWidth) {
 
 let active = null
 let zIndex = 1
+let inputs = {
+  pointerXY: {pageX: 0, pageY: 0}, // btw, on page load, there's no way to render a first cursor state =(
+}
 
 let boxes; {
   let {innerWidth, innerHeight} = window
@@ -291,6 +294,19 @@ window.addEventListener('click', (e) => {
   }
   scheduleRender(true)
 })
+window.addEventListener('pointermove', (e) => {
+  // when scrolling (which updates `render`), a container's pointermove doesn't trigger; e.offsetX/Y (coordinates local
+  // to container) would be stale. So we have to use global coords anyway. Might as well attach to window
+  // We need to listen window-wide anyway, since custom selection needs to know when the cursor dragged into a comment from outside
+  inputs.pointerXY.pageX = e.pageX; inputs.pointerXY.pageY = e.pageY // can exceed document bounds, e.g. dragging reports back out-of-bound values
+  scheduleRender()
+})
+// safari pointerdown isn't fired on the first left click after dismissing context menus... back to mousedown
+window.addEventListener('mousedown', (e) => {
+  // also update position. Maybe pointer never moved (page refresh, right click, move, then left click to dismiss, etc.)
+  inputs.pointerXY.pageX = e.pageX; inputs.pointerXY.pageY = e.pageY
+  scheduleRender()
+})
 
 let dummyPlaceholder = document.createElement('div')
 document.body.appendChild(dummyPlaceholder)
@@ -339,6 +355,15 @@ function scheduleRender(needsScroll) {
         maxHRow = Math.max(maxHRow, h + maxHRegular + gapTop)
       } else {
         maxHRow = Math.max(maxHRow, maxH)
+      }
+
+      if (i !== active &&
+        left <= inputs.pointerXY.pageX && inputs.pointerXY.pageX <= left + w &&
+        top <= inputs.pointerXY.pageY && inputs.pointerXY.pageY <= top + h
+      ) {
+        // hovering
+        left += (inputs.pointerXY.pageX - (left + w / 2)) / 40
+        top += (inputs.pointerXY.pageY - (top + h / 2)) / 40
       }
 
       let speed = 5
