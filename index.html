@@ -202,6 +202,12 @@ let zIndex = 1
 
 window.addEventListener('resize', scheduleRender)
 window.addEventListener('scroll', scheduleRender)
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Escape') {
+    active = null
+    scheduleRender()
+  }
+})
 
 let boxes; {
   let {innerWidth, innerHeight} = window
