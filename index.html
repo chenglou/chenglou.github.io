@@ -207,6 +207,7 @@ function colsF(innerWidth) {
 
 let active = null
 let zIndex = 1
+let needsScroll = false
 let inputs = {
   pointerXY: {pageX: 0, pageY: 0}, // btw, on page load, there's no way to render a first cursor state =(
 }
@@ -249,26 +250,30 @@ window.addEventListener('keydown', (e) => {
   // TODO: cleanup, zIndex increase
   if (e.code === 'Escape') {
     active = null
-    scheduleRender(true)
+    scheduleRender()
   } else if (e.code === 'ArrowLeft') {
     if (active == null) {
       active = 0
       boxes[active].node.style.zIndex = zIndex++
-      scheduleRender(true)
+      needsScroll = true
+      scheduleRender()
     } else if (active > 0) {
       active--
       boxes[active].node.style.zIndex = zIndex++
-      scheduleRender(true)
+      needsScroll = true
+      scheduleRender()
     }
   } else if (e.code === 'ArrowRight') {
     if (active == null) {
       active = 0
       boxes[active].node.style.zIndex = zIndex++
-      scheduleRender(true)
+      needsScroll = true
+      scheduleRender()
     } else if (active < data.length - 1) {
       active++
       boxes[active].node.style.zIndex = zIndex++
-      scheduleRender(true)
+      needsScroll = true
+      scheduleRender()
     }
   }
 })
@@ -285,6 +290,7 @@ window.addEventListener('click', (e) => {
         } else {
           active = i
           node.style.zIndex = zIndex++
+          needsScroll = true
         }
         break
       }
@@ -292,7 +298,7 @@ window.addEventListener('click', (e) => {
   } else {
     active = null
   }
-  scheduleRender(true)
+  scheduleRender()
 })
 window.addEventListener('pointermove', (e) => {
   // when scrolling (which updates `render`), a container's pointermove doesn't trigger; e.offsetX/Y (coordinates local
@@ -312,7 +318,7 @@ let dummyPlaceholder = document.createElement('div')
 document.body.appendChild(dummyPlaceholder)
 
 let scheduled = false
-function scheduleRender(needsScroll) {
+function scheduleRender() {
   if (scheduled) return;
   scheduled = true
 
@@ -410,6 +416,7 @@ function scheduleRender(needsScroll) {
 
     // === prepare for next frame
     scheduled = false
+    needsScroll = false
     if (scheduleNextRender) scheduleRender()
   })
 }
