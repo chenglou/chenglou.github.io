@@ -27,6 +27,26 @@
     }
     .box img {
       width: 100%;
+      position: absolute;
+    }
+    .prompt {
+      box-sizing: border-box;
+      padding: 8px 12px 20px 12px;
+      width: 100%;
+      font-family: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+      color: rgb(192, 198, 205);
+      font-size: 16px;
+      position: absolute;
+      background-color: rgb(24, 26, 38);
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      transition: bottom 0.25s ease-out;
+    }
+    .prompt:before {
+      content: '❝';
+      color: rgb(122, 126, 130);
+      padding-right: 2px;
     }
 /*
     div {
@@ -36,18 +56,6 @@
       border: 1px solid rgb(35, 35, 35);
       border-radius: 16px;
       box-shadow: 0 4px 28px 0 rgba(0, 0, 0, 0.4);
-    }
-    p {
-      padding: 0 12px;
-      margin: 8px 0 20px 0;
-      font-family: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-      color: rgb(192, 198, 205);
-      font-size: 16px;
-    }
-    p:before {
-      content: '❝';
-      color: rgb(122, 126, 130);
-      padding-right: 2px;
     }
 */  </style>
 </head>
@@ -191,7 +199,7 @@ let data = [
 ]
 
 let gapLeft = 16
-let gapTop = 16
+let gapTop = 16 + 28
 
 function colsF(innerWidth) {
   return innerWidth < 600 ? 2 : innerWidth < 900 ? 3 : 4
@@ -206,20 +214,21 @@ let boxes; {
   let maxW = (innerWidth - 0) / cols - gapLeft * 2
   let maxH = maxW - gapTop * 2
 
-  boxes = data.map((size, i) => {
-    let ar = size.w / size.h
-    let w = Math.min(size.w, maxW)
-    let h = Math.min(size.h, maxH)
+  boxes = data.map((d, i) => {
+    let ar = d.w / d.h
+    let w = Math.min(d.w, maxW)
+    let h = Math.min(d.h, maxH)
     w = Math.min(h * ar, w)
     h = w / ar
 
     let node = document.createElement('div')
         node.className = 'box'
     let img = document.createElement('img')
-        img.src = `https://mj-gallery.com/${size.id}/grid_0_384_N.webp`
-    node.appendChild(img)
+        img.src = `https://mj-gallery.com/${d.id}/grid_0_384_N.webp`
     let prompt = document.createElement('div')
-
+        prompt.className = 'prompt'
+        prompt.textContent = d.prompt
+    node.append(img, prompt)
     return {
       w,
       h,
@@ -296,6 +305,7 @@ function scheduleRender() {
     let needsScroll = null
 
     let cols = colsF(innerWidth)
+    let promptH = 30
 
     let rowTop = gapTop
     let maxHRow = 0
@@ -315,7 +325,7 @@ function scheduleRender() {
       let w = Math.min(size.w, maxW)
       let h = Math.min(size.h, maxH)
       w = Math.min(h * ar, w)
-      h = w / ar
+      h = w / ar + promptH
       let top = rowTop + (maxH - h) / 2 // center vertically
       let left = gapLeft + innerWidth / cols * (i % cols) + (maxW - w) / 2 // center horizontally
       if (i === active) {
@@ -344,7 +354,7 @@ function scheduleRender() {
         scheduleNextRender = true
       }
 
-      let node = box.node
+      let {node, prompt} = box
       if (box.top <= scrollTop + innerHeight && box.top + box.h >= scrollTop) { // visible range
         node.style.width = `${box.w}px`
         node.style.height = `${box.h}px`
@@ -352,6 +362,14 @@ function scheduleRender() {
         node.style.left = `${box.left}px`
         let img = node.children[0]
         img.style.cursor = i === active ? 'zoom-out' : 'zoom-in'
+        if (i === active) {
+          prompt.style.top = 'unset'
+          prompt.style.bottom = 0
+        } else {
+          prompt.style.top = `${box.h - promptH}px`
+          prompt.style.bottom = 'unset'
+        }
+        prompt.style.lineClamp = prompt.style.webkitLineClamp = i === active ? 999 : 1
         if (node.parentNode == null) document.body.appendChild(node) // if previously absent, add
       } else if (node.parentNode != null) document.body.removeChild(node) // if previously present, remove
 
