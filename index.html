@@ -240,32 +240,32 @@ let boxes; {
   })
 }
 
-window.addEventListener('resize', scheduleRender)
-window.addEventListener('scroll', scheduleRender)
+window.addEventListener('resize', () => scheduleRender())
+window.addEventListener('scroll', () => scheduleRender())
 window.addEventListener('keydown', (e) => {
   // TODO: cleanup, zIndex increase
   if (e.code === 'Escape') {
     active = null
-    scheduleRender()
+    scheduleRender(true)
   } else if (e.code === 'ArrowLeft') {
     if (active == null) {
       active = 0
       boxes[active].node.style.zIndex = zIndex++
-      scheduleRender()
+      scheduleRender(true)
     } else if (active > 0) {
       active--
       boxes[active].node.style.zIndex = zIndex++
-      scheduleRender()
+      scheduleRender(true)
     }
   } else if (e.code === 'ArrowRight') {
     if (active == null) {
       active = 0
       boxes[active].node.style.zIndex = zIndex++
-      scheduleRender()
+      scheduleRender(true)
     } else if (active < data.length - 1) {
       active++
       boxes[active].node.style.zIndex = zIndex++
-      scheduleRender()
+      scheduleRender(true)
     }
   }
 })
@@ -286,14 +286,14 @@ window.addEventListener('click', (e) => {
   } else {
     active = null
   }
-  scheduleRender()
+  scheduleRender(true)
 })
 
 let dummyPlaceholder = document.createElement('div')
 document.body.appendChild(dummyPlaceholder)
 
 let scheduled = false
-function scheduleRender() {
+function scheduleRender(needsScroll) {
   if (scheduled) return;
   scheduled = true
 
@@ -302,10 +302,9 @@ function scheduleRender() {
     let scrollTop = window.scrollY
 
     let scheduleNextRender = false
-    let needsScroll = null
 
     let cols = colsF(innerWidth)
-    let promptH = 30
+    let promptH = 28
 
     let rowTop = gapTop
     let maxHRow = 0
@@ -329,9 +328,9 @@ function scheduleRender() {
       let top = rowTop + (maxH - h) / 2 // center vertically
       let left = gapLeft + innerWidth / cols * (i % cols) + (maxW - w) / 2 // center horizontally
       if (i === active) {
-        // needsScroll = rowTop
         top = rowTop + maxHRegular + gapTop
         left = gapLeft + 100 + (maxW - w) / 2 // center horizontally
+        if (needsScroll) window.scrollTo({top: top - gapTop * 2, behavior: 'smooth'})
       }
       if (i === active) {
         maxHRow = Math.max(maxHRow, h + maxHRegular + gapTop)
@@ -383,7 +382,6 @@ function scheduleRender() {
 
     // === prepare for next frame
     scheduled = false
-    if (needsScroll != null) window.scrollTo({top: needsScroll, behavior: 'auto'})
     if (scheduleNextRender) scheduleRender()
   })
 }
