@@ -190,15 +190,18 @@ let data = [
   {id: '14465d26-a41e-4cc7-9a70-c7de8a0e28b3', w: 1408, h: 1792},
 ]
 
-window.addEventListener('resize', scheduleRender)
-window.addEventListener('scroll', scheduleRender)
-
 let gapLeft = 16
 let gapTop = 16
 
 function colsF(innerWidth) {
   return innerWidth < 600 ? 2 : innerWidth < 900 ? 3 : 4
 }
+
+let active = null
+let zIndex = 1
+
+window.addEventListener('resize', scheduleRender)
+window.addEventListener('scroll', scheduleRender)
 
 let boxes; {
   let {innerWidth, innerHeight} = window
@@ -229,12 +232,30 @@ let boxes; {
   })
 }
 
+window.addEventListener('click', (e) => {
+  if (e.target.tagName === 'IMG') {
+    let node = e.target.parentNode
+    for (let i = 0; i < boxes.length; i++) {
+      if (boxes[i].node === node) {
+        if (active === i) {
+          active = null
+        } else {
+          active = i
+          node.style.zIndex = zIndex++
+        }
+        break
+      }
+    }
+  } else {
+    active = null
+  }
+  scheduleRender()
+})
+
 let dummyPlaceholder = document.createElement('div')
 document.body.appendChild(dummyPlaceholder)
 
-// === state
 let scheduled = false
-
 function scheduleRender() {
   if (scheduled) return;
   scheduled = true
@@ -244,23 +265,40 @@ function scheduleRender() {
     let scrollTop = window.scrollY
 
     let scheduleNextRender = false
+    let needsScroll = null
 
     let cols = colsF(innerWidth)
-    let maxW = (innerWidth - 0) / cols - gapLeft * 2
-    let maxH = maxW - gapTop * 2
 
     let rowTop = gapTop
+    let maxHRow = 0
     for (let i = 0; i < data.length; i++) {
       let size = data[i]
       let box = boxes[i]
 
       let ar = size.w / size.h
+
+      let maxW = (innerWidth - 0) / cols - gapLeft * 2
+      let maxH = maxW - gapTop * 2
+      let maxHRegular = maxH
+      if (i === active) {
+        maxW = innerWidth - gapLeft * 2 - 200
+        maxH = innerHeight - gapTop * 2
+      }
       let w = Math.min(size.w, maxW)
       let h = Math.min(size.h, maxH)
       w = Math.min(h * ar, w)
       h = w / ar
       let top = rowTop + (maxH - h) / 2 // center vertically
       let left = gapLeft + innerWidth / cols * (i % cols) + (maxW - w) / 2 // center horizontally
+      if (i === active) {
+        // needsScroll = rowTop
+        top = rowTop + maxHRegular + gapTop
+        left = gapLeft + 100 + (maxW - w) / 2 // center horizontally
+      }
+      maxHRow = Math.max(maxHRow, h)
+      if (i === active) {
+        maxHRow = Math.max(maxHRow, h + maxHRegular + gapTop)
+      }
 
       let speed = 5
       let dW = (w - box.w) / speed
@@ -284,12 +322,13 @@ function scheduleRender() {
         node.style.top = `${box.top}px`
         node.style.left = `${box.left}px`
         let img = node.children[0]
-        img.style.cursor = 'zoom-in'
+        img.style.cursor = i === active ? 'zoom-out' : 'zoom-in'
         if (node.parentNode == null) document.body.appendChild(node) // if previously absent, add
       } else if (node.parentNode != null) document.body.removeChild(node) // if previously present, remove
 
-      if (i % cols === cols - 1 || i === data.length - 1) {
-        rowTop += maxH + gapTop
+      if (i === data.length - 1 || i % cols === cols - 1) { // last item of row
+        rowTop += maxHRow + gapTop
+        maxHRow = 0
       }
     }
 
@@ -297,6 +336,7 @@ function scheduleRender() {
 
     // === prepare for next frame
     scheduled = false
+    if (needsScroll != null) window.scrollTo({top: needsScroll, behavior: 'auto'})
     if (scheduleNextRender) scheduleRender()
   })
 }
