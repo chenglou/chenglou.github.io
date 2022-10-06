@@ -24,6 +24,7 @@
         0 0px 2px 0 rgba(255, 255, 255, 0.2),
         0 4px 28px 0 rgba(0, 0, 0, 0.4);
       overflow: hidden;
+      transition: all 0.5s cubic-bezier(0.190,  1.000, 0.220, 1.000);
     }
     .box img {
       width: 100%;
@@ -42,6 +43,7 @@
       display: -webkit-box;
       -webkit-box-orient: vertical;
       overflow: hidden;
+      transition: all 0.5s cubic-bezier(0.190,  1.000, 0.220, 1.000);
     }
     .prompt:before {
       content: '❝';
@@ -349,7 +351,7 @@ function scheduleRender() {
     let {innerWidth, innerHeight} = window
     let scrollTop = window.scrollY
 
-    let scheduleNextRender = false
+    // let scheduleNextRender = false
 
     let cols = colsF(innerWidth)
     let promptH = 28
@@ -395,20 +397,20 @@ function scheduleRender() {
         top += (inputs.pointerXY.pageY - (top + h / 2)) / 40
       }
 
-      let speed = 5
-      let dW = (w - box.w) / speed
-      let dH = (h - box.h) / speed
-      let dTop = (top - box.top) / speed
-      let dLeft = (left - box.left) / speed
+      // let speed = 5
+      // let dW = (w - box.w) / speed
+      // let dH = (h - box.h) / speed
+      // let dTop = (top - box.top) / speed
+      // let dLeft = (left - box.left) / speed
 
-      box.w += dW
-      box.h += dH
-      box.top += dTop
-      box.left += dLeft
+      box.w = w
+      box.h = h
+      box.top = top
+      box.left = left
 
-      if (Math.abs(dW) > 0.001 || Math.abs(dH) > 0.001 || Math.abs(dTop) > 0.001 || Math.abs(dLeft) > 0.001) {
-        scheduleNextRender = true
-      }
+      // if (Math.abs(dW) > 0.001 || Math.abs(dH) > 0.001 || Math.abs(dTop) > 0.001 || Math.abs(dLeft) > 0.001) {
+      //   scheduleNextRender = true
+      // }
 
       let {node, prompt} = box
       if (box.top <= scrollTop + innerHeight && box.top + box.h >= scrollTop) { // visible range
@@ -444,7 +446,7 @@ function scheduleRender() {
     // === prepare for next frame
     scheduled = false
     needsScroll = false
-    if (scheduleNextRender) scheduleRender()
+    // if (scheduleNextRender) scheduleRender()
   })
 }
 
