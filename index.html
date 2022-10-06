@@ -262,6 +262,7 @@ let boxes; {
       left: Math.floor(i / cols) * -innerWidth - innerWidth,
       node,
       prompt,
+      loadedFullRes: false,
     }
   })
 }
@@ -420,6 +421,10 @@ function scheduleRender() {
         if (i === active) {
           prompt.style.top = 'unset'
           prompt.style.bottom = 0
+          if (!img.loadedFull) {
+            img.src = `https://mj-gallery.com/${d.id}/grid_0.webp`
+            img.loadedFullRes = true
+          }
         } else {
           prompt.style.top = `${box.h - promptH}px`
           prompt.style.bottom = 'unset'
