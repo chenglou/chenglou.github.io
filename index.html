@@ -41,7 +41,6 @@
       /* for lime clamping programmatically */
       display: -webkit-box;
       -webkit-box-orient: vertical;
-      overflow: hidden;
     }
     .prompt:before {
       content: '❝';
@@ -363,7 +362,6 @@ function scheduleRender() {
     let scheduleNextRender = false
 
     let cols = colsF(innerWidth)
-    let promptH = 28
 
     let rowTop = gapTop
     let maxHRow = 0
@@ -372,6 +370,7 @@ function scheduleRender() {
       let d = data[i]
       let box = boxes[i]
 
+      let promptH = i === active ? 52 : 28
       let ar = d.w / d.h
 
       let maxW = (innerWidth - 0) / cols - gapLeft * 2
@@ -431,8 +430,7 @@ function scheduleRender() {
         let img = node.children[0]
         img.style.cursor = i === active ? 'zoom-out' : 'zoom-in'
         if (i === active) {
-          prompt.style.top = 'unset'
-          prompt.style.bottom = 0
+          prompt.style.overflowY = 'scroll'
           let src = `https://mj-gallery.com/${d.id}/grid_0.webp`
           if (Math.abs(dW) < 10 && Math.abs(dH) < 10 && Math.abs(dTop) < 10 && Math.abs(dLeft) < 10) { // almost done animating, load big image
             bigImage.style.display = 'block'
@@ -442,9 +440,10 @@ function scheduleRender() {
             if (bigImage.src !== src) bigImage.src = src
           }
         } else {
-          prompt.style.top = `${box.h - promptH}px`
-          prompt.style.bottom = 'unset'
+          prompt.style.overflowY = 'hidden'
         }
+        prompt.style.height = `${promptH}px`
+        prompt.style.top = `${box.h - promptH}px`
         prompt.style.lineClamp = prompt.style.webkitLineClamp = i === active ? 999 : 1
         if (node.parentNode == null) document.body.appendChild(node) // if previously absent, add
       } else if (node.parentNode != null) document.body.removeChild(node) // if previously present, remove
