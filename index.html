@@ -249,6 +249,8 @@ let boxes; {
         node.className = 'box'
     let img = document.createElement('img')
         img.src = `https://mj-gallery.com/${d.id}/grid_0_384_N.webp`
+        img.loading = 'lazy'
+        img.decoding = 'async'
     let prompt = document.createElement('figcaption')
         prompt.className = 'prompt'
         prompt.textContent = d.prompt
