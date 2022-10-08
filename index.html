@@ -29,6 +29,7 @@
       width: 100%;
       position: absolute;
       transform: translateZ(0px);
+      border-radius: 16px 16px 0 0; /* safari forgets border-radius occlusion from box container when lifting img onto GPU */
     }
     .prompt {
       box-sizing: border-box;
