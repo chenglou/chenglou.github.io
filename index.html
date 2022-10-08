@@ -349,42 +349,37 @@ function scheduleRender() {
       let d = data[i]
       let box = boxes[i]
 
-      let promptH = i === active ? 52 : 28
       let ar = d.w / d.h
 
+      let promptH = 28
       let maxW = (innerWidth - 0) / cols - gapLeft * 2
       let maxH = maxW - gapTop * 2 + 100 // TODO: adjust this better
-      let maxHRegular = maxH
-      if (i === active) {
-        maxW = innerWidth - gapLeft * 2 - 200
-        maxH = innerHeight - gapTop * 2
-      }
-      let w = Math.min(d.w, maxW)
-      let h = Math.min(d.h, maxH)
-      w = Math.min(h * ar, w)
-      h = w / ar + promptH
+      let w = Math.min(Math.min(d.h, maxH) * ar, Math.min(d.w, maxW))
+      let h = w / ar + promptH
       let top = rowTop + (maxH - h) / 2 // center vertically
       let left = gapLeft + innerWidth / cols * (i % cols) + (maxW - w) / 2 // center horizontally
+
       if (i === active) {
+        let maxHRegular = maxH
+        let topRegular = top
+        promptH = 52
+        maxW = innerWidth - gapLeft * 2 - 200
+        maxH = innerHeight - gapTop * 2
+        w = Math.min(Math.min(d.h, maxH) * ar, Math.min(d.w, maxW))
+        h = w / ar + promptH
         top = rowTop + maxHRegular + gapTop
         left = gapLeft + 100 + (maxW - w) / 2 // center horizontally
-        if (needsScroll && (top - gapTop * 2 < scrollTop || top + h > scrollTop + innerHeight)) {
-          window.scrollTo({top: top - gapTop * 2, behavior: 'smooth'})
+        if (needsScroll && (topRegular - gapTop * 2 < scrollTop || top + h > scrollTop + innerHeight)) {
+          window.scrollTo({top: topRegular - gapTop * 2, behavior: 'smooth'})
         }
-      }
-      if (i === active) {
         maxHRow = Math.max(maxHRow, h + maxHRegular + gapTop)
       } else {
         maxHRow = Math.max(maxHRow, maxH)
-      }
-
-      if (i !== active &&
-        left <= inputs.pointerXY.pageX && inputs.pointerXY.pageX <= left + w &&
-        top <= inputs.pointerXY.pageY && inputs.pointerXY.pageY <= top + h
-      ) {
-        // hovering
-        left += (inputs.pointerXY.pageX - (left + w / 2)) / 40
-        top += (inputs.pointerXY.pageY - (top + h / 2)) / 40
+        let {pageX, pageY} = inputs.pointerXY
+        if (left <= pageX && pageX <= left + w && top <= pageY && pageY <= top + h) { // hovering
+          left += (pageX - (left + w / 2)) / 40
+          top += (pageY - (top + h / 2)) / 40
+        }
       }
 
       let speed = 5
@@ -408,16 +403,17 @@ function scheduleRender() {
         node.style.top = `${box.top}px`
         node.style.left = `${box.left}px`
         let img = node.children[0]
-        img.style.cursor = i === active ? 'zoom-out' : 'zoom-in'
         if (i === active) {
           prompt.style.overflowY = 'scroll'
           // lift to GPU. Smoother animation & prevents safari image flash. Can't put on every box layers saturation -> degradation
           img.style.transform = 'translateZ(0px)'
+          img.style.cursor = 'zoom-out'
           let src = `https://mj-gallery.com/${d.id}/grid_0.webp`
           if (!stillAnimating && img.src !== src) img.src = src // load the full res image
         } else {
           prompt.style.overflowY = 'hidden'
           img.style.transform = 'none'
+          img.style.cursor = 'zoom-in'
         }
         prompt.style.height = `${promptH}px`
         prompt.style.top = `${box.h - promptH}px`
