@@ -28,7 +28,6 @@
     .box img {
       width: 100%;
       position: absolute;
-      transform: translateZ(0px);
       border-radius: 16px 16px 0 0; /* safari forgets border-radius occlusion from box container when lifting img onto GPU */
     }
     .prompt {
@@ -419,10 +418,13 @@ function scheduleRender() {
         img.style.cursor = i === active ? 'zoom-out' : 'zoom-in'
         if (i === active) {
           prompt.style.overflowY = 'scroll'
+          // lift to GPU. Smoother animation & prevents safari image flash. Can't put on every box layers saturation -> degradation
+          img.style.transform = 'translateZ(0px)'
           let src = `https://mj-gallery.com/${d.id}/grid_0.webp`
           if (!stillAnimating && img.src !== src) img.src = src // load the full res image
         } else {
           prompt.style.overflowY = 'hidden'
+          img.style.transform = 'none'
         }
         prompt.style.height = `${promptH}px`
         prompt.style.top = `${box.h - promptH}px`
