@@ -369,8 +369,8 @@ function scheduleRender() {
         h = w / ar + promptH
         top = rowTop + maxHRegular + gapTop
         left = gapLeft + 100 + (maxW - w) / 2 // center horizontally
-        if (needsScroll && (topRegular - gapTop * 2 < scrollTop || top + h > scrollTop + innerHeight)) {
-          window.scrollTo({top: topRegular - gapTop * 2, behavior: 'smooth'})
+        if (needsScroll && (top - gapTop * 2 < scrollTop || top + h > scrollTop + innerHeight)) {
+          window.scrollTo({top: top - gapTop * 2, behavior: 'smooth'})
         }
         maxHRow = Math.max(maxHRow, h + maxHRegular + gapTop)
       } else {
