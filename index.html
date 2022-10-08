@@ -28,6 +28,7 @@
     .box img {
       width: 100%;
       position: absolute;
+      transform: translateZ(0px);
     }
     .prompt {
       box-sizing: border-box;
@@ -46,12 +47,6 @@
       content: '❝';
       color: rgb(122, 126, 130);
       padding-right: 2px;
-    }
-    .big-image {
-      position: absolute;
-      border-radius: 16px 16px 0 0;
-      z-index: 99999;
-      cursor: zoom-out;
     }
 /*
     div {
@@ -256,7 +251,6 @@ let boxes; {
     let img = document.createElement('img')
         img.src = `https://mj-gallery.com/${d.id}/grid_0_384_N.webp`
         img.loading = 'lazy'
-        img.decoding = 'async'
     let prompt = document.createElement('figcaption')
         prompt.className = 'prompt'
         prompt.textContent = d.prompt
@@ -310,20 +304,17 @@ window.addEventListener('click', (e) => {
     return // TODO: fix image and figcaption size. Don't overlap in active mode
   }
   if (e.target.tagName === 'IMG') {
-    if (e.target.className === 'big-image') active = null
-    else {
-      let node = e.target.parentNode
-      for (let i = 0; i < boxes.length; i++) {
-        if (boxes[i].node === node) {
-          if (active === i) {
-            active = null
-          } else {
-            active = i
-            node.style.zIndex = zIndex++
-            needsScroll = true
-          }
-          break
+    let node = e.target.parentNode
+    for (let i = 0; i < boxes.length; i++) {
+      if (boxes[i].node === node) {
+        if (active === i) {
+          active = null
+        } else {
+          active = i
+          node.style.zIndex = zIndex++
+          needsScroll = true
         }
+        break
       }
     }
   } else {
@@ -345,11 +336,8 @@ window.addEventListener('mousedown', (e) => {
   scheduleRender()
 })
 
-let bigImage = document.createElement('img')
-    bigImage.className = 'big-image'
-    bigImage.decoding = 'async'
 let dummyPlaceholder = document.createElement('div')
-document.body.append(bigImage, dummyPlaceholder)
+document.body.append(dummyPlaceholder)
 
 let scheduled = false
 function scheduleRender() {
@@ -366,7 +354,6 @@ function scheduleRender() {
 
     let rowTop = gapTop
     let maxHRow = 0
-    bigImage.style.display = 'none'
     for (let i = 0; i < data.length; i++) {
       let d = data[i]
       let box = boxes[i]
@@ -418,9 +405,8 @@ function scheduleRender() {
       box.top += dTop
       box.left += dLeft
 
-      if (Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005) {
-        scheduleNextRender = true
-      }
+      let stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005
+      if (stillAnimating) scheduleNextRender = true
 
       let {node, prompt} = box
       if (box.top <= scrollTop + innerHeight && box.top + box.h >= scrollTop) { // visible range
@@ -433,13 +419,7 @@ function scheduleRender() {
         if (i === active) {
           prompt.style.overflowY = 'scroll'
           let src = `https://mj-gallery.com/${d.id}/grid_0.webp`
-          if (Math.abs(dW) < 10 && Math.abs(dH) < 10 && Math.abs(dTop) < 10 && Math.abs(dLeft) < 10) { // almost done animating, load big image
-            bigImage.style.display = 'block'
-            bigImage.style.width = `${box.w}px`
-            bigImage.style.top = `${box.top}px`
-            bigImage.style.left = `${box.left}px`
-            if (bigImage.src !== src) bigImage.src = src
-          }
+          if (!stillAnimating && img.src !== src) img.src = src // load the full res image
         } else {
           prompt.style.overflowY = 'hidden'
         }
