@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>My Midjourney AI Art</title>
   <meta property="og:image" content="https://mj-gallery.com/9c8420b0-4a42-45c9-8d87-414a89f7b304/grid_0_384_N.webp"/>
-  <meta property="og:description" content="Gallery of art generated through Midjourney using AI" />
+  <meta property="og:description" content="Gallery of art generated through Midjourney AI" />
   <style>
     html {
       /*background-image: url(https://grainy-gradients.vercel.app/noise.svg);*/
@@ -48,16 +48,7 @@
       color: rgb(122, 126, 130);
       padding-right: 2px;
     }
-/*
-    div {
-      display: inline-block;
-      overflow: hidden;
-      background-color: rgb(24, 26, 38);
-      border: 1px solid rgb(35, 35, 35);
-      border-radius: 16px;
-      box-shadow: 0 4px 28px 0 rgba(0, 0, 0, 0.4);
-    }
-*/  </style>
+  </style>
 </head>
 
 <body>
@@ -301,7 +292,7 @@ window.addEventListener('keydown', (e) => {
 })
 window.addEventListener('click', (e) => {
   if (e.target.tagName === 'FIGCAPTION') {
-    return // TODO: fix image and figcaption size. Don't overlap in active mode
+    return
   }
   if (e.target.tagName === 'IMG') {
     let node = e.target.parentNode
@@ -344,7 +335,7 @@ function scheduleRender() {
   if (scheduled) return;
   scheduled = true
 
-  requestAnimationFrame(function render() {
+  requestAnimationFrame(function render(now) {
     let {innerWidth, innerHeight} = window
     let scrollTop = window.scrollY
 
