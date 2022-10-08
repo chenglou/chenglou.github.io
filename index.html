@@ -230,6 +230,10 @@ function colsF(innerWidth) {
   return innerWidth < 600 ? 2 : innerWidth < 900 ? 3 : 4
 }
 
+function easeOutQuad(x) {
+  return 1 - (1 - x) * (1 - x);
+}
+
 let active = null
 let zIndex = 1
 let needsScroll = false
@@ -267,6 +271,7 @@ let boxes; {
       left: Math.floor(i / cols) * -innerWidth - innerWidth,
       node,
       prompt,
+      animationTiming: 0,
     }
   })
 }
@@ -355,7 +360,7 @@ function scheduleRender() {
   if (scheduled) return;
   scheduled = true
 
-  requestAnimationFrame(function render() {
+  requestAnimationFrame(function render(now) {
     let {innerWidth, innerHeight} = window
     let scrollTop = window.scrollY
 
@@ -406,7 +411,8 @@ function scheduleRender() {
         top += (inputs.pointerXY.pageY - (top + h / 2)) / 40
       }
 
-      let speed = 5
+      let percent = easeOutQuad((now - box.animationTiming) / 500) // animation duration 500ms
+
       let dW = (w - box.w) / speed
       let dH = (h - box.h) / speed
       let dTop = (top - box.top) / speed
