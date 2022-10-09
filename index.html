@@ -56,16 +56,17 @@ const promptHBig = 52
 const boxesGapH = 24 // fixed gap looks nicer
 const boxesGapV = 24
 
-function colsBoxWMaxF(innerWidth) {
+function colsBoxWMaxF(containerW) {
   const boxWMin = 220 // Make sure that on mobile, this min width is big enough not to show 2 images per row
-  const cols = Math.floor((innerWidth - boxesGapH) / (boxWMin + boxesGapH)) // boxesGapH for body's left and right too
-  const boxWMax = (innerWidth - boxesGapH - cols * boxesGapH) / cols
+  const cols = Math.floor((containerW - boxesGapH) / (boxWMin + boxesGapH)) // boxesGapH for body's left and right too
+  const boxWMax = (containerW - boxesGapH - cols * boxesGapH) / cols
   return {cols, boxWMax}
 }
 
 let data; {
-  const {innerWidth, innerHeight} = window
-  const {cols, boxWMax} = colsBoxWMaxF(innerWidth)
+  const windowW = document.documentElement.clientWidth
+  const windowH = window.outerHeight
+  const {cols, boxWMax} = colsBoxWMaxF(windowW)
   const imgHmax = boxWMax + 100 // TODO: adjust this better
   data = [
     {id: 'c90dde4f-47bd-41bc-9574-2a85a5b51a52', w: 1024, h: 1536, prompt: `beautiful focaccia vegetable pattern, seamlessly repeating`},
@@ -240,8 +241,8 @@ let data; {
       ...d,
       cw,
       ch,
-      top: innerHeight + Math.floor(i / cols) * imgHmax,
-      left: Math.floor(i / cols) * -innerWidth - innerWidth,
+      top: windowH + Math.floor(i / cols) * imgHmax,
+      left: Math.floor(i / cols) * -windowW - windowW,
       node,
       promptNode,
     }
@@ -336,10 +337,13 @@ function scheduleRender() {
 
   requestAnimationFrame(function render(now) {
     // batched DOM reads
-    const {innerWidth, innerHeight} = window
+    // excludes scroll bar & invariant under safari pinch zoom
+    const windowW = document.documentElement.clientWidth
+    // includes browser chrome (which might be transluscent; needed to be taken into consideration when occluding rows vertically) & invariant under safari pinch zoom (this way, when zoomed in, we don't occlude away rows outside of the zoomed-in view; if we did, when we zoom out again we wouldn't see those occluded rows until we release our fingers. During safari pinch, no event is triggered so we couldn't have updated the occlusion in real time)
+    const windowH = window.outerHeight
     const scrollTop = window.scrollY
 
-    const {cols, boxWMax} = colsBoxWMaxF(innerWidth)
+    const {cols, boxWMax} = colsBoxWMaxF(windowW)
     const imgHmax = boxWMax + 100 // TODO: adjust this better
     let scheduleNextRender = false
     let rowTop = boxesGapV
@@ -355,13 +359,13 @@ function scheduleRender() {
       let left = boxesGapH + (boxWMax + boxesGapH) * (i % cols) + (boxWMax - w) / 2 // center horizontally
 
       if (i === active) {
-        const boxWMaxBig = innerWidth - boxesGapH * 2 // TODO: adjust
-        const imgHMaxBig = innerHeight - boxesGapV * 2 - promptHBig
+        const boxWMaxBig = windowW - boxesGapH * 2 // TODO: adjust
+        const imgHMaxBig = windowH - boxesGapV * 2 - promptHBig
         w = Math.min(d.w, boxWMaxBig, imgHMaxBig * ar)
         h = w / ar + promptHBig
         top = rowTop + boxHMax
         left = boxesGapH + (boxWMaxBig - w) / 2 // center horizontally
-        if (needsScroll && (top - boxesGapV * 2 < scrollTop || top + h > scrollTop + innerHeight)) {
+        if (needsScroll && (top - boxesGapV * 2 < scrollTop || top + h > scrollTop + windowH)) {
           window.scrollTo({top: top - boxesGapV * 2, behavior: 'smooth'})
         }
         rowHMax = Math.max(rowHMax, boxHMax + h + boxesGapV)
@@ -389,7 +393,7 @@ function scheduleRender() {
       if (stillAnimating) scheduleNextRender = true
 
       let {node, promptNode} = d
-      if (d.top <= scrollTop + innerHeight && d.top + d.ch >= scrollTop) { // visible range
+      if (d.top <= scrollTop + windowH && d.top + d.ch >= scrollTop) { // visible range
         node.style.width = `${d.cw}px`
         node.style.height = `${d.ch}px`
         node.style.top = `${d.top}px`
