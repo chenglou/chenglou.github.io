@@ -51,18 +51,18 @@
 <script>
 let gapLeft = 16
 let gapTop = 16 + 28 // TODO: sigh adjust this
-let artWidthNatural = 320 // iPhone 1 width https://www.ios-resolution.com
-let artsGapHMin = 16
+let artWidthNatural = 220 // iPhone 1 width https://www.ios-resolution.com
+let artsGapH = 24 // fixed looks nicer
 
-function colsGapF(innerWidth) {
-  const cols = Math.floor(innerWidth / (artWidthNatural + artsGapHMin)) // half of artsGapHMin for container's left and right
-  const gap = (innerWidth - artWidthNatural * cols) / cols
-  return {cols, gap}
+function colsMaxWF(innerWidth) {
+  const cols = Math.floor((innerWidth - artsGapH) / (artWidthNatural + artsGapH)) // artsGapH for body's left and right too
+  const maxW = (innerWidth - artsGapH - cols * artsGapH) / cols
+  return {cols, maxW}
 }
 
 let data; {
   let {innerWidth, innerHeight} = window
-  let {cols, gap} = colsGapF(innerWidth)
+  let {cols} = colsMaxWF(innerWidth)
   let maxW = (innerWidth - 0) / cols - gapLeft * 2
   let maxH = maxW - gapTop * 2
 
@@ -228,8 +228,8 @@ let data; {
     let node = document.createElement('div')
         node.className = 'box'
     let img = document.createElement('img')
-        img.src = `https://mj-gallery.com/${d.id}/grid_0_384_N.webp`
-        img.loading = 'lazy'
+        img.src = `https://mj-gallery.com/${d.id}/grid_0_384_N.webp` // 128 is the next smallest. Too small for retina screens
+        img.loading = 'lazy' // don't add async btw. Decodes badly in certain cases. 368560c
     let promptNode = document.createElement('figcaption')
         promptNode.className = 'prompt'
         promptNode.textContent = d.prompt
@@ -337,37 +337,34 @@ function scheduleRender() {
     const {innerWidth, innerHeight} = window
     const scrollTop = window.scrollY
 
-    const {cols, gap} = colsGapF(innerWidth)
-    const gapLeftYooo = gap / 2
+    const {cols, maxW} = colsMaxWF(innerWidth)
     let scheduleNextRender = false
     let rowTop = gapTop
     let maxHRow = 0
     for (let i = 0; i < data.length; i++) {
       let d = data[i]
 
-      let ar = d.w / d.h
+      const ar = d.w / d.h
 
+      const maxH = maxW - gapTop * 2 + 100 // TODO: adjust this better
       let promptH = 28
-      let maxH = artWidthNatural - gapTop * 2 + 100 // TODO: adjust this better
-      let w = Math.min(d.w, artWidthNatural, maxH * ar)
+      let w = Math.min(d.w, maxW, maxH * ar)
       let h = w / ar + promptH
       let top = rowTop + (maxH - h) / 2 // center vertically
-      let left = gapLeftYooo + innerWidth / cols * (i % cols) + (artWidthNatural - w) / 2 // center horizontally
+      let left = artsGapH + (maxW + artsGapH) * (i % cols) + (maxW - w) / 2 // center horizontally
 
       if (i === active) {
-        let maxHRegular = maxH
-        let topRegular = top
+        const maxWBig = innerWidth - artsGapH * 2 - 200
+        const maxHBig = innerHeight - gapTop * 2
         promptH = 52
-        let maxW = innerWidth - gapLeft * 2 - 200
-        maxH = innerHeight - gapTop * 2
-        w = Math.min(d.w, maxW, maxH * ar)
+        w = Math.min(d.w, maxWBig, maxHBig * ar)
         h = w / ar + promptH
-        top = rowTop + maxHRegular + gapTop
-        left = gapLeft + 100 + (maxW - w) / 2 // center horizontally
+        top = rowTop + maxH + gapTop
+        left = artsGapH + 100 + (maxWBig - w) / 2 // center horizontally
         if (needsScroll && (top - gapTop * 2 < scrollTop || top + h > scrollTop + innerHeight)) {
           window.scrollTo({top: top - gapTop * 2, behavior: 'smooth'})
         }
-        maxHRow = Math.max(maxHRow, h + maxHRegular + gapTop)
+        maxHRow = Math.max(maxHRow, h + maxH + gapTop)
       } else {
         maxHRow = Math.max(maxHRow, maxH)
         let {pageX, pageY} = inputs.pointerXY
