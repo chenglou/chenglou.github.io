@@ -218,7 +218,7 @@ let data; {
     {id: '14465d26-a41e-4cc7-9a70-c7de8a0e28b3', w: 1408, h: 1792, prompt: `three-body problem, cinematic`},
   ].map((d, i) => {
     let ar = d.w / d.h
-    let cw = Math.min(Math.min(d.h, maxH) * ar, d.w, maxW)
+    let cw = Math.min(d.w, maxW, maxH * ar)
     let ch = cw / ar
 
     let node = document.createElement('div')
@@ -346,7 +346,7 @@ function scheduleRender() {
       let promptH = 28
       let maxW = (innerWidth - 0) / cols - gapLeft * 2
       let maxH = maxW - gapTop * 2 + 100 // TODO: adjust this better
-      let w = Math.min(Math.min(d.h, maxH) * ar, d.w, maxW)
+      let w = Math.min(d.w, maxW, maxH * ar)
       let h = w / ar + promptH
       let top = rowTop + (maxH - h) / 2 // center vertically
       let left = gapLeft + innerWidth / cols * (i % cols) + (maxW - w) / 2 // center horizontally
@@ -357,7 +357,7 @@ function scheduleRender() {
         promptH = 52
         maxW = innerWidth - gapLeft * 2 - 200
         maxH = innerHeight - gapTop * 2
-        w = Math.min(Math.min(d.h, maxH) * ar, d.w, maxW)
+        w = Math.min(d.w, maxW, maxH * ar)
         h = w / ar + promptH
         top = rowTop + maxHRegular + gapTop
         left = gapLeft + 100 + (maxW - w) / 2 // center horizontally
