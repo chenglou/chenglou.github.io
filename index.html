@@ -24,13 +24,13 @@
         0 4px 28px 0 rgba(0, 0, 0, 0.4);
     }
     .box img {
+      display: block; /* prevent inline-block from adding whitespaces... */
       width: 100%;
       border-radius: 16px 16px 0 0; /* safari forgets border-radius occlusion from box container when lifting img onto GPU */
     }
     .prompt {
-      position: absolute;
       box-sizing: border-box;
-      padding: 8px 12px 20px 12px;
+      padding: 4px 12px 8px 12px;
       font-family: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
       color: rgb(192, 198, 205);
       font-size: 16px;
@@ -50,7 +50,8 @@
 <body>
 
 <script>
-const promptH = 28
+const promptH = 24
+const promptHBig = 52
 const boxesGapH = 24 // fixed gap looks nicer
 const boxesGapV = 24
 
@@ -353,17 +354,16 @@ function scheduleRender() {
       let left = boxesGapH + (boxWMax + boxesGapH) * (i % cols) + (boxWMax - w) / 2 // center horizontally
 
       if (i === active) {
-        const promptHBig = 52
         const boxWMaxBig = innerWidth - boxesGapH * 2 // TODO: adjust
         const imgHMaxBig = innerHeight - boxesGapV * 2 - promptHBig
         w = Math.min(d.w, boxWMaxBig, imgHMaxBig * ar)
-        h = w / ar + boxesGapV + promptHBig
+        h = w / ar + promptHBig
         top = rowTop + boxHMax
         left = boxesGapH + (boxWMaxBig - w) / 2 // center horizontally
         if (needsScroll && (top - boxesGapV * 2 < scrollTop || top + h > scrollTop + innerHeight)) {
           window.scrollTo({top: top - boxesGapV * 2, behavior: 'smooth'})
         }
-        rowHMax = Math.max(rowHMax, boxHMax + h)
+        rowHMax = Math.max(rowHMax, boxHMax + h + boxesGapV)
       } else {
         rowHMax = Math.max(rowHMax, boxHMax)
         let {pageX, pageY} = inputs.pointerXY
@@ -397,6 +397,7 @@ function scheduleRender() {
         let img = node.children[0]
         if (i === active) {
           promptNode.style.overflowY = 'scroll'
+          promptNode.style.height = `${promptHBig}px`
           // lift to GPU. Smoother animation & prevents safari image flash. Can't put on every box; layers saturation -> degradation
           img.style.transform = 'translateZ(0px)'
           img.style.cursor = 'zoom-out'
@@ -404,11 +405,10 @@ function scheduleRender() {
           if (!stillAnimating && img.src !== src) img.src = src // load the full res image
         } else {
           promptNode.style.overflowY = 'hidden'
+          promptNode.style.height = `${promptH}px`
           img.style.transform = 'none'
           img.style.cursor = 'zoom-in'
         }
-        promptNode.style.height = `${promptH}px`
-        promptNode.style.top = `${d.ch - promptH}px`
         promptNode.style.lineClamp = promptNode.style.webkitLineClamp = i === active ? 999 : 1
         if (node.parentNode == null) document.body.appendChild(node) // if previously absent, add
       } else if (node.parentNode != null) document.body.removeChild(node) // if previously present, remove
