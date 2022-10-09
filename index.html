@@ -29,6 +29,7 @@
       border-radius: 16px 16px 0 0; /* safari forgets border-radius occlusion from box container when lifting img onto GPU */
     }
     .prompt {
+      position: absolute; /* rest at bottom even when image isn't loaded yet */
       box-sizing: border-box;
       padding: 4px 12px 8px 12px;
       font-family: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
@@ -398,6 +399,7 @@ function scheduleRender() {
         if (i === active) {
           promptNode.style.overflowY = 'scroll'
           promptNode.style.height = `${promptHBig}px`
+          promptNode.style.top = `${d.ch - promptHBig}px`
           // lift to GPU. Smoother animation & prevents safari image flash. Can't put on every box; layers saturation -> degradation
           img.style.transform = 'translateZ(0px)'
           img.style.cursor = 'zoom-out'
@@ -406,6 +408,7 @@ function scheduleRender() {
         } else {
           promptNode.style.overflowY = 'hidden'
           promptNode.style.height = `${promptH}px`
+          promptNode.style.top = `${d.ch - promptH}px`
           img.style.transform = 'none'
           img.style.cursor = 'zoom-in'
         }
