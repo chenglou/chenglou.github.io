@@ -51,14 +51,18 @@
 <script>
 let gapLeft = 16
 let gapTop = 16 + 28 // TODO: sigh adjust this
+let artWidthNatural = 320 // iPhone 1 width https://www.ios-resolution.com
+let artsGapHMin = 16
 
-function colsF(innerWidth) {
-  return innerWidth < 600 ? 2 : innerWidth < 900 ? 3 : 4
+function colsGapF(innerWidth) {
+  const cols = Math.floor(innerWidth / (artWidthNatural + artsGapHMin)) // half of artsGapHMin for container's left and right
+  const gap = (innerWidth - artWidthNatural * cols) / cols
+  return {cols, gap}
 }
 
 let data; {
   let {innerWidth, innerHeight} = window
-  let cols = colsF(innerWidth)
+  let {cols, gap} = colsGapF(innerWidth)
   let maxW = (innerWidth - 0) / cols - gapLeft * 2
   let maxH = maxW - gapTop * 2
 
@@ -329,13 +333,13 @@ function scheduleRender() {
   scheduled = true
 
   requestAnimationFrame(function render(now) {
-    let {innerWidth, innerHeight} = window
-    let scrollTop = window.scrollY
+    // batched DOM reads
+    const {innerWidth, innerHeight} = window
+    const scrollTop = window.scrollY
 
+    const {cols, gap} = colsGapF(innerWidth)
+    const gapLeftYooo = gap / 2
     let scheduleNextRender = false
-
-    let cols = colsF(innerWidth)
-
     let rowTop = gapTop
     let maxHRow = 0
     for (let i = 0; i < data.length; i++) {
@@ -344,18 +348,17 @@ function scheduleRender() {
       let ar = d.w / d.h
 
       let promptH = 28
-      let maxW = (innerWidth - 0) / cols - gapLeft * 2
-      let maxH = maxW - gapTop * 2 + 100 // TODO: adjust this better
-      let w = Math.min(d.w, maxW, maxH * ar)
+      let maxH = artWidthNatural - gapTop * 2 + 100 // TODO: adjust this better
+      let w = Math.min(d.w, artWidthNatural, maxH * ar)
       let h = w / ar + promptH
       let top = rowTop + (maxH - h) / 2 // center vertically
-      let left = gapLeft + innerWidth / cols * (i % cols) + (maxW - w) / 2 // center horizontally
+      let left = gapLeftYooo + innerWidth / cols * (i % cols) + (artWidthNatural - w) / 2 // center horizontally
 
       if (i === active) {
         let maxHRegular = maxH
         let topRegular = top
         promptH = 52
-        maxW = innerWidth - gapLeft * 2 - 200
+        let maxW = innerWidth - gapLeft * 2 - 200
         maxH = innerHeight - gapTop * 2
         w = Math.min(d.w, maxW, maxH * ar)
         h = w / ar + promptH
