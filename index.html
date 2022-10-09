@@ -49,10 +49,9 @@
 <body>
 
 <script>
-let gapLeft = 16
 let gapTop = 16 + 28 // TODO: sigh adjust this
-let artWidthNatural = 220 // iPhone 1 width https://www.ios-resolution.com
-let artsGapH = 24 // fixed looks nicer
+const artWidthNatural = 220 // iPhone 1 width https://www.ios-resolution.com
+const artsGapH = 24 // fixed gap looks nicer
 
 function colsMaxWF(innerWidth) {
   const cols = Math.floor((innerWidth - artsGapH) / (artWidthNatural + artsGapH)) // artsGapH for body's left and right too
@@ -61,10 +60,9 @@ function colsMaxWF(innerWidth) {
 }
 
 let data; {
-  let {innerWidth, innerHeight} = window
-  let {cols} = colsMaxWF(innerWidth)
-  let maxW = (innerWidth - 0) / cols - gapLeft * 2
-  let maxH = maxW - gapTop * 2
+  const {innerWidth, innerHeight} = window
+  const {cols, maxW} = colsMaxWF(innerWidth)
+  const maxH = maxW - gapTop * 2 + 100 // TODO: adjust this better
 
   data = [
     {id: 'c90dde4f-47bd-41bc-9574-2a85a5b51a52', w: 1024, h: 1536, prompt: `beautiful focaccia vegetable pattern, seamlessly repeating`},
@@ -221,9 +219,9 @@ let data; {
     {id: '19a138c9-8d56-471f-bc08-351fda122b5e', w: 1408, h: 1792, prompt: `three-body problem, cinematic`},
     {id: '14465d26-a41e-4cc7-9a70-c7de8a0e28b3', w: 1408, h: 1792, prompt: `three-body problem, cinematic`},
   ].map((d, i) => {
-    let ar = d.w / d.h
-    let cw = Math.min(d.w, maxW, maxH * ar)
-    let ch = cw / ar
+    const ar = d.w / d.h
+    const cw = Math.min(d.w, maxW, maxH * ar)
+    const ch = cw / ar
 
     let node = document.createElement('div')
         node.className = 'box'
@@ -345,7 +343,6 @@ function scheduleRender() {
       let d = data[i]
 
       const ar = d.w / d.h
-
       const maxH = maxW - gapTop * 2 + 100 // TODO: adjust this better
       let promptH = 28
       let w = Math.min(d.w, maxW, maxH * ar)
