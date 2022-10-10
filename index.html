@@ -250,6 +250,7 @@ let data; {
       ch,
       top: windowH + Math.floor(i / cols) * imgHmax,
       left: Math.floor(i / cols) * -windowW - windowW,
+      scale: 1,
       node,
       promptNode,
     }
@@ -370,7 +371,7 @@ function scheduleRender() {
       let h = w / ar + promptH + promptGapBottom
       let top = rowTop + (boxHMax - h) / 2 // center vertically
       let left = boxesGapH + (boxWMax + boxesGapH) * (i % cols) + (boxWMax - w) / 2 // center horizontally
-
+      let scale = 1
       if (i === active) {
         const boxWMaxBig = windowW - boxesGapH * 2 // TODO: adjust
         const imgHMaxBig = windowH - boxesGapV * 2 - promptHBig
@@ -388,6 +389,7 @@ function scheduleRender() {
         if (left <= pageX && pageX <= left + w && top <= pageY && pageY <= top + h) { // hovering
           left += (pageX - (left + w / 2)) / 40
           top += (pageY - (top + h / 2)) / 40
+          scale = 1.02
         }
       }
 
@@ -396,20 +398,22 @@ function scheduleRender() {
       let dH = (h - d.ch) / speed
       let dTop = (top - d.top) / speed
       let dLeft = (left - d.left) / speed
+      let dScale = (scale - d.scale) / speed
 
       d.cw += dW
       d.ch += dH
       d.top += dTop
       d.left += dLeft
+      d.scale += dScale
 
-      let stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005
+      let stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005
       if (stillAnimating) scheduleNextRender = true
 
       let {node, promptNode} = d
       if (d.top <= scrollTop + windowH + UIBottomHMax && d.top + d.ch >= scrollTop - UITopHMax) { // visible range
         node.style.width = `${d.cw}px`
         node.style.height = `${d.ch}px`
-        node.style.transform = `translateX(${d.left}px) translateY(${d.top}px)` // safari now anti-aliases for hover, but then zoom in janks on big displays...
+        node.style.transform = `translateX(${d.left}px) translateY(${d.top}px) scale(${d.scale})` // safari now anti-aliases for hover, but then zoom in janks on big displays...
         let img = node.children[0]
         if (i === active) {
           node.style.cursor = 'zoom-out'
