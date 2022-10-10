@@ -363,20 +363,13 @@ function scheduleRender() {
     let rowHMax = 0
     for (let i = 0; i < data.length; i++) {
       let d = data[i]
-
       const ar = d.w / d.h
-      let punish = Math.log10(2.77 - Math.min(ar, 1/ar)) + 0.55
-      punish = 1/(Math.min(ar, 1/ar)-2.7)+1.36
-      let boxWMax2 = boxWMax
-      let imgHmax = boxWMax2
-      ar < 1 ? imgHmax *= punish : boxWMax2 *= punish
-
+      const imgHmax =
+        ar === 1 ? boxWMax * 0.9 // square aspect ratio area too big. Shrink it
+        : ar < 1 ? boxWMax * 1.05 // vertical images look a bit small. Grow it
+        : boxWMax
       const boxHMax = imgHmax + boxesGapV + promptH + promptGapBottom
-      if (i<2) {
-        // console.log({ar, punish, imgHmax, boxWMax2})
-      }
-      // if (ar === 1) imgHmax *= 0.85
-      let w = Math.min(d.w, boxWMax2, imgHmax * ar)
+      let w = Math.min(d.w, boxWMax, imgHmax * ar)
       let h = w / ar + promptH + promptGapBottom
       let top = rowTop + (boxHMax - h) / 2 // center vertically
       let left = boxesGapH + (boxWMax + boxesGapH) * (i % cols) + (boxWMax - w) / 2 // center horizontally
