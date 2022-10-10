@@ -17,7 +17,7 @@
     .box {
       position: absolute;
       overflow: hidden;
-      background-color: rgb(24, 26, 38);
+      background-color: rgb(34, 36, 53);
       border-radius: 16px;
       box-shadow:
         0 0px 2px 0 rgba(255, 255, 255, 0.2),
@@ -30,16 +30,23 @@
     }
     .prompt {
       position: absolute; /* rest at bottom even when image isn't loaded yet */
+      width: 100%;
       box-sizing: border-box;
-      padding: 4px 12px 8px 12px;
+      padding: 8px 12px 8px 12px;
+      overflow: hidden;
       font-family: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
       color: rgb(192, 198, 205);
       font-size: 16px;
-      background-color: rgb(24, 26, 38);
       /* for lime clamping programmatically */
       display: -webkit-box;
       -webkit-box-orient: vertical;
-    }
+
+      /*cursor: n-resize;*/
+      /*background-color: rgba(34, 36, 53, 1.8);*/
+      /*backdrop-filter: blur(10px);*/
+/*      mask-image: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 4px);
+      -webkit-mask-image: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 4px);
+*/    }
     .prompt:before {
       content: '❝';
       color: rgb(122, 126, 130);
@@ -51,14 +58,15 @@
 <body>
 
 <script>
-const promptH = 24
-const promptHBig = 52
+const promptH = 46
+const promptHBig = 64
+const promptGapBottom = 8
 const boxesGapH = 24 // fixed gap looks nicer
 const boxesGapV = 24
 
 function colsBoxWMaxF(containerW) {
-  const boxWMin = 220 // Make sure that on mobile, this min width is big enough not to show 2 images per row
-  const cols = Math.floor((containerW - boxesGapH) / (boxWMin + boxesGapH)) // boxesGapH for body's left and right too
+  const boxWMin = 220 // Make sure that on mobile, this min width is big enough not to show 2 images per row. Also, this won't be respected if view's tiny
+  const cols = Math.max(1, Math.floor((containerW - boxesGapH) / (boxWMin + boxesGapH))) // boxesGapH for body's left and right too
   const boxWMax = (containerW - boxesGapH - cols * boxesGapH) / cols
   return {cols, boxWMax}
 }
@@ -69,6 +77,7 @@ let data; {
   const {cols, boxWMax} = colsBoxWMaxF(windowW)
   const imgHmax = boxWMax + 100 // TODO: adjust this better
   data = [
+    {id: 'c90dde4f-47bd-41bc-9574-2a85a5b51a52', w: 1024, h: 1536, prompt: `beautiful focaccia vegetable pattern, seamlessly repeating beautiful focaccia vegetable pattern, seamlessly repeatingbeautiful focaccia vegetable pattern, seamlessly repeatingbeautiful focaccia vegetable pattern, seamlessly repeatingbeautiful focaccia vegetable pattern, seamlessly repeatingbeautiful focaccia vegetable pattern, seamlessly repeatingbeautiful focaccia vegetable pattern, seamlessly repeatingbeautiful focaccia vegetable pattern, seamlessly repeatingbeautiful focaccia vegetable pattern, seamlessly repeatingbeautiful focaccia vegetable pattern, seamlessly repeatingbeautiful focaccia vegetable pattern, seamlessly repeatingbeautiful focaccia vegetable pattern, seamlessly repeating`},
     {id: 'c90dde4f-47bd-41bc-9574-2a85a5b51a52', w: 1024, h: 1536, prompt: `beautiful focaccia vegetable pattern, seamlessly repeating`},
     {id: 'fda63c22-f6ff-4ad8-bee2-2e197fbc0a97', w: 2048, h: 1024, prompt: `kid's back, low angle, staring up at floating temple in ancient china`},
     {id: '7d2393c5-6785-40db-bbea-19fa78b564ec', w: 2048, h: 1024, prompt: `kid's back, low angle, staring up at mobius spaceship landing in ancient china`},
@@ -346,7 +355,7 @@ function scheduleRender() {
     const scrollTop = window.scrollY
 
     const {cols, boxWMax} = colsBoxWMaxF(windowW)
-    const imgHmax = boxWMax + 100 // TODO: adjust this better
+    const imgHmax = boxWMax + 50 // TODO: adjust this better
     let scheduleNextRender = false
     let rowTop = boxesGapV
     let rowHMax = 0
@@ -354,9 +363,9 @@ function scheduleRender() {
       let d = data[i]
 
       const ar = d.w / d.h
-      const boxHMax = imgHmax + boxesGapV + promptH
+      const boxHMax = imgHmax + boxesGapV + promptH + promptGapBottom
       let w = Math.min(d.w, boxWMax, imgHmax * ar)
-      let h = w / ar + promptH
+      let h = w / ar + promptH + promptGapBottom
       let top = rowTop + (boxHMax - h) / 2 // center vertically
       let left = boxesGapH + (boxWMax + boxesGapH) * (i % cols) + (boxWMax - w) / 2 // center horizontally
 
@@ -364,7 +373,7 @@ function scheduleRender() {
         const boxWMaxBig = windowW - boxesGapH * 2 // TODO: adjust
         const imgHMaxBig = windowH - boxesGapV * 2 - promptHBig
         w = Math.min(d.w, boxWMaxBig, imgHMaxBig * ar)
-        h = w / ar + promptHBig
+        h = w / ar + promptHBig + promptGapBottom
         top = rowTop + boxHMax
         left = boxesGapH + (boxWMaxBig - w) / 2 // center horizontally
         if (needsScroll && (top - boxesGapV * 2 < scrollTop || top + h > scrollTop + windowH)) {
@@ -405,7 +414,7 @@ function scheduleRender() {
         if (i === active) {
           promptNode.style.overflowY = 'scroll'
           promptNode.style.height = `${promptHBig}px`
-          promptNode.style.top = `${d.ch - promptHBig}px`
+          promptNode.style.top = `${d.ch - promptHBig - promptGapBottom}px`
           // lift to GPU. Smoother animation & prevents safari image flash. Can't put on every box; layers saturation -> degradation
           img.style.transform = 'translateZ(0px)'
           img.style.cursor = 'zoom-out'
@@ -414,11 +423,11 @@ function scheduleRender() {
         } else {
           promptNode.style.overflowY = 'hidden'
           promptNode.style.height = `${promptH}px`
-          promptNode.style.top = `${d.ch - promptH}px`
+          promptNode.style.top = `${d.ch - promptH - promptGapBottom}px`
           img.style.transform = 'none'
           img.style.cursor = 'zoom-in'
         }
-        promptNode.style.lineClamp = promptNode.style.webkitLineClamp = i === active ? 999 : 1
+        promptNode.style.lineClamp = promptNode.style.webkitLineClamp = i === active ? 999 : 2
         if (node.parentNode == null) document.body.appendChild(node) // if previously absent, add
       } else if (node.parentNode != null) document.body.removeChild(node) // if previously present, remove
 
