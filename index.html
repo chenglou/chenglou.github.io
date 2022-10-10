@@ -358,7 +358,6 @@ function scheduleRender() {
     const scrollTop = window.scrollY
 
     const {cols, boxWMax} = colsBoxWMaxF(windowW)
-    const imgHmax = boxWMax + 50 // TODO: adjust this better
     let scheduleNextRender = false
     let rowTop = boxesGapV
     let rowHMax = 0
@@ -366,8 +365,18 @@ function scheduleRender() {
       let d = data[i]
 
       const ar = d.w / d.h
+      let punish = Math.log10(2.77 - Math.min(ar, 1/ar)) + 0.55
+      punish = 1/(Math.min(ar, 1/ar)-2.7)+1.36
+      let boxWMax2 = boxWMax
+      let imgHmax = boxWMax2
+      ar < 1 ? imgHmax *= punish : boxWMax2 *= punish
+
       const boxHMax = imgHmax + boxesGapV + promptH + promptGapBottom
-      let w = Math.min(d.w, boxWMax, imgHmax * ar)
+      if (i<2) {
+        // console.log({ar, punish, imgHmax, boxWMax2})
+      }
+      // if (ar === 1) imgHmax *= 0.85
+      let w = Math.min(d.w, boxWMax2, imgHmax * ar)
       let h = w / ar + promptH + promptGapBottom
       let top = rowTop + (boxHMax - h) / 2 // center vertically
       let left = boxesGapH + (boxWMax + boxesGapH) * (i % cols) + (boxWMax - w) / 2 // center horizontally
