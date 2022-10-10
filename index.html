@@ -416,8 +416,8 @@ function scheduleRender() {
           promptNode.style.overflowY = 'scroll'
           promptNode.style.height = `${promptHBig}px`
           promptNode.style.top = `${d.ch - promptHBig - promptGapBottom}px`
-          // lift to GPU. Smoother animation & prevents safari image flash. Can't put on every box; layers saturation -> degradation. TODO: keep or not?
-          // img.style.transform = 'translateZ(0px)'
+          // lift to GPU. Smoother animation or else Safari janks hard. Can't put on every box; layers saturation -> degradation
+          img.style.transform = 'translateZ(0px)'
           let src = `https://mj-gallery.com/${d.id}/grid_0.webp`
           if (img.src !== src) img.src = src // load the full res image
         } else {
@@ -425,7 +425,7 @@ function scheduleRender() {
           promptNode.style.overflowY = 'hidden'
           promptNode.style.height = `${promptH}px`
           promptNode.style.top = `${d.ch - promptH - promptGapBottom}px`
-          // img.style.transform = 'none'
+          img.style.transform = 'none'
         }
         promptNode.style.lineClamp = promptNode.style.webkitLineClamp = i === active ? 999 : 2
         if (node.parentNode == null) document.body.appendChild(node) // if previously absent, add
