@@ -24,6 +24,8 @@
       box-shadow:
         0 0px 2px 0 rgba(255, 255, 255, 0.2),
         0 4px 28px 0 rgba(0, 0, 0, 0.4);
+      background-size: 100%;
+      background-repeat: no-repeat;
     }
     .box img {
       display: block; /* prevent inline-block from adding whitespaces... */
@@ -42,6 +44,7 @@
       /* for lime clamping programmatically */
       display: -webkit-box;
       -webkit-box-orient: vertical;
+      cursor: text;
     }
     .prompt:before {
       content: '❝';
@@ -231,12 +234,12 @@ let data; {
     const boxHMax = imgHmax + boxesGapV + promptH
     const cw = Math.min(d.w, boxWMax, imgHmax * ar)
     const ch = cw / ar + promptH
-
+    // upon zooming into the big image view, swapping out an img src for a higher-resoltion one would cause a flash of blank image in certain cases. Instead, we put the low-res image as a background-image on the container, then the high-res image as a real img on top. Hand-rolled double buffering...
     let node = document.createElement('div')
         node.className = 'box'
+        node.style.backgroundImage = `url(https://mj-gallery.com/${d.id}/grid_0_384_N.webp)` // 128 is the next smallest. Too small for retina screens
     let img = document.createElement('img')
-        img.src = `https://mj-gallery.com/${d.id}/grid_0_384_N.webp` // 128 is the next smallest. Too small for retina screens
-        img.loading = 'lazy' // don't add async btw. Decodes badly in certain cases. 368560c
+        img.decoding = 'async'
     let promptNode = document.createElement('figcaption')
         promptNode.className = 'prompt'
         promptNode.textContent = d.prompt
@@ -295,11 +298,15 @@ window.addEventListener('keydown', (e) => {
   }
 })
 window.addEventListener('click', (e) => {
-  if (e.target.tagName === 'FIGCAPTION') {
-    return
-  }
-  if (e.target.tagName === 'IMG') {
-    let node = e.target.parentNode
+  const tagName = e.target.tagName
+  if (tagName === 'FIGCAPTION') { // select the whole prompt
+    let selection = window.getSelection()
+    let range = document.createRange()
+    range.selectNodeContents(e.target)
+    selection.removeAllRanges()
+    selection.addRange(range)
+  } else if (tagName === 'DIV' || tagName === 'IMG') {
+    let node = tagName === 'DIV' ? e.target : e.target.parentNode
     for (let i = 0; i < data.length; i++) {
       if (data[i].node === node) {
         if (active === i) {
@@ -405,20 +412,20 @@ function scheduleRender() {
         node.style.transform = `translateX(${d.left}px) translateY(${d.top}px)` // safari now anti-aliases for hover, but then zoom in janks on big displays...
         let img = node.children[0]
         if (i === active) {
+          node.style.cursor = 'zoom-out'
           promptNode.style.overflowY = 'scroll'
           promptNode.style.height = `${promptHBig}px`
           promptNode.style.top = `${d.ch - promptHBig - promptGapBottom}px`
-          // lift to GPU. Smoother animation & prevents safari image flash. Can't put on every box; layers saturation -> degradation
-          img.style.transform = 'translateZ(0px)'
-          img.style.cursor = 'zoom-out'
+          // lift to GPU. Smoother animation & prevents safari image flash. Can't put on every box; layers saturation -> degradation. TODO: keep or not?
+          // img.style.transform = 'translateZ(0px)'
           let src = `https://mj-gallery.com/${d.id}/grid_0.webp`
-          if (!stillAnimating && img.src !== src) img.src = src // load the full res image
+          if (img.src !== src) img.src = src // load the full res image
         } else {
+          node.style.cursor = 'zoom-in'
           promptNode.style.overflowY = 'hidden'
           promptNode.style.height = `${promptH}px`
           promptNode.style.top = `${d.ch - promptH - promptGapBottom}px`
-          img.style.transform = 'none'
-          img.style.cursor = 'zoom-in'
+          // img.style.transform = 'none'
         }
         promptNode.style.lineClamp = promptNode.style.webkitLineClamp = i === active ? 999 : 2
         if (node.parentNode == null) document.body.appendChild(node) // if previously absent, add
