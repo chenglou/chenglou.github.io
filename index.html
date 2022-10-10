@@ -65,7 +65,7 @@ const boxesGapV = 24
 
 function colsBoxWMaxF(containerW) {
   const boxWMin = 220 // Make sure that on mobile, this min width is big enough not to show 2 images per row. Also, this won't be respected if view's tiny
-  const cols = Math.max(1, Math.floor((containerW - boxesGapH) / (boxWMin + boxesGapH))) // boxesGapH for body's left and right too
+  const cols = Math.max(1, Math.min(7, Math.floor((containerW - boxesGapH) / (boxWMin + boxesGapH)))) // boxesGapH for body's left and right too
   const boxWMax = (containerW - boxesGapH - cols * boxesGapH) / cols
   return {cols, boxWMax}
 }
