@@ -16,6 +16,8 @@
     }
     .box {
       position: absolute;
+      top: 0;
+      left: 0;
       overflow: hidden;
       background-color: rgb(34, 36, 53);
       border-radius: 16px;
@@ -40,13 +42,7 @@
       /* for lime clamping programmatically */
       display: -webkit-box;
       -webkit-box-orient: vertical;
-
-      /*cursor: n-resize;*/
-      /*background-color: rgba(34, 36, 53, 1.8);*/
-      /*backdrop-filter: blur(10px);*/
-/*      mask-image: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 4px);
-      -webkit-mask-image: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 4px);
-*/    }
+    }
     .prompt:before {
       content: '❝';
       color: rgb(122, 126, 130);
@@ -77,7 +73,6 @@ let data; {
   const {cols, boxWMax} = colsBoxWMaxF(windowW)
   const imgHmax = boxWMax + 100 // TODO: adjust this better
   data = [
-    {id: 'c90dde4f-47bd-41bc-9574-2a85a5b51a52', w: 1024, h: 1536, prompt: `beautiful focaccia vegetable pattern, seamlessly repeating beautiful focaccia vegetable pattern, seamlessly repeatingbeautiful focaccia vegetable pattern, seamlessly repeatingbeautiful focaccia vegetable pattern, seamlessly repeatingbeautiful focaccia vegetable pattern, seamlessly repeatingbeautiful focaccia vegetable pattern, seamlessly repeatingbeautiful focaccia vegetable pattern, seamlessly repeatingbeautiful focaccia vegetable pattern, seamlessly repeatingbeautiful focaccia vegetable pattern, seamlessly repeatingbeautiful focaccia vegetable pattern, seamlessly repeatingbeautiful focaccia vegetable pattern, seamlessly repeatingbeautiful focaccia vegetable pattern, seamlessly repeating`},
     {id: 'c90dde4f-47bd-41bc-9574-2a85a5b51a52', w: 1024, h: 1536, prompt: `beautiful focaccia vegetable pattern, seamlessly repeating`},
     {id: 'fda63c22-f6ff-4ad8-bee2-2e197fbc0a97', w: 2048, h: 1024, prompt: `kid's back, low angle, staring up at floating temple in ancient china`},
     {id: '7d2393c5-6785-40db-bbea-19fa78b564ec', w: 2048, h: 1024, prompt: `kid's back, low angle, staring up at mobius spaceship landing in ancient china`},
@@ -407,9 +402,7 @@ function scheduleRender() {
       if (d.top <= scrollTop + windowH + UIBottomHMax && d.top + d.ch >= scrollTop - UITopHMax) { // visible range
         node.style.width = `${d.cw}px`
         node.style.height = `${d.ch}px`
-        node.style.top = `${d.top}px`
-        node.style.left = `${d.left}px`
-        // node.style.transform = `translateX(${d.left}px) translateY(${d.top}px)` // safari now anti-aliases for hover, but then zoom in janks...
+        node.style.transform = `translateX(${d.left}px) translateY(${d.top}px)` // safari now anti-aliases for hover, but then zoom in janks on big displays...
         let img = node.children[0]
         if (i === active) {
           promptNode.style.overflowY = 'scroll'
