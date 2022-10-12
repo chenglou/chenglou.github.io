@@ -360,7 +360,7 @@ function scheduleRender() {
     const speed = 5
     const {cols, boxWMax} = colsBoxWMaxF(windowW)
     const boxWMaxBig = windowW - boxesGapH * 2 // TODO: adjust
-    const imgHMaxBig = windowH - boxesGapV * 2 - promptHBig
+    const imgHMaxBig = windowH - boxesGapV * 2 - promptHBig - promptGapBottom - 40 // TODO: adjust
     let scheduleNextRender = false
 
     let imgsWH = []
@@ -397,8 +397,8 @@ function scheduleRender() {
           left = boxesGapH + (boxWMaxBig - imgW) / 2 // center horizontally
           scale = 1
           bigH = boxH
-          if (needsScroll && (top - boxesGapV < scrollTop || top + boxH > scrollTop + windowH)) { // TODO: adjust
-            window.scrollTo({top: top - boxesGapV, behavior: 'smooth'})
+          if (needsScroll && (top - boxesGapV - 20 < scrollTop || top + boxH > scrollTop + windowH)) { // TODO: adjust
+            window.scrollTo({top: top - boxesGapV - 20, behavior: 'smooth'})
           }
         } else {
           boxW = imgsWH[idx].imgW
