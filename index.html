@@ -258,7 +258,8 @@ let data; {
 }
 
 // === state
-let active = null
+let activeFirst = 7
+let active = 7
 let zIndex = 1
 let needsScroll = false
 let inputs = {
@@ -270,30 +271,28 @@ window.addEventListener('scroll', () => scheduleRender())
 window.addEventListener('keydown', (e) => {
   // TODO: cleanup, zIndex increase
   if (e.code === 'Escape') {
-    active = null
+    active = activeFirst = null
     scheduleRender()
   } else if (e.code === 'ArrowLeft') {
     if (active == null) {
-      active = 0
+      active = activeFirst = 0
       data[active].node.style.zIndex = zIndex++
       needsScroll = true
       scheduleRender()
     } else if (active > 0) {
       active--
       data[active].node.style.zIndex = zIndex++
-      needsScroll = true
       scheduleRender()
     }
   } else if (e.code === 'ArrowRight') {
     if (active == null) {
-      active = 0
+      active = activeFirst = 0
       data[active].node.style.zIndex = zIndex++
       needsScroll = true
       scheduleRender()
     } else if (active < data.length - 1) {
       active++
       data[active].node.style.zIndex = zIndex++
-      needsScroll = true
       scheduleRender()
     }
   }
@@ -306,22 +305,25 @@ window.addEventListener('click', (e) => {
     range.selectNodeContents(e.target)
     selection.removeAllRanges()
     selection.addRange(range)
-  } else if ((tagName === 'DIV' && e.target.className === 'box') || tagName === 'IMG') {
+  } else if (tagName === 'DIV' || tagName === 'IMG') {
     let node = tagName === 'DIV' ? e.target : e.target.parentNode
     for (let i = 0; i < data.length; i++) {
       if (data[i].node === node) {
         if (active === i) {
-          active = null
+          active = activeFirst = null
+        } else if (active === null) {
+          active = activeFirst = i
+          node.style.zIndex = zIndex++
+          needsScroll = true
         } else {
           active = i
           node.style.zIndex = zIndex++
-          needsScroll = true
         }
         break
       }
     }
   } else {
-    active = null
+    active = activeFirst = null
   }
   scheduleRender()
 })
@@ -353,15 +355,17 @@ function scheduleRender() {
     const windowW = document.documentElement.clientWidth
     // invariant under safari pinch zoom (this way, when zoomed in, we don't occlude away rows outside of the zoomed-in view; if we did, when we zoom out again we wouldn't see those occluded rows until we release our fingers. During safari pinch, no event is triggered so we couldn't have updated the occlusion in real time)
     const windowH = document.documentElement.clientHeight
+    const scrollTop = window.scrollY
     // don't forget top & bottom safari UI chrome sizes when vertically occluding, since they're transluscent so we can't over-occlude by ignoring them
     const UITopHMax = 100, UIBottomHMax = 150 // random conservative numbers
-    const scrollTop = window.scrollY
 
     const speed = 5
     const {cols, boxWMax} = colsBoxWMaxF(windowW)
+    const boxWMaxBig = windowW - boxesGapH * 2 - 120 // TODO: adjust
+    const imgHMaxBig = windowH - boxesGapV * 2 - promptHBig
     let scheduleNextRender = false
-    let rowTop = boxesGapV
-    let rowHMax = 0
+
+    let imgsWH = []
     for (let i = 0; i < data.length; i++) {
       let d = data[i]
       const ar = d.w / d.h
@@ -369,59 +373,233 @@ function scheduleRender() {
         ar === 1 ? boxWMax * 0.9 // square aspect ratio area too big. Shrink it
         : ar < 1 ? boxWMax * 1.05 // vertical images look a bit small. Grow it
         : boxWMax
-      const boxHMax = imgHmax + boxesGapV + promptH + promptGapBottom
-
-      let w, h, top, left, scale
-      if (i === active) {
-        const boxWMaxBig = windowW - boxesGapH * 2 // TODO: adjust
-        const imgHMaxBig = windowH - boxesGapV * 2 - promptHBig
-        w = Math.min(d.w, boxWMaxBig, imgHMaxBig * ar)
-        h = w / ar + promptHBig + promptGapBottom
-        top = rowTop + boxHMax
-        left = boxesGapH + (boxWMaxBig - w) / 2 // center horizontally
-        if (needsScroll && (top - boxesGapV * 2 < scrollTop || top + h > scrollTop + windowH)) {
-          window.scrollTo({top: top - boxesGapV * 2, behavior: 'smooth'})
-        }
-        scale = 1
-        rowHMax = Math.max(rowHMax, boxHMax + h + boxesGapV)
-      } else {
-        w = Math.min(d.w, boxWMax, imgHmax * ar)
-        h = w / ar + promptH + promptGapBottom
-        top = rowTop + (boxHMax - h) / 2 // center vertically
-        left = boxesGapH + (boxWMax + boxesGapH) * (i % cols) + (boxWMax - w) / 2 // center horizontally
-        const {pageX, pageY} = inputs.pointerXY
-        if (left <= pageX && pageX <= left + w && top <= pageY && pageY <= top + h) { // hovering
-          left += (pageX - (left + w / 2)) / 40
-          top += (pageY - (top + h / 2)) / 40
-          scale = 1.02
-        } else {
-          scale = 1
-        }
-        rowHMax = Math.max(rowHMax, boxHMax)
+      const imgW = Math.min(d.w, boxWMax, imgHmax * ar)
+      const imgH = imgW / ar
+      imgsWH.push({imgW, imgH})
+    }
+    if (active != null) {
+      if (active > 0) {
+        let d = data[active - 1]
+        const ar = d.w / d.h
+        const imgW = Math.min(d.w, boxWMaxBig, imgHMaxBig * ar)
+        const imgH = imgW / ar
+        imgsWH[active - 1].imgW = imgW
+        imgsWH[active - 1].imgH = imgH
       }
+      {
+        let d = data[active]
+        const ar = d.w / d.h
+        const imgW = Math.min(d.w, boxWMaxBig * 0.5, imgHMaxBig * ar)
+        const imgH = imgW / ar
+        imgsWH[active].imgW = imgW
+        imgsWH[active].imgH = imgH
+      }
+      if (active < data.length - 1) {
+        let d = data[active + 1]
+        const ar = d.w / d.h
+        const imgW = Math.min(d.w, boxWMaxBig * 0.5, imgHMaxBig * ar)
+        const imgH = imgW / ar
+        imgsWH[active + 1].imgW = imgW
+        imgsWH[active + 1].imgH = imgH
+      }
+    }
 
-      const dW = (w - d.cw) / speed
-      const dH = (h - d.ch) / speed
-      const dTop = (top - d.top) / speed
-      const dLeft = (left - d.left) / speed
-      const dScale = (scale - d.scale) / speed
+    // const specialRowIndex = active == null ? null : Math.floor(active / cols)
+    // let rowsHMax = [boxesGapV]
+    // {
+    //   let rowHMax = 0
+    //   for (let i = 0; i < imgsWH.length; i++) {
+    //     rowHMax = Math.max(rowHMax, imgsWH[i].imgH + promptH + promptGapBottom + boxesGapV)
+    //     let lastItemOfRow = i % cols === cols - 1
+    //     if (lastItemOfRow || i === imgsWH.length - 1) {
+    //       let accum = rowsHMax[rowsHMax.length - 1] + rowHMax
+    //       rowsHMax.push(accum)
+    //       if (active != null && Math.floor(i / cols) === Math.floor(active / cols)) { // full res special row
+    //         // rowsHMax.push(accum + imgsWH[i].imgH + promptHBig + promptGapBottom + boxesGapV)
+    //         rowsHMax.push(accum + imgsWH[i].imgH + promptHBig + promptGapBottom + boxesGapV)
+    //         // the current logic means if the active image's netural height is the longest of the row, then it's still taken into consideration by the full res special row's top. That's fine
+    //       }
+    //       rowHMax = 0
+    //     }
+    //   }
+    // }
 
-      d.cw += dW
-      d.ch += dH
-      d.top += dTop
-      d.left += dLeft
-      d.scale += dScale
 
-      const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005
-      if (stillAnimating) scheduleNextRender = true
+    if (active != null) {
+      let rowHMax = 0
+      let activeTop = boxesGapV
+      for (let i = 0; i <= activeFirst; i++) {
+        rowHMax = Math.max(rowHMax, imgsWH[i].imgH)
+        if (i % cols === cols - 1) { // last box of row
+          activeTop += rowHMax + promptH + promptGapBottom + boxesGapV
+          rowHMax = 0
+        }
+      }
+      // boxes before actives
+      let currentTop = activeTop
+      for (let i = active - 2; i >= 0; i -= cols) {
+        let rowHMax = 0
+        for (let j = 0; j < cols && i - j >= 0; j++) rowHMax = Math.max(rowHMax, imgsWH[i - j].imgH)
+        rowHMax += promptH + promptGapBottom + boxesGapV
+        currentTop -= rowHMax
 
+        for (let j = 0; j < cols && i - j >= 0; j++) {
+          const idx = i - j // render right to left. Just because
+          let d = data[idx]
+          const boxW = imgsWH[idx].imgW
+          const boxH = imgsWH[idx].imgH + promptH + promptGapBottom
+          let top = currentTop + (rowHMax - boxH) / 2
+          let left = boxesGapH + (boxWMax + boxesGapH) * (cols - j - 1) + (boxWMax - boxW) / 2 // center horizontally
+          let scale
+          const {pageX, pageY} = inputs.pointerXY
+          if (left <= pageX && pageX <= left + boxW && top <= pageY && pageY <= top + boxH) { // hovering
+            left += (pageX - (left + boxW / 2)) / 40
+            top += (pageY - (top + boxH / 2)) / 40
+            scale = 1.02
+          } else {
+            scale = 1
+          }
+
+          const dW = (boxW - d.cw) / speed
+          const dH = (boxH - d.ch) / speed
+          const dTop = (top - d.top) / speed
+          const dLeft = (left - d.left) / speed
+          const dScale = (scale - d.scale) / speed
+
+          d.cw += dW
+          d.ch += dH
+          d.top += dTop
+          d.left += dLeft
+          d.scale += dScale
+
+          const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005
+          if (stillAnimating) scheduleNextRender = true
+        }
+      }
+      // boxes after actives
+      currentTop = activeTop + imgsWH[active].imgH + promptHBig + promptGapBottom + boxesGapV
+      for (let i = active + 2; i < data.length; i += cols) {
+        let rowHMax = 0
+        for (let j = 0; j < cols && i + j < data.length; j++) rowHMax = Math.max(rowHMax, imgsWH[i + j].imgH)
+        rowHMax += promptH + promptGapBottom + boxesGapV
+
+        for (let j = 0; j < cols && i + j < data.length; j++) {
+          const idx = i + j
+          let d = data[idx]
+          const boxW = imgsWH[idx].imgW
+          const boxH = imgsWH[idx].imgH + promptH + promptGapBottom
+          let top = currentTop + (rowHMax - boxH) / 2
+          let left = boxesGapH + (boxWMax + boxesGapH) * j + (boxWMax - boxW) / 2 // center horizontally
+          let scale
+          const {pageX, pageY} = inputs.pointerXY
+          if (left <= pageX && pageX <= left + boxW && top <= pageY && pageY <= top + boxH) { // hovering
+            left += (pageX - (left + boxW / 2)) / 40
+            top += (pageY - (top + boxH / 2)) / 40
+            scale = 1.02
+          } else {
+            scale = 1
+          }
+
+          const dW = (boxW - d.cw) / speed
+          const dH = (boxH - d.ch) / speed
+          const dTop = (top - d.top) / speed
+          const dLeft = (left - d.left) / speed
+          const dScale = (scale - d.scale) / speed
+
+          d.cw += dW
+          d.ch += dH
+          d.top += dTop
+          d.left += dLeft
+          d.scale += dScale
+
+          const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005
+          if (stillAnimating) scheduleNextRender = true
+        }
+        currentTop += rowHMax
+      }
+      // actives
+      const activeLeft = boxesGapH + (boxWMaxBig - imgsWH[active].imgW) / 2
+      const boxHMaxBig = imgHMaxBig + promptHBig + promptGapBottom + boxesGapV // TOOD: adjust
+      if (active > 0) {
+        let d = data[active - 1]
+        const boxW = imgsWH[active - 1].imgW
+        const boxH = imgsWH[active - 1].imgH + promptHBig + promptGapBottom
+        let top = activeTop
+        let left = activeLeft - boxesGapH - boxW
+        const scale = 1
+
+        const dW = (boxW - d.cw) / speed
+        const dH = (boxH - d.ch) / speed
+        const dTop = (top - d.top) / speed
+        const dLeft = (left - d.left) / speed
+        const dScale = (scale - d.scale) / speed
+
+        d.cw += dW
+        d.ch += dH
+        d.top += dTop
+        d.left += dLeft
+        d.scale += dScale
+
+        const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005
+        if (stillAnimating) scheduleNextRender = true
+      }
+      {
+        let d = data[active]
+        const boxW = imgsWH[active].imgW
+        const boxH = imgsWH[active].imgH + promptHBig + promptGapBottom
+        let top = activeTop
+        let left = activeLeft // center horizontally
+        const scale = 1
+
+        const dW = (boxW - d.cw) / speed
+        const dH = (boxH - d.ch) / speed
+        const dTop = (top - d.top) / speed
+        const dLeft = (left - d.left) / speed
+        const dScale = (scale - d.scale) / speed
+
+        d.cw += dW
+        d.ch += dH
+        d.top += dTop
+        d.left += dLeft
+        d.scale += dScale
+
+        const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005
+        if (stillAnimating) scheduleNextRender = true
+      }
+      if (active + 1 < data.length) {
+        let d = data[active + 1]
+        const boxW = imgsWH[active + 1].imgW
+        const boxH = imgsWH[active + 1].imgH + promptHBig + promptGapBottom
+        let top = activeTop
+        let left = activeLeft + imgsWH[active].imgW + boxesGapH
+        const scale = 1
+
+        const dW = (boxW - d.cw) / speed
+        const dH = (boxH - d.ch) / speed
+        const dTop = (top - d.top) / speed
+        const dLeft = (left - d.left) / speed
+        const dScale = (scale - d.scale) / speed
+
+        d.cw += dW
+        d.ch += dH
+        d.top += dTop
+        d.left += dLeft
+        d.scale += dScale
+
+        const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005
+        if (stillAnimating) scheduleNextRender = true
+      }
+    }
+
+    for (let i = 0; i < data.length; i++) {
+      let d = data[i]
       let {node, promptNode} = d
       if (d.top <= scrollTop + windowH + UIBottomHMax && d.top + d.ch >= scrollTop - UITopHMax) { // visible range
         node.style.width = `${d.cw}px`
         node.style.height = `${d.ch}px`
         node.style.transform = `translateX(${d.left}px) translateY(${d.top}px) scale(${d.scale})` // safari now anti-aliases for hover, but then zoom in janks on big displays...
         let img = node.children[0]
-        if (i === active) {
+        if (active != null && (i === active || i === active - 1 || i === active + 1)) {
           node.style.cursor = 'zoom-out'
           promptNode.style.overflowY = 'scroll'
           promptNode.style.height = `${promptHBig}px`
@@ -441,14 +619,10 @@ function scheduleRender() {
         }
         if (node.parentNode == null) document.body.appendChild(node) // if previously absent, add
       } else if (node.parentNode != null) document.body.removeChild(node) // if previously present, remove
-
-      if (i === data.length - 1 || i % cols === cols - 1) { // last item of row
-        rowTop += rowHMax
-        rowHMax = 0
-      }
     }
 
-    dummyPlaceholder.style.height = `${rowTop}px`
+    // dummyPlaceholder.style.height = `${rowsHMax[rowsHMax.length - 1]}px`
+    dummyPlaceholder.style.height = `${10000}px`
     document.body.style.cursor = active === null ? 'auto' : 'zoom-out'
 
     // === prepare for next frame
