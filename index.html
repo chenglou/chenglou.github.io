@@ -377,6 +377,7 @@ function scheduleRender() {
     }
 
     let currentTop = boxesGapV
+    let scrollAmount = null
     for (let i = 0; i < data.length; i += cols) {
       let rowHMax = 0
       for (let j = 0; j < cols && i + j < data.length; j++) rowHMax = Math.max(rowHMax, imgsWH[i + j].imgH)
@@ -398,7 +399,7 @@ function scheduleRender() {
           scale = 1
           bigH = boxH
           if (needsScroll && (top - boxesGapV - 20 < scrollTop || top + boxH > scrollTop + windowH)) { // TODO: adjust
-            window.scrollTo({top: top - boxesGapV - 20, behavior: 'smooth'})
+            scrollAmount = top - boxesGapV - 20
           }
         } else {
           boxW = imgsWH[idx].imgW
@@ -466,6 +467,7 @@ function scheduleRender() {
 
     dummyPlaceholder.style.height = `${currentTop}px`
     document.body.style.cursor = active === null ? 'auto' : 'zoom-out'
+    if (scrollAmount != null) window.scrollTo({top: scrollAmount, behavior: 'smooth'}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting
 
     // === prepare for next frame
     scheduled = false
