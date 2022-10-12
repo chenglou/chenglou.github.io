@@ -306,7 +306,7 @@ window.addEventListener('click', (e) => {
     range.selectNodeContents(e.target)
     selection.removeAllRanges()
     selection.addRange(range)
-  } else if (tagName === 'DIV' || tagName === 'IMG') {
+  } else if ((tagName === 'DIV' && e.target.className === 'box') || tagName === 'IMG') {
     let node = tagName === 'DIV' ? e.target : e.target.parentNode
     for (let i = 0; i < data.length; i++) {
       if (data[i].node === node) {
@@ -449,6 +449,7 @@ function scheduleRender() {
     }
 
     dummyPlaceholder.style.height = `${rowTop}px`
+    document.body.style.cursor = active === null ? 'auto' : 'zoom-out'
 
     // === prepare for next frame
     scheduled = false
