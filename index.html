@@ -357,6 +357,7 @@ function scheduleRender() {
     const UITopHMax = 100, UIBottomHMax = 150 // random conservative numbers
     const scrollTop = window.scrollY
 
+    const speed = 5
     const {cols, boxWMax} = colsBoxWMaxF(windowW)
     let scheduleNextRender = false
     let rowTop = boxesGapV
@@ -388,7 +389,7 @@ function scheduleRender() {
         h = w / ar + promptH + promptGapBottom
         top = rowTop + (boxHMax - h) / 2 // center vertically
         left = boxesGapH + (boxWMax + boxesGapH) * (i % cols) + (boxWMax - w) / 2 // center horizontally
-        let {pageX, pageY} = inputs.pointerXY
+        const {pageX, pageY} = inputs.pointerXY
         if (left <= pageX && pageX <= left + w && top <= pageY && pageY <= top + h) { // hovering
           left += (pageX - (left + w / 2)) / 40
           top += (pageY - (top + h / 2)) / 40
@@ -399,12 +400,11 @@ function scheduleRender() {
         rowHMax = Math.max(rowHMax, boxHMax)
       }
 
-      let speed = 5
-      let dW = (w - d.cw) / speed
-      let dH = (h - d.ch) / speed
-      let dTop = (top - d.top) / speed
-      let dLeft = (left - d.left) / speed
-      let dScale = (scale - d.scale) / speed
+      const dW = (w - d.cw) / speed
+      const dH = (h - d.ch) / speed
+      const dTop = (top - d.top) / speed
+      const dLeft = (left - d.left) / speed
+      const dScale = (scale - d.scale) / speed
 
       d.cw += dW
       d.ch += dH
@@ -412,7 +412,7 @@ function scheduleRender() {
       d.left += dLeft
       d.scale += dScale
 
-      let stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005
+      const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005
       if (stillAnimating) scheduleNextRender = true
 
       let {node, promptNode} = d
