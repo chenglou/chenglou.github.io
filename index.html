@@ -26,6 +26,7 @@
         0 4px 28px 0 rgba(0, 0, 0, 0.4);
       background-size: 100%; /* low-res image added as background-image in JS later */
       background-repeat: no-repeat;
+      transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1), height 0.4s cubic-bezier(0.25, 1, 0.5, 1), transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
     }
     .box img {
       display: block; /* prevent inline-block from adding whitespaces... */
@@ -416,20 +417,20 @@ function scheduleRender() {
           }
         }
 
-        const dW = (boxW - d.cw) / speed
-        const dH = (boxH - d.ch) / speed
-        const dTop = (top - d.top) / speed
-        const dLeft = (left - d.left) / speed
-        const dScale = (scale - d.scale) / speed
+        // const dW = (boxW - d.cw) / speed
+        // const dH = (boxH - d.ch) / speed
+        // const dTop = (top - d.top) / speed
+        // const dLeft = (left - d.left) / speed
+        // const dScale = (scale - d.scale) / speed
 
-        d.cw += dW
-        d.ch += dH
-        d.top += dTop
-        d.left += dLeft
-        d.scale += dScale
+        d.cw = boxW
+        d.ch = boxH
+        d.top = top
+        d.left = left
+        d.scale = scale
 
-        const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005
-        if (stillAnimating) scheduleNextRender = true
+        // const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005
+        // if (stillAnimating) scheduleNextRender = true
       }
       currentTop += rowHMax + boxesGapV
       if (active != null && Math.floor(i / cols) === Math.floor(active / cols)) currentTop += bigH + boxesGapV
@@ -438,7 +439,7 @@ function scheduleRender() {
     for (let i = 0; i < data.length; i++) {
       let d = data[i]
       let {node, promptNode} = d
-      if (d.top <= scrollTop + windowH + UIBottomHMax && d.top + d.ch >= scrollTop - UITopHMax) { // visible range
+      if (d.top <= scrollTop + windowH + UIBottomHMax && d.top + d.ch >= scrollTop - UITopHMax || true) { // visible range
         node.style.width = `${d.cw}px`
         node.style.height = `${d.ch}px`
         node.style.transform = `translateX(${d.left}px) translateY(${d.top}px) scale(${d.scale})` // safari now anti-aliases for hover, but then zoom in janks on big displays...
