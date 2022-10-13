@@ -260,6 +260,7 @@ let data; {
 }
 
 // === state
+let justDismissedActive = null
 let active = null
 let zIndex = 1
 let needsScroll = false
@@ -272,6 +273,7 @@ window.addEventListener('scroll', () => scheduleRender())
 window.addEventListener('keydown', (e) => {
   // TODO: cleanup, zIndex increase
   if (e.code === 'Escape') {
+    if (active != null) justDismissedActive = active
     active = null
     scheduleRender()
   } else if (e.code === 'ArrowLeft') {
@@ -313,6 +315,7 @@ window.addEventListener('click', (e) => {
     for (let i = 0; i < data.length; i++) {
       if (data[i].node === node) {
         if (active === i) {
+          justDismissedActive = active
           active = null
         } else {
           active = i
@@ -323,6 +326,7 @@ window.addEventListener('click', (e) => {
       }
     }
   } else {
+    if (active != null) justDismissedActive = active
     active = null
   }
   scheduleRender()
@@ -433,8 +437,14 @@ function scheduleRender() {
         const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005
         if (stillAnimating) scheduleNextRender = true
       }
+
+      const rowCurrent = Math.floor(i / cols)
+      if (justDismissedActive != null && rowCurrent === Math.floor(justDismissedActive / cols)) {
+        // after dismissing an active img, scroll back to where it was. Btw, by definition justDismissedActive will never be when there's an active img
+        scrollAmount = currentTop - boxesGapV - 20
+      }
       currentTop += rowHMax + boxesGapV
-      if (active != null && Math.floor(i / cols) === Math.floor(active / cols)) currentTop += bigH + boxesGapV
+      if (active != null && rowCurrent === Math.floor(active / cols)) currentTop += bigH + boxesGapV
     }
 
     for (let i = 0; i < data.length; i++) {
@@ -474,6 +484,7 @@ function scheduleRender() {
     // === prepare for next frame
     scheduled = false
     needsScroll = false
+    justDismissedActive = null
     if (scheduleNextRender) scheduleRender()
   })
 }
