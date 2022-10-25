@@ -57,6 +57,7 @@
 <body>
 
 <script>
+'use strict'
 const promptH = 47 /* magic number. Doesn't show the 3rd line nor cuts the 2nd line on safari, mobile safari and chrome */
 const promptHBig = 64
 const promptGapBottom = 8
@@ -76,6 +77,10 @@ let data; {
   const {cols, boxWMax} = colsBoxWMaxF(windowW)
   const imgHmax = boxWMax + 100 // TODO: adjust this better
   data = [
+    {id: 'adae74c4-65c5-4245-87e1-c0fbc81c2c27', w: 1024, h: 1792, prompt: `liquid gold melting over white bird skull mask, cyberpunk rococo`},
+    {id: 'f0485122-e83e-492c-aa63-42a28015e45d', w: 1664, h: 2432, prompt: `futuristic soldier with bird skull mask, rococo`},
+    {id: '8a8f7373-d0b2-4ea4-a3ff-a93e312d1aaf', w: 1664, h: 2432, prompt: `skull knight, rococo`},
+    {id: '9589827f-4904-4dd8-a5a4-4fcc7a9c93f1', w: 2304, h: 1536, prompt: `grim rococo skulls`},
     {id: '6663e462-eba5-4a62-b914-5dc62d8be269', w: 2048, h: 2048, prompt: `tiny comfy vertical house in the valley of sunshine and flowers`},
     {id: '20fb2780-14bc-44af-8fee-bce4da244f9e', w: 2304, h: 1536, prompt: `rainy fall, happy tree frog on a leaf, close up high-resolution macrophotography`},
     {id: 'acc8432d-fc61-4346-8aee-961d4a51aa6d', w: 2048, h: 2048, prompt: `delicious chocolate cake keyboard`},
