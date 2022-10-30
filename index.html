@@ -290,12 +290,12 @@ function stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness) {
   d.brightness = mix(d.brightness, brightness, speed)
 
   return (
-    Math.abs(boxW - d.cw) > 0.005 ||
-    Math.abs(boxH - d.ch) > 0.005 ||
-    Math.abs(top - d.top) > 0.005 ||
-    Math.abs(left - d.left) > 0.005 ||
-    Math.abs(scale - d.scale) > 0.005 ||
-    Math.abs(brightness - d.brightness) > 0.005
+    Math.abs(boxW - d.cw) > 0.01 ||
+    Math.abs(boxH - d.ch) > 0.01 ||
+    Math.abs(top - d.top) > 0.01 ||
+    Math.abs(left - d.left) > 0.01 ||
+    Math.abs(scale - d.scale) > 0.01 ||
+    Math.abs(brightness - d.brightness) > 0.01
   )
 }
 
