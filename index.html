@@ -581,7 +581,7 @@ function scheduleRender() {
         node.style.width = `${d.cw}px`
         node.style.height = `${d.ch}px`
         node.style.transform = `translateX(${d.left}px) translateY(${d.top}px) scale(${d.scale})` // safari now anti-aliases for hover, but then zoom in janks on big displays...
-        node.style.filter = `brightness(${d.brightness * 100}%)`
+        // node.style.filter = `brightness(${d.brightness * 100}%)` // safari super slow with this
         let img = node.children[0]
         if (i === active) {
           node.style.cursor = 'zoom-out'
