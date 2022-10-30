@@ -62,6 +62,9 @@
 function clamp(min, v, max) {
   return v > max ? max : v < min ? min : v
 }
+function mix(a, b, pct) {
+  return a * (1 - pct) + b * pct
+}
 
 const promptH = 47 /* magic number. Doesn't show the 3rd line nor cuts the 2nd line on safari, mobile safari and chrome */
 const promptHBig = 64
@@ -282,6 +285,7 @@ let data; {
 let justDismissedActive = null
 let active = null
 let scrollTopWhenFirstActive = null
+let lastRenderTime = null
 let zIndex = 1
 let inputs = {
   pointerXY: {pageX: 0, pageY: 0}, // btw, on page load, there's no way to render a first cursor state =(
@@ -383,7 +387,6 @@ function scheduleRender() {
     // don't forget top & bottom safari UI chrome sizes when vertically occluding, since they're transluscent so we can't over-occlude by ignoring them
     const UITopHMax = 100, UIBottomHMax = 150 // random conservative numbers
 
-    const speed = 5
     const {cols, boxWMax} = colsBoxWMaxF(windowW)
     const clickStripW = 100
     const boxWMaxBig = windowW - boxesGapWBig * 2 - clickStripW * 2
@@ -405,7 +408,7 @@ function scheduleRender() {
 
     let scrollAmount = null
     let currentTop
-
+    const speed = 1 - 0.9875**Math.floor(now - lastRenderTime)
     if (active != null) {
       currentTop = null // disable scrolling
       let centerImageLeft, centerImageW
@@ -424,21 +427,20 @@ function scheduleRender() {
         const scale = 1
         const brightness = 1
 
-        const dW = (boxW - d.cw) / speed
-        const dH = (boxH - d.ch) / speed
-        const dTop = (top - d.top) / speed
-        const dLeft = (left - d.left) / speed
-        const dScale = (scale - d.scale) / speed
-        const dBrightness = (brightness - d.brightness) / speed
+        d.cw = mix(d.cw, boxW, speed)
+        d.ch = mix(d.ch, boxH, speed)
+        d.top = mix(d.top, top, speed)
+        d.left = mix(d.left, left, speed)
+        d.scale = mix(d.scale, scale, speed)
+        d.brightness = mix(d.brightness, brightness, speed)
 
-        d.cw += dW
-        d.ch += dH
-        d.top += dTop
-        d.left += dLeft
-        d.scale += dScale
-        d.brightness += dBrightness
-
-        const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005 || Math.abs(dBrightness) > 0.005
+        const stillAnimating =
+          Math.abs(boxW - d.cw) > 0.005 ||
+          Math.abs(boxH - d.ch) > 0.005 ||
+          Math.abs(top - d.top) > 0.005 ||
+          Math.abs(left - d.left) > 0.005 ||
+          Math.abs(scale - d.scale) > 0.005 ||
+          Math.abs(brightness - d.brightness) > 0.005
         if (stillAnimating) scheduleNextRender = true
       }
       // left images
@@ -459,21 +461,20 @@ function scheduleRender() {
         const scale = 1
         const brightness = 0.2
 
-        const dW = (boxW - d.cw) / speed
-        const dH = (boxH - d.ch) / speed
-        const dTop = (top - d.top) / speed
-        const dLeft = (left - d.left) / speed
-        const dScale = (scale - d.scale) / speed
-        const dBrightness = (brightness - d.brightness) / speed
+        d.cw = mix(d.cw, boxW, speed)
+        d.ch = mix(d.ch, boxH, speed)
+        d.top = mix(d.top, top, speed)
+        d.left = mix(d.left, left, speed)
+        d.scale = mix(d.scale, scale, speed)
+        d.brightness = mix(d.brightness, brightness, speed)
 
-        d.cw += dW
-        d.ch += dH
-        d.top += dTop
-        d.left += dLeft
-        d.scale += dScale
-        d.brightness += dBrightness
-
-        const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005 || Math.abs(dBrightness) > 0.005
+        const stillAnimating =
+          Math.abs(boxW - d.cw) > 0.005 ||
+          Math.abs(boxH - d.ch) > 0.005 ||
+          Math.abs(top - d.top) > 0.005 ||
+          Math.abs(left - d.left) > 0.005 ||
+          Math.abs(scale - d.scale) > 0.005 ||
+          Math.abs(brightness - d.brightness) > 0.005
         if (stillAnimating) scheduleNextRender = true
       }
       // right images
@@ -493,21 +494,20 @@ function scheduleRender() {
         const scale = 1
         const brightness = 0.2
 
-        const dW = (boxW - d.cw) / speed
-        const dH = (boxH - d.ch) / speed
-        const dTop = (top - d.top) / speed
-        const dLeft = (left - d.left) / speed
-        const dScale = (scale - d.scale) / speed
-        const dBrightness = (brightness - d.brightness) / speed
+        d.cw = mix(d.cw, boxW, speed)
+        d.ch = mix(d.ch, boxH, speed)
+        d.top = mix(d.top, top, speed)
+        d.left = mix(d.left, left, speed)
+        d.scale = mix(d.scale, scale, speed)
+        d.brightness = mix(d.brightness, brightness, speed)
 
-        d.cw += dW
-        d.ch += dH
-        d.top += dTop
-        d.left += dLeft
-        d.scale += dScale
-        d.brightness += dBrightness
-
-        const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005 || Math.abs(dBrightness) > 0.005
+        const stillAnimating =
+          Math.abs(boxW - d.cw) > 0.005 ||
+          Math.abs(boxH - d.ch) > 0.005 ||
+          Math.abs(top - d.top) > 0.005 ||
+          Math.abs(left - d.left) > 0.005 ||
+          Math.abs(scale - d.scale) > 0.005 ||
+          Math.abs(brightness - d.brightness) > 0.005
         if (stillAnimating) scheduleNextRender = true
       }
 
@@ -537,21 +537,20 @@ function scheduleRender() {
           }
           const brightness = 1
 
-          const dW = (boxW - d.cw) / speed
-          const dH = (boxH - d.ch) / speed
-          const dTop = (top - d.top) / speed
-          const dLeft = (left - d.left) / speed
-          const dScale = (scale - d.scale) / speed
-          const dBrightness = (brightness - d.brightness) / speed
+          d.cw = mix(d.cw, boxW, speed)
+          d.ch = mix(d.ch, boxH, speed)
+          d.top = mix(d.top, top, speed)
+          d.left = mix(d.left, left, speed)
+          d.scale = mix(d.scale, scale, speed)
+          d.brightness = mix(d.brightness, brightness, speed)
 
-          d.cw += dW
-          d.ch += dH
-          d.top += dTop
-          d.left += dLeft
-          d.scale += dScale
-          d.brightness += dBrightness
-
-          const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005 || Math.abs(dBrightness) > 0.005
+          const stillAnimating =
+            Math.abs(boxW - d.cw) > 0.005 ||
+            Math.abs(boxH - d.ch) > 0.005 ||
+            Math.abs(top - d.top) > 0.005 ||
+            Math.abs(left - d.left) > 0.005 ||
+            Math.abs(scale - d.scale) > 0.005 ||
+            Math.abs(brightness - d.brightness) > 0.005
           if (stillAnimating) scheduleNextRender = true
 
           if (justDismissedActive === idx && (top <= scrollTop || top + boxH >= scrollTop + windowH)) {
@@ -613,10 +612,12 @@ function scheduleRender() {
     // === prepare for next frame
     scheduled = false
     justDismissedActive = null
+    lastRenderTime = now
     if (scheduleNextRender) scheduleRender()
   })
 }
 
+lastRenderTime = performance.now()
 scheduleRender()
 </script>
 
