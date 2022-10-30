@@ -408,6 +408,7 @@ function scheduleRender() {
 
     let scrollAmount = null
     let currentTop
+    if (lastRenderTime == null) lastRenderTime = now
     const speed = 1 - 0.9875**Math.floor(now - lastRenderTime)
     if (active != null) {
       currentTop = null // disable scrolling
@@ -576,7 +577,7 @@ function scheduleRender() {
         node.style.width = `${d.cw}px`
         node.style.height = `${d.ch}px`
         node.style.transform = `translateX(${d.left}px) translateY(${d.top}px) scale(${d.scale})` // safari now anti-aliases for hover, but then zoom in janks on big displays...
-        // node.style.filter = `brightness(${d.brightness * 100}%)` // safari super slow with this
+        // node.style.filter = `brightness(${d.brightness * 100}%)` // TODO: safari super slow with this
         let img = node.children[0]
         if (i === active) {
           node.style.cursor = 'zoom-out'
@@ -612,12 +613,15 @@ function scheduleRender() {
     // === prepare for next frame
     scheduled = false
     justDismissedActive = null
-    lastRenderTime = now
-    if (scheduleNextRender) scheduleRender()
+    if (scheduleNextRender) {
+      lastRenderTime = now
+      scheduleRender()
+    } else {
+      lastRenderTime = null
+    }
   })
 }
 
-lastRenderTime = performance.now()
 scheduleRender()
 </script>
 
