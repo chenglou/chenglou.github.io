@@ -410,7 +410,7 @@ function scheduleRender() {
     let currentTop
 
     if (active != null) {
-      currentTop = 0 // disable scrolling
+      currentTop = null // disable scrolling
       let centerImageLeft, centerImageW
       { // center image
         let d = data[active]
@@ -593,7 +593,12 @@ function scheduleRender() {
       } else if (node.parentNode != null) document.body.removeChild(node) // if previously present, remove
     }
 
-    dummyPlaceholder.style.height = `${currentTop}px`
+    if (currentTop == null) {
+      document.body.style.overflowY = 'hidden'
+    } else {
+      document.body.style.overflowY = 'auto'
+      dummyPlaceholder.style.height = `${currentTop}px`
+    }
     document.body.style.cursor = active === null ? 'auto' : 'zoom-out'
     if (scrollAmount != null) window.scrollTo({top: scrollAmount, behavior: 'smooth'}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting
 
