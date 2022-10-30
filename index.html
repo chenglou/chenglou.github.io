@@ -279,7 +279,7 @@ let data; {
 
 // === state
 let justDismissedActive = null
-let active = 2
+let active = null
 let scrollTopWhenFirstActive = null
 let zIndex = 1
 let needsScroll = false
@@ -407,9 +407,10 @@ function scheduleRender() {
     }
 
     let scrollAmount = null
-    let currentTop = boxesGapH
+    let currentTop
 
     if (active != null) {
+      currentTop = 0 // disable scrolling
       let centerImageLeft, centerImageW
       { // center image
         let d = data[active]
@@ -421,7 +422,7 @@ function scheduleRender() {
         centerImageW = imgW
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
-        const top = scrollTopWhenFirstActive + (windowH - imgH) / 2
+        const top = scrollTopWhenFirstActive + (windowH - boxH) / 2
         const left = centerImageLeft
         const scale = 1
 
@@ -452,7 +453,7 @@ function scheduleRender() {
         const imgH = imgW / ar
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
-        const top = scrollTopWhenFirstActive + (windowH - imgH) / 2
+        const top = scrollTopWhenFirstActive + (windowH - boxH) / 2
         currentLeft -= boxW
         const left = currentLeft
         currentLeft -= boxesGapWBig
@@ -485,7 +486,7 @@ function scheduleRender() {
         const imgH = imgW / ar
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
-        const top = scrollTopWhenFirstActive + (windowH - imgH) / 2
+        const top = scrollTopWhenFirstActive + (windowH - boxH) / 2
         const left = currentLeft
         currentLeft += boxW + boxesGapWBig
         const scale = 1
@@ -507,6 +508,7 @@ function scheduleRender() {
       }
 
     } else {
+      currentTop = boxesGapH
       for (let i = 0; i < data.length; i += cols) {
         let rowHMax = 0
         for (let j = 0; j < cols && i + j < data.length; j++) rowHMax = Math.max(rowHMax, imgsWH[i + j].imgH)
@@ -571,7 +573,7 @@ function scheduleRender() {
         let img = node.children[0]
         if (i === active) {
           node.style.cursor = 'zoom-out'
-          promptNode.style.overflowY = 'scroll'
+          promptNode.style.overflowY = 'auto'
           promptNode.style.height = `${promptHBig}px`
           promptNode.style.top = `${d.ch - promptHBig - promptGapBottom}px`
           promptNode.style.lineClamp = promptNode.style.webkitLineClamp = 999
@@ -591,8 +593,7 @@ function scheduleRender() {
       } else if (node.parentNode != null) document.body.removeChild(node) // if previously present, remove
     }
 
-    // dummyPlaceholder.style.height = `${currentTop}px`
-    dummyPlaceholder.style.height = `${10000}px`
+    dummyPlaceholder.style.height = `${currentTop}px`
     document.body.style.cursor = active === null ? 'auto' : 'zoom-out'
     if (scrollAmount != null) window.scrollTo({top: scrollAmount, behavior: 'smooth'}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting
 
