@@ -373,7 +373,7 @@ function scheduleRender() {
   if (scheduled) return;
   scheduled = true
 
-  requestAnimationFrame(function render(now) {
+  raf(function render(now) {
     // batched DOM reads
     // excludes scroll bar & invariant under safari pinch zoom
     const windowW = document.documentElement.clientWidth
@@ -618,6 +618,9 @@ function scheduleRender() {
 }
 
 scheduleRender()
+function raf(f) {
+  setTimeout(() => f(performance.now()), Math.random() * 200 + 100)
+}
 </script>
 
 </body>
