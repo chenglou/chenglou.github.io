@@ -545,21 +545,14 @@ function scheduleRender() {
 
           const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005
           if (stillAnimating) scheduleNextRender = true
+
+          if (justDismissedActive === idx && (top >= scrollTop + windowH || top + boxH <= scrollTop)) {
+            // after dismissing an active img, scroll back to where it was. Btw, by definition justDismissedActive will never be when there's an active img
+            scrollAmount = currentTop - boxesGapH - 20
+          }
         }
 
-        const rowCurrent = Math.floor(i / cols)
-        if (
-          justDismissedActive != null &&
-          top <= scrollTop + windowH + UIBottomHMax &&
-          top + boxH >= scrollTop - UITopHMax
-        ) {
-          // after dismissing an active img, scroll back to where it was. Btw, by definition justDismissedActive will never be when there's an active img
-        console.log('hi')
-          scrollAmount = currentTop - boxesGapH - 20
-          smoothScroll = false
-        }
         currentTop += rowHMax + boxesGapH
-        if (active != null && rowCurrent === Math.floor(active / cols)) currentTop += bigH + boxesGapH
       }
 
     }
@@ -586,7 +579,7 @@ function scheduleRender() {
           // lift to GPU. Smoother animation or else Safari janks hard. Can't put on every box; layers saturation -> degradation
           img.style.transform = 'translateZ(0px)'
           let src = `https://mj-gallery.com/${d.id}/grid_0.webp`
-          // if (img.src !== src) img.src = src // load the full res image
+          if (img.src !== src) img.src = src // load the full res image
         } else {
           node.style.cursor = 'zoom-in'
           promptNode.style.overflowY = 'hidden'
