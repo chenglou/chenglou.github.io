@@ -538,8 +538,9 @@ function scheduleRender() {
       ) { // visible range
         node.style.width = `${d.cw}px`
         node.style.height = `${d.ch}px`
-        node.style.transform = `translateX(${d.left}px) translateY(${d.top}px) scale(${d.scale})` // safari now anti-aliases for hover, but then zoom in janks on big displays...
-        // node.style.filter = `brightness(${d.brightness * 100}%)` // TODO: safari super slow with this
+        node.style.transform = `translateX(${d.left}px) translateY(${d.top}px) scale(${d.scale}) translateZ(0)` // safari now anti-aliases for hover, but then zoom in janks on big displays...
+        node.style.filter = `brightness(${d.brightness * 100}%)` // TODO: safari super slow with this
+        // node.style.filter = `blur(${10 - d.brightness * 10}px)` // TODO: safari super slow with this
         let img = node.children[0]
         if (i === active) {
           node.style.cursor = 'zoom-out'
@@ -548,7 +549,7 @@ function scheduleRender() {
           promptNode.style.top = `${d.ch - promptHBig - promptGapBottom}px`
           promptNode.style.lineClamp = promptNode.style.webkitLineClamp = 999
           // lift to GPU. Smoother animation or else Safari janks hard. Can't put on every box; layers saturation -> degradation
-          img.style.transform = 'translateZ(0px)'
+          // img.style.transform = 'translateZ(0px)'
           let src = `https://mj-gallery.com/${d.id}/grid_0.webp`
           if (!stillAnimating && img.src !== src) img.src = src // load the full res image
         } else {
