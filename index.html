@@ -407,7 +407,6 @@ function scheduleRender() {
     }
 
     let scrollAmount = null
-    let smoothScroll = true
     let currentTop = boxesGapH
 
     if (active != null) {
@@ -546,7 +545,7 @@ function scheduleRender() {
           const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005
           if (stillAnimating) scheduleNextRender = true
 
-          if (justDismissedActive === idx && (top >= scrollTop + windowH || top + boxH <= scrollTop)) {
+          if (justDismissedActive === idx && (top <= scrollTop || top + boxH >= scrollTop + windowH)) {
             // after dismissing an active img, scroll back to where it was. Btw, by definition justDismissedActive will never be when there's an active img
             scrollAmount = currentTop - boxesGapH - 20
           }
@@ -595,7 +594,7 @@ function scheduleRender() {
     // dummyPlaceholder.style.height = `${currentTop}px`
     dummyPlaceholder.style.height = `${10000}px`
     document.body.style.cursor = active === null ? 'auto' : 'zoom-out'
-    if (scrollAmount != null) window.scrollTo({top: scrollAmount, behavior: smoothScroll ? 'smooth' : 'instant'}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting
+    if (scrollAmount != null) window.scrollTo({top: scrollAmount, behavior: 'smooth'}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting
 
     // === prepare for next frame
     scheduled = false
