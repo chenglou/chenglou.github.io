@@ -69,7 +69,7 @@ const promptGapBottom = 8
 const boxesGapW = 24 // fixed gap looks nicer
 const boxesGapH = 24
 const boxesGapWBig = 52
-const boxesGapHBig = 32
+const boxesGapHBig = 28
 
 function colsBoxWMaxF(containerW) {
   const boxWMin = 220 // Make sure that on mobile, this min width is big enough not to show 2 images per row. Also, this won't be respected if view's tiny
@@ -279,7 +279,6 @@ let data; {
 
 // === state
 let justDismissedActive = null
-let activeFirst = 2
 let active = 2
 let scrollTopWhenFirstActive = null
 let zIndex = 1
@@ -294,11 +293,11 @@ window.addEventListener('keydown', (e) => {
   // TODO: cleanup, zIndex increase
   if (e.code === 'Escape') {
     if (active != null) justDismissedActive = active
-    active = activeFirst = null
+    active = null
     scheduleRender()
   } else if (e.code === 'ArrowLeft') {
     if (active == null) {
-      active = activeFirst = 0
+      active = 0
       scrollTopWhenFirstActive = window.scrollY
       data[active].node.style.zIndex = zIndex++
       needsScroll = true
@@ -310,7 +309,7 @@ window.addEventListener('keydown', (e) => {
     }
   } else if (e.code === 'ArrowRight') {
     if (active == null) {
-      active = activeFirst = 0
+      active = 0
       scrollTopWhenFirstActive = window.scrollY
       data[active].node.style.zIndex = zIndex++
       needsScroll = true
@@ -336,9 +335,9 @@ window.addEventListener('click', (e) => {
       if (data[i].node === node) {
         if (active === i) {
           justDismissedActive = active
-          active = activeFirst = null
+          active = null
         } else if (active === null) {
-          active = activeFirst = i
+          active = i
           scrollTopWhenFirstActive = window.scrollY
           node.style.zIndex = zIndex++
           needsScroll = true
@@ -351,7 +350,7 @@ window.addEventListener('click', (e) => {
     }
   } else {
     if (active != null) justDismissedActive = active
-    active = activeFirst = null
+    active = null
   }
   scheduleRender()
 })
@@ -411,14 +410,16 @@ function scheduleRender() {
     let smoothScroll = true
     let currentTop = boxesGapH
 
-    if (activeFirst != null) {
+    if (active != null) {
+      let centerImageLeft, centerImageW
       { // center image
         let d = data[active]
         const ar = d.w / d.h
         let imgW = clamp(Math.min(d.w, boxWMaxBig), imgHFullScreen * ar, boxWMaxBig)
         imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig)
-        const centerImageLeft = (windowW - imgW) / 2 // center horizontally
+        centerImageLeft = (windowW - imgW) / 2 // center horizontally
         const imgH = imgW / ar
+        centerImageW = imgW
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
         const top = scrollTopWhenFirstActive + (windowH - imgH) / 2
@@ -440,8 +441,9 @@ function scheduleRender() {
         const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005
         if (stillAnimating) scheduleNextRender = true
       }
-      // left image
+      // left images
       let currentLeft = clickStripW
+      // currentLeft = centerImageLeft - boxesGapWBig
       for (let i = active - 1; i >= 0; i--) {
         let d = data[i]
         const ar = d.w / d.h
@@ -472,8 +474,9 @@ function scheduleRender() {
         const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005
         if (stillAnimating) scheduleNextRender = true
       }
-      // right image
+      // right images
       currentLeft = windowW - clickStripW
+      // currentLeft = centerImageLeft + centerImageW + boxesGapWBig
       for (let i = active + 1; i < data.length; i++) {
         let d = data[i]
         const ar = d.w / d.h
@@ -515,32 +518,17 @@ function scheduleRender() {
           const idx = i + j
           let d = data[idx]
           let left, top, scale, boxH, boxW
-          if (idx === active) {
-            const ar = d.w / d.h
-            const imgW = Math.min(d.w, boxWMaxBig, imgHFullScreen * ar)
-            const imgH = imgW / ar
-            boxW = imgW
-            boxH = imgH + promptHBig + promptGapBottom
-            top = currentTop + rowHMax + boxesGapH
-            left = boxesGapW + (boxWMaxBig - imgW) / 2 // center horizontally
-            scale = 1
-            bigH = boxH
-            if (needsScroll && (top - boxesGapH - 20 < scrollTop || top + boxH > scrollTop + windowH)) { // TODO: adjust
-              scrollAmount = top - boxesGapH - 20
-            }
+          boxW = imgsWH[idx].imgW
+          boxH = imgsWH[idx].imgH + promptH + promptGapBottom
+          top = currentTop + (rowHMax - boxH) / 2
+          left = boxesGapW + (boxWMax + boxesGapW) * j + (boxWMax - boxW) / 2 // center horizontally
+          const {pageX, pageY} = inputs.pointerXY
+          if (left <= pageX && pageX <= left + boxW && top <= pageY && pageY <= top + boxH) { // hovering
+            left += (pageX - (left + boxW / 2)) / 40
+            top += (pageY - (top + boxH / 2)) / 40
+            scale = 1.02
           } else {
-            boxW = imgsWH[idx].imgW
-            boxH = imgsWH[idx].imgH + promptH + promptGapBottom
-            top = currentTop + (rowHMax - boxH) / 2
-            left = boxesGapW + (boxWMax + boxesGapW) * j + (boxWMax - boxW) / 2 // center horizontally
-            const {pageX, pageY} = inputs.pointerXY
-            if (left <= pageX && pageX <= left + boxW && top <= pageY && pageY <= top + boxH) { // hovering
-              left += (pageX - (left + boxW / 2)) / 40
-              top += (pageY - (top + boxH / 2)) / 40
-              scale = 1.02
-            } else {
-              scale = 1
-            }
+            scale = 1
           }
 
           const dW = (boxW - d.cw) / speed
