@@ -69,6 +69,7 @@ const promptGapBottom = 8
 const boxesGapW = 24 // fixed gap looks nicer
 const boxesGapH = 24
 const boxesGapWBig = 52
+const boxesGapHBig = 32
 
 function colsBoxWMaxF(containerW) {
   const boxWMin = 220 // Make sure that on mobile, this min width is big enough not to show 2 images per row. Also, this won't be respected if view's tiny
@@ -280,6 +281,7 @@ let data; {
 let justDismissedActive = null
 let activeFirst = 2
 let active = 2
+let scrollTopWhenFirstActive = null
 let zIndex = 1
 let needsScroll = false
 let inputs = {
@@ -297,6 +299,7 @@ window.addEventListener('keydown', (e) => {
   } else if (e.code === 'ArrowLeft') {
     if (active == null) {
       active = activeFirst = 0
+      scrollTopWhenFirstActive = window.scrollY
       data[active].node.style.zIndex = zIndex++
       needsScroll = true
       scheduleRender()
@@ -308,6 +311,7 @@ window.addEventListener('keydown', (e) => {
   } else if (e.code === 'ArrowRight') {
     if (active == null) {
       active = activeFirst = 0
+      scrollTopWhenFirstActive = window.scrollY
       data[active].node.style.zIndex = zIndex++
       needsScroll = true
       scheduleRender()
@@ -335,6 +339,7 @@ window.addEventListener('click', (e) => {
           active = activeFirst = null
         } else if (active === null) {
           active = activeFirst = i
+          scrollTopWhenFirstActive = window.scrollY
           node.style.zIndex = zIndex++
           needsScroll = true
         } else {
@@ -386,7 +391,7 @@ function scheduleRender() {
     const {cols, boxWMax} = colsBoxWMaxF(windowW)
     const clickStripW = 100
     const boxWMaxBig = windowW - boxesGapWBig * 2 - clickStripW * 2
-    const imgHFullScreen = windowH - boxesGapH * 2 - promptHBig - promptGapBottom // TODO: adjust
+    const imgHFullScreen = windowH - boxesGapHBig * 2 - promptHBig - promptGapBottom // TODO: adjust
     let scheduleNextRender = false
 
     let imgsWH = []
@@ -407,16 +412,6 @@ function scheduleRender() {
     let currentTop = boxesGapH
 
     if (activeFirst != null) {
-      const activeFirstRow =  Math.floor(activeFirst / cols)
-      let rowHeightMax = 0
-      for (let i = 0; i <= activeFirst; i++) {
-        if (Math.floor(i / cols) < activeFirstRow) rowHeightMax = Math.max(rowHeightMax, imgsWH[i].imgH)
-        if (i % cols === cols - 1) {
-          currentTop += rowHeightMax
-          rowHeightMax = 0
-        }
-      }
-
       { // center image
         let d = data[active]
         const ar = d.w / d.h
@@ -426,7 +421,7 @@ function scheduleRender() {
         const imgH = imgW / ar
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
-        const top = currentTop
+        const top = scrollTopWhenFirstActive + (windowH - imgH) / 2
         const left = centerImageLeft
         const scale = 1
 
@@ -451,12 +446,12 @@ function scheduleRender() {
         let d = data[i]
         const ar = d.w / d.h
         let imgW = clamp(Math.min(d.w, boxWMaxBig), imgHFullScreen * ar, boxWMaxBig)
-        imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig)
+        imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig) * 0.7
         // imgW=10
         const imgH = imgW / ar
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
-        const top = currentTop
+        const top = scrollTopWhenFirstActive + (windowH - imgH) / 2
         currentLeft -= boxW
         const left = currentLeft
         currentLeft -= boxesGapWBig
@@ -483,12 +478,12 @@ function scheduleRender() {
         let d = data[i]
         const ar = d.w / d.h
         let imgW = clamp(Math.min(d.w, boxWMaxBig), imgHFullScreen * ar, boxWMaxBig)
-        imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig)
+        imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig) * 0.7
         // imgW=10
         const imgH = imgW / ar
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
-        const top = currentTop
+        const top = scrollTopWhenFirstActive + (windowH - imgH) / 2
         const left = currentLeft
         currentLeft += boxW + boxesGapWBig
         const scale = 1
