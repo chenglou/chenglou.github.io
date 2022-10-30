@@ -262,7 +262,7 @@ let data; {
         node.className = 'box'
         node.style.backgroundImage = `url(https://mj-gallery.com/${d.id}/grid_0_384_N.webp)` // 128 is the next smallest. Too small for retina screens
     let img = document.createElement('img')
-        img.decoding = 'async'
+        // img.decoding = 'async'
     let promptNode = document.createElement('figcaption')
         promptNode.className = 'prompt'
         promptNode.textContent = d.prompt
@@ -588,7 +588,7 @@ function scheduleRender() {
           // lift to GPU. Smoother animation or else Safari janks hard. Can't put on every box; layers saturation -> degradation
           img.style.transform = 'translateZ(0px)'
           let src = `https://mj-gallery.com/${d.id}/grid_0.webp`
-          if (img.src !== src) img.src = src // load the full res image
+          if (!scheduleNextRender && img.src !== src) img.src = src // load the full res image
         } else {
           node.style.cursor = 'zoom-in'
           promptNode.style.overflowY = 'hidden'
