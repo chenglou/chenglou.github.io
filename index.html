@@ -283,7 +283,6 @@ let justDismissedActive = null
 let active = null
 let scrollTopWhenFirstActive = null
 let zIndex = 1
-let needsScroll = false
 let inputs = {
   pointerXY: {pageX: 0, pageY: 0}, // btw, on page load, there's no way to render a first cursor state =(
 }
@@ -301,7 +300,6 @@ window.addEventListener('keydown', (e) => {
       active = 0
       scrollTopWhenFirstActive = window.scrollY
       data[active].node.style.zIndex = zIndex++
-      needsScroll = true
       scheduleRender()
     } else if (active > 0) {
       active--
@@ -313,7 +311,6 @@ window.addEventListener('keydown', (e) => {
       active = 0
       scrollTopWhenFirstActive = window.scrollY
       data[active].node.style.zIndex = zIndex++
-      needsScroll = true
       scheduleRender()
     } else if (active < data.length - 1) {
       active++
@@ -341,7 +338,6 @@ window.addEventListener('click', (e) => {
           active = i
           scrollTopWhenFirstActive = window.scrollY
           node.style.zIndex = zIndex++
-          needsScroll = true
         } else {
           active = i
           node.style.zIndex = zIndex++
@@ -616,7 +612,6 @@ function scheduleRender() {
 
     // === prepare for next frame
     scheduled = false
-    needsScroll = false
     justDismissedActive = null
     if (scheduleNextRender) scheduleRender()
   })
