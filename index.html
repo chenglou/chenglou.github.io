@@ -271,6 +271,7 @@ let data; {
       top: windowH + Math.floor(i / cols) * imgHmax,
       left: Math.floor(i / cols) * -windowW - windowW,
       scale: 1,
+      brightness: 20, // 2000%, for a splashy entrance
       node,
       promptNode,
     }
@@ -425,20 +426,23 @@ function scheduleRender() {
         const top = scrollTopWhenFirstActive + (windowH - boxH) / 2
         const left = centerImageLeft
         const scale = 1
+        const brightness = 1
 
         const dW = (boxW - d.cw) / speed
         const dH = (boxH - d.ch) / speed
         const dTop = (top - d.top) / speed
         const dLeft = (left - d.left) / speed
         const dScale = (scale - d.scale) / speed
+        const dBrightness = (brightness - d.brightness) / speed
 
         d.cw += dW
         d.ch += dH
         d.top += dTop
         d.left += dLeft
         d.scale += dScale
+        d.brightness += dBrightness
 
-        const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005
+        const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005 || Math.abs(dBrightness) > 0.005
         if (stillAnimating) scheduleNextRender = true
       }
       // left images
@@ -449,7 +453,6 @@ function scheduleRender() {
         const ar = d.w / d.h
         let imgW = clamp(Math.min(d.w, boxWMaxBig), imgHFullScreen * ar, boxWMaxBig)
         imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig) * 0.7
-        // imgW=10
         const imgH = imgW / ar
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
@@ -458,20 +461,23 @@ function scheduleRender() {
         const left = currentLeft
         currentLeft -= boxesGapWBig
         const scale = 1
+        const brightness = 0.2
 
         const dW = (boxW - d.cw) / speed
         const dH = (boxH - d.ch) / speed
         const dTop = (top - d.top) / speed
         const dLeft = (left - d.left) / speed
         const dScale = (scale - d.scale) / speed
+        const dBrightness = (brightness - d.brightness) / speed
 
         d.cw += dW
         d.ch += dH
         d.top += dTop
         d.left += dLeft
         d.scale += dScale
+        d.brightness += dBrightness
 
-        const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005
+        const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005 || Math.abs(dBrightness) > 0.005
         if (stillAnimating) scheduleNextRender = true
       }
       // right images
@@ -482,7 +488,6 @@ function scheduleRender() {
         const ar = d.w / d.h
         let imgW = clamp(Math.min(d.w, boxWMaxBig), imgHFullScreen * ar, boxWMaxBig)
         imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig) * 0.7
-        // imgW=10
         const imgH = imgW / ar
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
@@ -490,20 +495,23 @@ function scheduleRender() {
         const left = currentLeft
         currentLeft += boxW + boxesGapWBig
         const scale = 1
+        const brightness = 0.2
 
         const dW = (boxW - d.cw) / speed
         const dH = (boxH - d.ch) / speed
         const dTop = (top - d.top) / speed
         const dLeft = (left - d.left) / speed
         const dScale = (scale - d.scale) / speed
+        const dBrightness = (brightness - d.brightness) / speed
 
         d.cw += dW
         d.ch += dH
         d.top += dTop
         d.left += dLeft
         d.scale += dScale
+        d.brightness += dBrightness
 
-        const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005
+        const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005 || Math.abs(dBrightness) > 0.005
         if (stillAnimating) scheduleNextRender = true
       }
 
@@ -518,9 +526,9 @@ function scheduleRender() {
         for (let j = 0; j < cols && i + j < data.length; j++) {
           const idx = i + j
           let d = data[idx]
-          let left, top, scale, boxH, boxW
-          boxW = imgsWH[idx].imgW
-          boxH = imgsWH[idx].imgH + promptH + promptGapBottom
+          let left, top, scale
+          const boxW = imgsWH[idx].imgW
+          const boxH = imgsWH[idx].imgH + promptH + promptGapBottom
           top = currentTop + (rowHMax - boxH) / 2
           left = boxesGapW + (boxWMax + boxesGapW) * j + (boxWMax - boxW) / 2 // center horizontally
           const {pageX, pageY} = inputs.pointerXY
@@ -531,20 +539,23 @@ function scheduleRender() {
           } else {
             scale = 1
           }
+          const brightness = 1
 
           const dW = (boxW - d.cw) / speed
           const dH = (boxH - d.ch) / speed
           const dTop = (top - d.top) / speed
           const dLeft = (left - d.left) / speed
           const dScale = (scale - d.scale) / speed
+          const dBrightness = (brightness - d.brightness) / speed
 
           d.cw += dW
           d.ch += dH
           d.top += dTop
           d.left += dLeft
           d.scale += dScale
+          d.brightness += dBrightness
 
-          const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005
+          const stillAnimating = Math.abs(dW) > 0.005 || Math.abs(dH) > 0.005 || Math.abs(dTop) > 0.005 || Math.abs(dLeft) > 0.005 || Math.abs(dScale) > 0.005 || Math.abs(dBrightness) > 0.005
           if (stillAnimating) scheduleNextRender = true
 
           if (justDismissedActive === idx && (top <= scrollTop || top + boxH >= scrollTop + windowH)) {
@@ -570,6 +581,7 @@ function scheduleRender() {
         node.style.width = `${d.cw}px`
         node.style.height = `${d.ch}px`
         node.style.transform = `translateX(${d.left}px) translateY(${d.top}px) scale(${d.scale})` // safari now anti-aliases for hover, but then zoom in janks on big displays...
+        node.style.filter = `brightness(${d.brightness * 100}%)`
         let img = node.children[0]
         if (i === active) {
           node.style.cursor = 'zoom-out'
