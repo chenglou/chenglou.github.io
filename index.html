@@ -281,6 +281,24 @@ let data; {
   })
 }
 
+function stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness) {
+  d.cw = mix(d.cw, boxW, speed)
+  d.ch = mix(d.ch, boxH, speed)
+  d.top = mix(d.top, top, speed)
+  d.left = mix(d.left, left, speed)
+  d.scale = mix(d.scale, scale, speed)
+  d.brightness = mix(d.brightness, brightness, speed)
+
+  return (
+    Math.abs(boxW - d.cw) > 0.005 ||
+    Math.abs(boxH - d.ch) > 0.005 ||
+    Math.abs(top - d.top) > 0.005 ||
+    Math.abs(left - d.left) > 0.005 ||
+    Math.abs(scale - d.scale) > 0.005 ||
+    Math.abs(brightness - d.brightness) > 0.005
+  )
+}
+
 // === state
 let justDismissedActive = null
 let active = null
@@ -391,7 +409,7 @@ function scheduleRender() {
     const clickStripW = 100
     const boxWMaxBig = windowW - boxesGapWBig * 2 - clickStripW * 2
     const imgHFullScreen = windowH - boxesGapHBig * 2 - promptHBig - promptGapBottom // TODO: adjust
-    let scheduleNextRender = false
+    if (lastRenderTime == null) lastRenderTime = now
 
     let imgsWH = []
     for (let i = 0; i < data.length; i++) {
@@ -408,8 +426,8 @@ function scheduleRender() {
 
     let scrollAmount = null
     let currentTop
-    if (lastRenderTime == null) lastRenderTime = now
     const speed = 1 - 0.9875**Math.floor(now - lastRenderTime)
+    let stillAnimating = false
     if (active != null) {
       currentTop = null // disable scrolling
       let centerImageLeft, centerImageW
@@ -428,21 +446,7 @@ function scheduleRender() {
         const scale = 1
         const brightness = 1
 
-        d.cw = mix(d.cw, boxW, speed)
-        d.ch = mix(d.ch, boxH, speed)
-        d.top = mix(d.top, top, speed)
-        d.left = mix(d.left, left, speed)
-        d.scale = mix(d.scale, scale, speed)
-        d.brightness = mix(d.brightness, brightness, speed)
-
-        const stillAnimating =
-          Math.abs(boxW - d.cw) > 0.005 ||
-          Math.abs(boxH - d.ch) > 0.005 ||
-          Math.abs(top - d.top) > 0.005 ||
-          Math.abs(left - d.left) > 0.005 ||
-          Math.abs(scale - d.scale) > 0.005 ||
-          Math.abs(brightness - d.brightness) > 0.005
-        if (stillAnimating) scheduleNextRender = true
+        stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness)
       }
       // left images
       let currentLeft = clickStripW
@@ -462,21 +466,7 @@ function scheduleRender() {
         const scale = 1
         const brightness = 0.2
 
-        d.cw = mix(d.cw, boxW, speed)
-        d.ch = mix(d.ch, boxH, speed)
-        d.top = mix(d.top, top, speed)
-        d.left = mix(d.left, left, speed)
-        d.scale = mix(d.scale, scale, speed)
-        d.brightness = mix(d.brightness, brightness, speed)
-
-        const stillAnimating =
-          Math.abs(boxW - d.cw) > 0.005 ||
-          Math.abs(boxH - d.ch) > 0.005 ||
-          Math.abs(top - d.top) > 0.005 ||
-          Math.abs(left - d.left) > 0.005 ||
-          Math.abs(scale - d.scale) > 0.005 ||
-          Math.abs(brightness - d.brightness) > 0.005
-        if (stillAnimating) scheduleNextRender = true
+        stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness)
       }
       // right images
       currentLeft = windowW - clickStripW
@@ -495,21 +485,7 @@ function scheduleRender() {
         const scale = 1
         const brightness = 0.2
 
-        d.cw = mix(d.cw, boxW, speed)
-        d.ch = mix(d.ch, boxH, speed)
-        d.top = mix(d.top, top, speed)
-        d.left = mix(d.left, left, speed)
-        d.scale = mix(d.scale, scale, speed)
-        d.brightness = mix(d.brightness, brightness, speed)
-
-        const stillAnimating =
-          Math.abs(boxW - d.cw) > 0.005 ||
-          Math.abs(boxH - d.ch) > 0.005 ||
-          Math.abs(top - d.top) > 0.005 ||
-          Math.abs(left - d.left) > 0.005 ||
-          Math.abs(scale - d.scale) > 0.005 ||
-          Math.abs(brightness - d.brightness) > 0.005
-        if (stillAnimating) scheduleNextRender = true
+        stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness)
       }
 
     } else {
@@ -538,21 +514,7 @@ function scheduleRender() {
           }
           const brightness = 1
 
-          d.cw = mix(d.cw, boxW, speed)
-          d.ch = mix(d.ch, boxH, speed)
-          d.top = mix(d.top, top, speed)
-          d.left = mix(d.left, left, speed)
-          d.scale = mix(d.scale, scale, speed)
-          d.brightness = mix(d.brightness, brightness, speed)
-
-          const stillAnimating =
-            Math.abs(boxW - d.cw) > 0.005 ||
-            Math.abs(boxH - d.ch) > 0.005 ||
-            Math.abs(top - d.top) > 0.005 ||
-            Math.abs(left - d.left) > 0.005 ||
-            Math.abs(scale - d.scale) > 0.005 ||
-            Math.abs(brightness - d.brightness) > 0.005
-          if (stillAnimating) scheduleNextRender = true
+          stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness)
 
           if (justDismissedActive === idx && (top <= scrollTop || top + boxH >= scrollTop + windowH)) {
             // after dismissing an active img, scroll back to where it was. Btw, by definition justDismissedActive will never be when there's an active img
@@ -588,7 +550,7 @@ function scheduleRender() {
           // lift to GPU. Smoother animation or else Safari janks hard. Can't put on every box; layers saturation -> degradation
           img.style.transform = 'translateZ(0px)'
           let src = `https://mj-gallery.com/${d.id}/grid_0.webp`
-          if (!scheduleNextRender && img.src !== src) img.src = src // load the full res image
+          if (!stillAnimating && img.src !== src) img.src = src // load the full res image
         } else {
           node.style.cursor = 'zoom-in'
           promptNode.style.overflowY = 'hidden'
@@ -613,7 +575,7 @@ function scheduleRender() {
     // === prepare for next frame
     scheduled = false
     justDismissedActive = null
-    if (scheduleNextRender) {
+    if (stillAnimating) {
       lastRenderTime = now
       scheduleRender()
     } else {
