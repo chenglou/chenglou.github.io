@@ -426,7 +426,10 @@ function scheduleRender() {
 
     let scrollAmount = null
     let currentTop
-    const speed = 1 - 0.9875**Math.floor(now - lastRenderTime)
+    // every 16ms we go 20% of the distance from current position to end position
+    const speed = 1 - (1 - 0.2 / 16)**Math.floor(now - lastRenderTime)
+    // d = destination, x = current pos, C = speed constant above, n = number of times to loop
+    // x_next = (d - x)(1 - C^n)+x = d(1 - C^n)-x(1 - C^n)+x = d(1 - C^n)-x(1 - C^n - 1) = d(1 - C^n)+xC^n = mix(d, x, C^n) = mix(x, d, 1 - C^n)
     let stillAnimating = false
     if (active != null) {
       currentTop = null // disable scrolling
