@@ -303,7 +303,6 @@ function stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness) {
 // === state
 let justDismissedActive = null
 let active = null
-let lastActive = null
 let scrollTopWhenFirstActive = 0
 let lastRenderTime = null
 let zIndex = 1
@@ -317,14 +316,13 @@ window.addEventListener('scroll', () => scheduleRender())
 window.addEventListener('keydown', (e) => {
   // TODO: cleanup, zIndex increase
   if (e.code === 'Escape') {
-    if (active != null) justDismissedActive = lastActive = active
+    if (active != null) justDismissedActive = active
     active = null
     scheduleRender()
   } else if (e.code === 'ArrowLeft') {
     if (active == null) {
       active = 0
       scrollTopWhenFirstActive = window.scrollY
-      // window.scrollY = 0
       data[active].node.style.zIndex = zIndex++
       scheduleRender()
     } else if (active > 0) {
@@ -336,7 +334,6 @@ window.addEventListener('keydown', (e) => {
     if (active == null) {
       active = 0
       scrollTopWhenFirstActive = window.scrollY
-      // window.scrollY = 0
       data[active].node.style.zIndex = zIndex++
       scheduleRender()
     } else if (active < data.length - 1) {
@@ -362,12 +359,11 @@ window.addEventListener('click', (e) => {
     for (let i = 0; i < data.length; i++) {
       if (data[i].node === node) {
         if (active === i) {
-          justDismissedActive = lastActive = active
+          justDismissedActive = active
           active = null
         } else if (active === null) {
           active = i
           scrollTopWhenFirstActive = window.scrollY
-          // window.scrollY = 0
           node.style.zIndex = zIndex++
         } else {
           active = i
@@ -377,7 +373,7 @@ window.addEventListener('click', (e) => {
       }
     }
   } else {
-    if (active != null) justDismissedActive = lastActive = active
+    if (active != null) justDismissedActive = active
     active = null
   }
   scheduleRender()
