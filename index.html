@@ -397,6 +397,7 @@ window.addEventListener('mousedown', (e) => {
 })
 
 let dummyPlaceholder = document.createElement('div')
+dummyPlaceholder.style.width = '1px' // make it tiny just in case it affects compositing... sigh
 document.body.append(dummyPlaceholder)
 
 let scheduled = false
@@ -582,19 +583,23 @@ function scheduleRender() {
 
     }
 
+    const scrollTopIfLocalCoords = active == null ? scrollTop : 0 // TODO: explain, and use /*c*/-foo format from HN demo again
     for (let i = 0; i < data.length; i++) {
       let d = data[i]
       let {node, promptNode} = d
       if (
-        d.top <= scrollTop + windowH + UIBottomHMax &&
-        d.top + d.ch >= scrollTop - UITopHMax &&
+        d.top <= scrollTopIfLocalCoords + windowH + UIBottomHMax &&
+        d.top + d.ch >= scrollTopIfLocalCoords - UITopHMax &&
         d.left <= windowW &&
-        d.left + d.cw >= 0 || true
-      ) { // visible range, disregard shadow (TODO: for now) & scaling
+        d.left + d.cw >= 0
+      ) { // visible range, disregard shadow (TODO: for now) & scaling. UIBottomHMax and UITopHMax are safe bigger values anyway
         node.style.width = `${d.cw}px`
         node.style.height = `${d.ch}px`
         node.style.transform = `translate3d(${d.left}px,${d.top}px,0) scale(${d.scale})` // safari now anti-aliases for hover, but then zoom in janks on big displays...
-        node.style.filter = `brightness(${d.brightness * 100}%) blur(${Math.max(0, 6 - d.brightness * 6)}px)` // TODO: this slows things down
+        // node.style.filter = `brightness(${d.brightness * 100}%) blur(${Math.max(0, 6 - d.brightness * 6)}px)`
+        // we can only afford brightness, not blur. Too expensive for Safari & Chrome, in different ways. E.g. when zomming out of a photo, keep scrolling; Chrome stops render on Studio Display
+        node.style.filter = `brightness(${d.brightness * 100}%)`
+        node.style.position = active == null ? 'absolute' : 'fixed'
         let img = node.children[0]
         if (i === active) {
           node.style.cursor = 'zoom-out'
@@ -602,35 +607,29 @@ function scheduleRender() {
           promptNode.style.height = `${promptHBig}px`
           promptNode.style.top = `${d.ch - promptHBig - promptGapBottom}px`
           promptNode.style.lineClamp = promptNode.style.webkitLineClamp = 999
+          img.style.display = 'block'
           let src = `https://mj-gallery.com/${d.id}/grid_0.webp`
-          if (!stillAnimating && img.src !== src) img.src = src // load the full res image
+          if (img.src !== src) img.src = src // load the full res image
         } else {
           node.style.cursor = 'zoom-in'
           promptNode.style.overflowY = 'hidden'
           promptNode.style.height = `${promptH}px`
           promptNode.style.top = `${d.ch - promptH - promptGapBottom}px`
           promptNode.style.lineClamp = promptNode.style.webkitLineClamp = 2
-          img.style.transform = 'none'
-          let src = `https://mj-gallery.com/${d.id}/grid_0_384_N.webp` // shrink back to smaller version for perf
-          if (img.src !== src) img.src = src
-        }
-        if (active == null) {
-          node.style.position = 'absolute'
-        } else {
-          node.style.position = 'fixed'
+          img.style.display = 'none' // hide big image for perf
         }
         if (node.parentNode == null) document.body.appendChild(node) // if previously absent, add
       } else if (node.parentNode != null) document.body.removeChild(node) // if previously present, remove
     }
 
     if (currentTop == null) {
-      // document.body.style.overflowY = 'hidden'
+      document.body.style.overflowY = 'hidden'
     } else {
       document.body.style.overflowY = 'auto'
       dummyPlaceholder.style.height = `${currentTop}px`
     }
     document.body.style.cursor = active === null ? 'auto' : 'zoom-out'
-    if (scrollAmount != null) window.scrollTo({top: scrollAmount, /*behavior: 'smooth'*/}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting
+    if (scrollAmount != null) window.scrollTo({top: scrollAmount}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting
 
     // === prepare for next frame
     scheduled = false
