@@ -400,6 +400,12 @@ let dummyPlaceholder = document.createElement('div')
 dummyPlaceholder.style.width = '1px' // make it tiny just in case it affects compositing... sigh
 document.body.append(dummyPlaceholder)
 
+let fakeDebugTime = 0
+function raf(f) {
+  return requestAnimationFrame(f)
+  fakeDebugTime += 1000 / 60
+  f(fakeDebugTime)
+}
 let scheduled = false
 function scheduleRender() {
   if (scheduled) return;
@@ -418,6 +424,7 @@ function scheduleRender() {
     const UITopHMax = 100, UIBottomHMax = 150 // random conservative numbers
 
     const {cols, boxWMax} = colsBoxWMaxF(windowW)
+    const {pageX, pageY} = inputs.pointerXY
     const clickStripW = 100
     const boxWMaxBig = windowW - boxesGapWBig * 2 - clickStripW * 2
     const imgHFullScreen = windowH - boxesGapHBig * 2 - promptHBig - promptGapBottom // TODO: adjust
@@ -459,7 +466,6 @@ function scheduleRender() {
         centerImageW = imgW
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
-        // const top = (windowH - boxH) / 2 - scrollTopWhenFirstActive
         const top = (windowH - boxH) / 2
         const left = centerImageLeft
         const scale = 1
@@ -478,13 +484,20 @@ function scheduleRender() {
         const imgH = imgW / ar
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
-        // const top = (windowH - boxH) / 2 - scrollTopWhenFirstActive
-        const top = (windowH - boxH) / 2
+        let top = (windowH - boxH) / 2
         currentLeft -= boxW
-        const left = currentLeft
+        let left = currentLeft
         currentLeft -= boxesGapWBig
-        const scale = 1
-        const brightness = 0.2
+        let scale, brightness
+        if (left <= pageX && pageX <= left + boxW && top <= pageY && pageY <= top + boxH) { // hovering
+          left += (pageX - (left + boxW / 2)) / 40
+          top += (pageY - (top + boxH / 2)) / 40
+          scale = 1.02
+          brightness = 0.5
+        } else {
+          scale = 1
+          brightness = 0.2
+        }
 
         stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness)
       }
@@ -499,12 +512,19 @@ function scheduleRender() {
         const imgH = imgW / ar
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
-        // const top = (windowH - boxH) / 2 - scrollTopWhenFirstActive
-        const top = (windowH - boxH) / 2
-        const left = currentLeft
+        let top = (windowH - boxH) / 2
+        let left = currentLeft
         currentLeft += boxW + boxesGapWBig
-        const scale = 1
-        const brightness = 0.2
+        let scale, brightness
+        if (left <= pageX && pageX <= left + boxW && top <= pageY && pageY <= top + boxH) { // hovering
+          left += (pageX - (left + boxW / 2)) / 40
+          top += (pageY - (top + boxH / 2)) / 40
+          scale = 1.02
+          brightness = 0.5
+        } else {
+          scale = 1
+          brightness = 0.2
+        }
 
         stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness)
       }
@@ -559,7 +579,6 @@ function scheduleRender() {
           const boxH = imgsWH[idx].imgH + promptH + promptGapBottom
           top = currentTop + (rowHMax - boxH) / 2 // TODO: these both include promptH + promptGapBottom. Simplify?
           left = boxesGapW + (boxWMax + boxesGapW) * j + (boxWMax - boxW) / 2 // center horizontally
-          const {pageX, pageY} = inputs.pointerXY
           if (left <= pageX && pageX <= left + boxW && top <= pageY && pageY <= top + boxH) { // hovering
             left += (pageX - (left + boxW / 2)) / 40
             top += (pageY - (top + boxH / 2)) / 40
@@ -570,12 +589,6 @@ function scheduleRender() {
           const brightness = 1
 
           stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness)
-
-          // if (justDismissedActive === idx && (true || top <= scrollTop || top + boxH >= scrollTop + windowH)) {
-          //   // scrollAmount = currentTop - boxesGapH - 20
-          //   scrollAmount = scrollAmountExtra
-          //   scrollTop = scrollAmount // TODO: comment on the timing
-          // }
         }
 
         currentTop += rowHMax + boxesGapH
@@ -587,12 +600,13 @@ function scheduleRender() {
     for (let i = 0; i < data.length; i++) {
       let d = data[i]
       let {node, promptNode} = d
+      // only draw what's visible on screen
       if (
         d.top <= scrollTopIfLocalCoords + windowH + UIBottomHMax &&
         d.top + d.ch >= scrollTopIfLocalCoords - UITopHMax &&
         d.left <= windowW &&
         d.left + d.cw >= 0
-      ) { // visible range, disregard shadow (TODO: for now) & scaling. UIBottomHMax and UITopHMax are safe bigger values anyway
+      ) { // disregard shadow & scaling for now; UIBottomHMax and UITopHMax are safe bigger values anyway
         node.style.width = `${d.cw}px`
         node.style.height = `${d.ch}px`
         node.style.transform = `translate3d(${d.left}px,${d.top}px,0) scale(${d.scale})` // safari now anti-aliases for hover, but then zoom in janks on big displays...
@@ -611,14 +625,14 @@ function scheduleRender() {
           promptNode.style.lineClamp = promptNode.style.webkitLineClamp = 999
           img.style.display = 'block'
           let src = `https://mj-gallery.com/${d.id}/grid_0.webp`
-          if (img.src !== src) img.src = src // load the full res image
+          if (!stillAnimating && img.src !== src) img.src = src // load the full res image
         } else {
           node.style.cursor = 'zoom-in'
           promptNode.style.overflowY = 'hidden'
           promptNode.style.height = `${promptH}px`
           promptNode.style.top = `${d.ch - promptH - promptGapBottom}px`
           promptNode.style.lineClamp = promptNode.style.webkitLineClamp = 2
-          img.style.display = 'none' // hide big image for perf
+          img.style.display = 'none' // hide full res image for perf (yes it makes a difference, even on M1, with Studio Display)
         }
         if (node.parentNode == null) document.body.appendChild(node) // if previously absent, add
       } else if (node.parentNode != null) document.body.removeChild(node) // if previously present, remove
@@ -646,16 +660,7 @@ function scheduleRender() {
   })
 }
 
-let time = 0
 scheduleRender()
-function raf(f) {
-  return requestAnimationFrame(f)
-  // if (advance) {
-  //   advance = false
-  time +=16
-    f(time)
-  // }
-}
 
 </script>
 
