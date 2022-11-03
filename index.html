@@ -10,6 +10,7 @@
     html {
       background-image: url(data:image/png;base64,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);
       background-color: rgb(1 5 19);
+      /*background: repeating-linear-gradient(#e66465 0%, #9198e5 5%);*/
     }
     body {
       overflow-x: hidden;
@@ -302,25 +303,28 @@ function stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness) {
 // === state
 let justDismissedActive = null
 let active = null
-let scrollTopWhenFirstActive = null
+let lastActive = null
+let scrollTopWhenFirstActive = 0
 let lastRenderTime = null
 let zIndex = 1
 let inputs = {
   pointerXY: {pageX: 0, pageY: 0}, // btw, on page load, there's no way to render a first cursor state =(
 }
+let advance = false
 
 window.addEventListener('resize', () => scheduleRender())
 window.addEventListener('scroll', () => scheduleRender())
 window.addEventListener('keydown', (e) => {
   // TODO: cleanup, zIndex increase
   if (e.code === 'Escape') {
-    if (active != null) justDismissedActive = active
+    if (active != null) justDismissedActive = lastActive = active
     active = null
     scheduleRender()
   } else if (e.code === 'ArrowLeft') {
     if (active == null) {
       active = 0
       scrollTopWhenFirstActive = window.scrollY
+      // window.scrollY = 0
       data[active].node.style.zIndex = zIndex++
       scheduleRender()
     } else if (active > 0) {
@@ -332,6 +336,7 @@ window.addEventListener('keydown', (e) => {
     if (active == null) {
       active = 0
       scrollTopWhenFirstActive = window.scrollY
+      // window.scrollY = 0
       data[active].node.style.zIndex = zIndex++
       scheduleRender()
     } else if (active < data.length - 1) {
@@ -339,6 +344,9 @@ window.addEventListener('keydown', (e) => {
       data[active].node.style.zIndex = zIndex++
       scheduleRender()
     }
+  } else if (e.code === 'KeyA') {
+    advance = true
+    scheduleRender()
   }
 })
 window.addEventListener('click', (e) => {
@@ -354,11 +362,12 @@ window.addEventListener('click', (e) => {
     for (let i = 0; i < data.length; i++) {
       if (data[i].node === node) {
         if (active === i) {
-          justDismissedActive = active
+          justDismissedActive = lastActive = active
           active = null
         } else if (active === null) {
           active = i
           scrollTopWhenFirstActive = window.scrollY
+          // window.scrollY = 0
           node.style.zIndex = zIndex++
         } else {
           active = i
@@ -368,7 +377,7 @@ window.addEventListener('click', (e) => {
       }
     }
   } else {
-    if (active != null) justDismissedActive = active
+    if (active != null) justDismissedActive = lastActive = active
     active = null
   }
   scheduleRender()
@@ -394,14 +403,16 @@ let scheduled = false
 function scheduleRender() {
   if (scheduled) return;
   scheduled = true
+  // if (!advance) return
+  // advance = false
 
-  requestAnimationFrame(function render(now) {
+  raf(function render(now) {
     // batched DOM reads
     // excludes scroll bar & invariant under safari pinch zoom
     const windowW = document.documentElement.clientWidth
     // invariant under safari pinch zoom (this way, when zoomed in, we don't occlude away rows outside of the zoomed-in view; if we did, when we zoom out again we wouldn't see those occluded rows until we release our fingers. During safari pinch, no event is triggered so we couldn't have updated the occlusion in real time)
     const windowH = document.documentElement.clientHeight
-    const scrollTop = window.scrollY
+    let scrollTop = window.scrollY
     // don't forget top & bottom safari UI chrome sizes when vertically occluding, since they're transluscent so we can't over-occlude by ignoring them
     const UITopHMax = 100, UIBottomHMax = 150 // random conservative numbers
 
@@ -432,6 +443,9 @@ function scheduleRender() {
     // x_next = (d - x)(1 - C^n)+x = d(1 - C^n)-x(1 - C^n)+x = d(1 - C^n)-x(1 - C^n - 1) = d(1 - C^n)+xC^n = mix(d, x, C^n) = mix(x, d, 1 - C^n)
     let stillAnimating = false
     if (active != null) {
+      for (let i = 0; i < data.length; i++) {
+        data[i].top -= scrollTopWhenFirstActive
+      }
       currentTop = null // disable scrolling
       let centerImageLeft, centerImageW
       { // center image
@@ -444,7 +458,8 @@ function scheduleRender() {
         centerImageW = imgW
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
-        const top = scrollTopWhenFirstActive + (windowH - boxH) / 2
+        // const top = (windowH - boxH) / 2 - scrollTopWhenFirstActive
+        const top = (windowH - boxH) / 2
         const left = centerImageLeft
         const scale = 1
         const brightness = 1
@@ -462,7 +477,8 @@ function scheduleRender() {
         const imgH = imgW / ar
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
-        const top = scrollTopWhenFirstActive + (windowH - boxH) / 2
+        // const top = (windowH - boxH) / 2 - scrollTopWhenFirstActive
+        const top = (windowH - boxH) / 2
         currentLeft -= boxW
         const left = currentLeft
         currentLeft -= boxesGapWBig
@@ -482,7 +498,8 @@ function scheduleRender() {
         const imgH = imgW / ar
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
-        const top = scrollTopWhenFirstActive + (windowH - boxH) / 2
+        // const top = (windowH - boxH) / 2 - scrollTopWhenFirstActive
+        const top = (windowH - boxH) / 2
         const left = currentLeft
         currentLeft += boxW + boxesGapWBig
         const scale = 1
@@ -492,6 +509,40 @@ function scheduleRender() {
       }
 
     } else {
+      let scrollAmountExtra = 0
+      let doScroll = false
+      if (justDismissedActive != null) {
+        let rowHMax = 0
+        for (let i = 0; i <= justDismissedActive; i++) {
+          rowHMax = Math.max(rowHMax, imgsWH[i].imgH + promptH + promptGapBottom)
+
+          if (i === justDismissedActive) {
+            const boxH = imgsWH[i].imgH + promptH + promptGapBottom
+            let dismissedTop = scrollAmountExtra + (rowHMax - boxH) / 2
+            if (dismissedTop <= scrollTop || dismissedTop + boxH >= scrollTop + windowH) {
+              doScroll = true
+            }
+            break
+          }
+
+          if (i % cols === cols - 1) {
+            scrollAmountExtra += rowHMax + boxesGapH
+            rowHMax = 0
+          }
+        }
+
+        scrollAmountExtra -= boxesGapH + 40 // TODO: adjust
+
+        if (doScroll||true) {
+          console.log('dismiss, scroll')
+          for (let i = 0; i < data.length; i++) {
+            data[i].top += scrollAmountExtra
+          }
+          scrollAmount = scrollAmountExtra
+          scrollTop = scrollAmount // TODO: comment on the timing, why scrollTop needs changed
+        }
+      }
+
       currentTop = boxesGapH
       for (let i = 0; i < data.length; i += cols) {
         let rowHMax = 0
@@ -505,7 +556,7 @@ function scheduleRender() {
           let left, top, scale
           const boxW = imgsWH[idx].imgW
           const boxH = imgsWH[idx].imgH + promptH + promptGapBottom
-          top = currentTop + (rowHMax - boxH) / 2
+          top = currentTop + (rowHMax - boxH) / 2 // TODO: these both include promptH + promptGapBottom. Simplify?
           left = boxesGapW + (boxWMax + boxesGapW) * j + (boxWMax - boxW) / 2 // center horizontally
           const {pageX, pageY} = inputs.pointerXY
           if (left <= pageX && pageX <= left + boxW && top <= pageY && pageY <= top + boxH) { // hovering
@@ -519,10 +570,11 @@ function scheduleRender() {
 
           stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness)
 
-          if (justDismissedActive === idx && (top <= scrollTop || top + boxH >= scrollTop + windowH)) {
-            // after dismissing an active img, scroll back to where it was. Btw, by definition justDismissedActive will never be when there's an active img
-            scrollAmount = currentTop - boxesGapH - 20
-          }
+          // if (justDismissedActive === idx && (true || top <= scrollTop || top + boxH >= scrollTop + windowH)) {
+          //   // scrollAmount = currentTop - boxesGapH - 20
+          //   scrollAmount = scrollAmountExtra
+          //   scrollTop = scrollAmount // TODO: comment on the timing
+          // }
         }
 
         currentTop += rowHMax + boxesGapH
@@ -537,8 +589,8 @@ function scheduleRender() {
         d.top <= scrollTop + windowH + UIBottomHMax &&
         d.top + d.ch >= scrollTop - UITopHMax &&
         d.left <= windowW &&
-        d.left + d.cw >= 0
-      ) { // visible range
+        d.left + d.cw >= 0 || true
+      ) { // visible range, disregard shadow (TODO: for now) & scaling
         node.style.width = `${d.cw}px`
         node.style.height = `${d.ch}px`
         node.style.transform = `translate3d(${d.left}px,${d.top}px,0) scale(${d.scale})` // safari now anti-aliases for hover, but then zoom in janks on big displays...
@@ -559,23 +611,31 @@ function scheduleRender() {
           promptNode.style.top = `${d.ch - promptH - promptGapBottom}px`
           promptNode.style.lineClamp = promptNode.style.webkitLineClamp = 2
           img.style.transform = 'none'
+          let src = `https://mj-gallery.com/${d.id}/grid_0_384_N.webp` // shrink back to smaller version for perf
+          if (img.src !== src) img.src = src
+        }
+        if (active == null) {
+          node.style.position = 'absolute'
+        } else {
+          node.style.position = 'fixed'
         }
         if (node.parentNode == null) document.body.appendChild(node) // if previously absent, add
       } else if (node.parentNode != null) document.body.removeChild(node) // if previously present, remove
     }
 
     if (currentTop == null) {
-      document.body.style.overflowY = 'hidden'
+      // document.body.style.overflowY = 'hidden'
     } else {
       document.body.style.overflowY = 'auto'
       dummyPlaceholder.style.height = `${currentTop}px`
     }
     document.body.style.cursor = active === null ? 'auto' : 'zoom-out'
-    if (scrollAmount != null) window.scrollTo({top: scrollAmount, behavior: 'smooth'}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting
+    if (scrollAmount != null) window.scrollTo({top: scrollAmount, /*behavior: 'smooth'*/}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting
 
     // === prepare for next frame
     scheduled = false
     justDismissedActive = null
+    scrollTopWhenFirstActive = 0
     if (stillAnimating) {
       lastRenderTime = now
       scheduleRender()
@@ -585,7 +645,17 @@ function scheduleRender() {
   })
 }
 
+let time = 0
 scheduleRender()
+function raf(f) {
+  return requestAnimationFrame(f)
+  // if (advance) {
+  //   advance = false
+  time +=16
+    f(time)
+  // }
+}
+
 </script>
 
 </body>
