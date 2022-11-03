@@ -261,6 +261,7 @@ let data; {
     // upon zooming into the big image view, swapping out an img src for a higher-resoltion one would cause a flash of blank image in certain cases. Instead, we put the low-res image as a background-image on the container, then the high-res image as a real img on top. Hand-rolled double buffering...
     let node = document.createElement('div')
         node.className = 'box'
+        node.tabIndex = i + 1
         node.style.backgroundImage = `url(https://mj-gallery.com/${d.id}/grid_0_384_N.webp)` // 128 is the next smallest. Too small for retina screens
     let img = document.createElement('img')
         // img.decoding = 'async'
