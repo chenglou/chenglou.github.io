@@ -596,9 +596,11 @@ function scheduleRender() {
         node.style.width = `${d.cw}px`
         node.style.height = `${d.ch}px`
         node.style.transform = `translate3d(${d.left}px,${d.top}px,0) scale(${d.scale})` // safari now anti-aliases for hover, but then zoom in janks on big displays...
-        // node.style.filter = `brightness(${d.brightness * 100}%) blur(${Math.max(0, 6 - d.brightness * 6)}px)`
-        // we can only afford brightness, not blur. Too expensive for Safari & Chrome, in different ways. E.g. when zomming out of a photo, keep scrolling; Chrome stops render on Studio Display
-        node.style.filter = `brightness(${d.brightness * 100}%)`
+        // we can't afford brightness & blur for all pics; too expensive for Safari & Chrome. E.g. when zomming out of a photo, keep scrolling; Chrome stops render on Studio Display
+        node.style.filter = active != null && i === active - 1 || i === active || i === active + 1
+          ? `brightness(${d.brightness * 100}%) blur(${Math.max(0, 6 - d.brightness * 6)}px)` // blur these 3 only
+          : `brightness(${d.brightness * 100}%)` // blur of unrelated pics is too fast during transition from/to zoomed-in view to be seen anyway
+
         node.style.position = active == null ? 'absolute' : 'fixed'
         let img = node.children[0]
         if (i === active) {
