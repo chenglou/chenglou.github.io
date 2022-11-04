@@ -304,7 +304,7 @@ function stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness) {
 // === state
 let justDismissedActive = null
 let active = null
-let lastRenderTime = null
+let lastAnimatedRenderTime = null
 let zIndex = 1
 let inputs = {
   pointerXY: {pageX: 0, pageY: 0}, // btw, on page load, there's no way to render a first cursor state =(
@@ -421,7 +421,7 @@ function scheduleRender() {
     const clickStripW = 100
     const boxWMaxBig = windowW - boxesGapWBig * 2 - clickStripW * 2
     const imgHFullScreen = windowH - boxesGapHBig * 2 - promptHBig - promptGapBottom // TODO: adjust
-    if (lastRenderTime == null) lastRenderTime = now
+    if (lastAnimatedRenderTime == null) lastAnimatedRenderTime = now // TODO: no mutation
 
     let imgsWH = []
     for (let i = 0; i < data.length; i++) {
@@ -439,7 +439,7 @@ function scheduleRender() {
     let scrollAmount = null
     let currentTop
     // every 16ms we go 20% of the distance from current position to end position
-    const speed = 1 - (1 - 0.2 / 16)**Math.floor(now - lastRenderTime)
+    const speed = 1 - (1 - 0.2 / 16)**Math.floor(now - lastAnimatedRenderTime)
     // d = destination, x = current pos, C = speed constant above, n = number of times to loop
     // x_next = (d - x)(1 - C^n)+x = d(1 - C^n)-x(1 - C^n)+x = d(1 - C^n)-x(1 - C^n - 1) = d(1 - C^n)+xC^n = mix(d, x, C^n) = mix(x, d, 1 - C^n)
     let stillAnimating = false
@@ -465,7 +465,6 @@ function scheduleRender() {
       }
       // left images
       let currentLeft = clickStripW
-      // currentLeft = centerImageLeft - boxesGapWBig
       for (let i = active - 1; i >= 0; i--) {
         let d = data[i]
         const ar = d.w / d.h
@@ -493,7 +492,6 @@ function scheduleRender() {
       }
       // right images
       currentLeft = windowW - clickStripW
-      // currentLeft = centerImageLeft + centerImageW + boxesGapWBig
       for (let i = active + 1; i < data.length; i++) {
         let d = data[i]
         const ar = d.w / d.h
@@ -520,9 +518,9 @@ function scheduleRender() {
       }
 
     } else {
-      let scrollAmountExtra = 0
-      let doScroll = false
       if (justDismissedActive != null) {
+        let scrollAmountExtra = 0
+        let doScroll = false
         let rowHMax = 0
         for (let i = 0; i <= justDismissedActive; i++) {
           rowHMax = Math.max(rowHMax, imgsWH[i].imgH + promptH + promptGapBottom)
@@ -545,12 +543,12 @@ function scheduleRender() {
         scrollAmountExtra -= boxesGapH + 40 // TODO: adjust
 
         if (doScroll||true) {
-          console.log('dismiss, scroll')
+          // console.log('dismiss, scroll')
           for (let i = 0; i < data.length; i++) {
             data[i].top += scrollAmountExtra - scrollTop
           }
           scrollAmount = scrollAmountExtra
-          scrollTop = scrollAmount // TODO: comment on the timing, why scrollTop needs changed
+          scrollTop = scrollAmountExtra // TODO: comment on the timing, why scrollTop needs changed
         }
       }
 
@@ -639,10 +637,10 @@ function scheduleRender() {
     scheduled = false
     justDismissedActive = null
     if (stillAnimating) {
-      lastRenderTime = now
+      lastAnimatedRenderTime = now
       scheduleRender()
     } else {
-      lastRenderTime = null
+      lastAnimatedRenderTime = null
     }
   })
 }
