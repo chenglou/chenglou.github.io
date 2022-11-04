@@ -370,8 +370,8 @@ function scheduleRender() {
 
     const {cols, boxWMax} = colsBoxWMaxF(windowW)
     const {pageX, pageY} = inputs.pointerXY
-    const clickStripW = 100
-    const boxWMaxBig = windowW - boxesGapWBig * 2 - clickStripW * 2
+    const linearHitW = 100 // left and right click region in linear mode
+    const boxWMaxBig = windowW - boxesGapWBig * 2 - linearHitW * 2
     const imgHFullScreen = windowH - boxesGapHBig * 2 - promptHBig - promptGapBottom // TODO: adjust
     if (lastAnimatedRenderTime == null) lastAnimatedRenderTime = now // TODO: no mutation
 
@@ -400,6 +400,11 @@ function scheduleRender() {
         range.selectNodeContents(inputs.clickedTarget)
         selection.removeAllRanges()
         selection.addRange(range)
+      } else if (active > 0 && pageX <= linearHitW) {
+        // allow spamming clicks without accidentally clicking on an empty region on left/right side (and dismiss linear mode) during transition
+        newActive = Math.max(active - 1, 0)
+      } else if (active != null && active < data.length - 1 && pageX >= windowW - linearHitW) {
+        newActive = Math.min(active + 1, data.length - 1)
       } else if ((tagName === 'DIV' && inputs.clickedTarget.className === 'box') || tagName === 'IMG') {
         let node = tagName === 'DIV' ? inputs.clickedTarget : inputs.clickedTarget.parentNode
         for (let i = 0; i < data.length; i++) {
@@ -459,7 +464,7 @@ function scheduleRender() {
         stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness)
       }
       // left images
-      let currentLeft = clickStripW
+      let currentLeft = linearHitW
       for (let i = newActive - 1; i >= 0; i--) {
         let d = data[i]
         const ar = d.w / d.h
@@ -486,7 +491,7 @@ function scheduleRender() {
         stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness)
       }
       // right images
-      currentLeft = windowW - clickStripW
+      currentLeft = windowW - linearHitW
       for (let i = newActive + 1; i < data.length; i++) {
         let d = data[i]
         const ar = d.w / d.h
