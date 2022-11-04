@@ -304,7 +304,6 @@ function stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness) {
 // === state
 let justDismissedActive = null
 let active = null
-let scrollTopWhenFirstActive = 0
 let lastRenderTime = null
 let zIndex = 1
 let inputs = {
@@ -323,7 +322,6 @@ window.addEventListener('keydown', (e) => {
   } else if (e.code === 'ArrowLeft') {
     if (active == null) {
       active = 0
-      scrollTopWhenFirstActive = window.scrollY
       data[active].node.style.zIndex = zIndex++
       scheduleRender()
     } else if (active > 0) {
@@ -334,7 +332,6 @@ window.addEventListener('keydown', (e) => {
   } else if (e.code === 'ArrowRight') {
     if (active == null) {
       active = 0
-      scrollTopWhenFirstActive = window.scrollY
       data[active].node.style.zIndex = zIndex++
       scheduleRender()
     } else if (active < data.length - 1) {
@@ -364,7 +361,6 @@ window.addEventListener('click', (e) => {
           active = null
         } else if (active === null) {
           active = i
-          scrollTopWhenFirstActive = window.scrollY
           node.style.zIndex = zIndex++
         } else {
           active = i
@@ -448,9 +444,6 @@ function scheduleRender() {
     // x_next = (d - x)(1 - C^n)+x = d(1 - C^n)-x(1 - C^n)+x = d(1 - C^n)-x(1 - C^n - 1) = d(1 - C^n)+xC^n = mix(d, x, C^n) = mix(x, d, 1 - C^n)
     let stillAnimating = false
     if (active != null) {
-      for (let i = 0; i < data.length; i++) {
-        data[i].top -= scrollTopWhenFirstActive
-      }
       currentTop = null // disable scrolling
       let centerImageLeft, centerImageW
       { // center image
@@ -463,7 +456,7 @@ function scheduleRender() {
         centerImageW = imgW
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
-        const top = (windowH - boxH) / 2
+        const top = scrollTop + (windowH - boxH) / 2
         const left = centerImageLeft
         const scale = 1
         const brightness = 1
@@ -481,7 +474,7 @@ function scheduleRender() {
         const imgH = imgW / ar
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
-        let top = (windowH - boxH) / 2
+        let top = scrollTop + (windowH - boxH) / 2
         currentLeft -= boxW
         let left = currentLeft
         currentLeft -= boxesGapWBig
@@ -509,7 +502,7 @@ function scheduleRender() {
         const imgH = imgW / ar
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
-        let top = (windowH - boxH) / 2
+        let top = scrollTop + (windowH - boxH) / 2
         let left = currentLeft
         currentLeft += boxW + boxesGapWBig
         let scale, brightness
@@ -554,7 +547,7 @@ function scheduleRender() {
         if (doScroll||true) {
           console.log('dismiss, scroll')
           for (let i = 0; i < data.length; i++) {
-            data[i].top += scrollAmountExtra
+            data[i].top += scrollAmountExtra - scrollTop
           }
           scrollAmount = scrollAmountExtra
           scrollTop = scrollAmount // TODO: comment on the timing, why scrollTop needs changed
@@ -593,14 +586,13 @@ function scheduleRender() {
 
     }
 
-    const scrollTopIfLocalCoords = active == null ? scrollTop : 0 // TODO: explain, and use /*c*/-foo format from HN demo again
     for (let i = 0; i < data.length; i++) {
       let d = data[i]
       let {node, promptNode} = d
       // only draw what's visible on screen
       if (
-        d.top <= scrollTopIfLocalCoords + windowH + UIBottomHMax &&
-        d.top + d.ch >= scrollTopIfLocalCoords - UITopHMax &&
+        d.top <= scrollTop + windowH + UIBottomHMax &&
+        d.top + d.ch >= scrollTop - UITopHMax &&
         d.left <= windowW &&
         d.left + d.cw >= 0
       ) { // disregard shadow & scaling for now; UIBottomHMax and UITopHMax are safe bigger values anyway
@@ -612,7 +604,6 @@ function scheduleRender() {
           ? `brightness(${d.brightness * 100}%) blur(${Math.max(0, 6 - d.brightness * 6)}px)` // blur these 3 only
           : `brightness(${d.brightness * 100}%)` // blur of unrelated pics is too fast during transition from/to zoomed-in view to be seen anyway
 
-        node.style.position = active == null ? 'absolute' : 'fixed'
         let img = node.children[0]
         if (i === active) {
           node.style.cursor = 'zoom-out'
@@ -635,19 +626,18 @@ function scheduleRender() {
       } else if (node.parentNode != null) document.body.removeChild(node) // if previously present, remove
     }
 
+    document.body.style.cursor = active === null ? 'auto' : 'zoom-out'
     if (currentTop == null) {
       document.body.style.overflowY = 'hidden'
     } else {
       document.body.style.overflowY = 'auto'
       dummyPlaceholder.style.height = `${currentTop}px`
     }
-    document.body.style.cursor = active === null ? 'auto' : 'zoom-out'
     if (scrollAmount != null) window.scrollTo({top: scrollAmount}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting
 
     // === prepare for next frame
     scheduled = false
     justDismissedActive = null
-    scrollTopWhenFirstActive = 0
     if (stillAnimating) {
       lastRenderTime = now
       scheduleRender()
