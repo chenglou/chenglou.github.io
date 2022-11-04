@@ -276,20 +276,20 @@ let data; {
       top: windowH + Math.floor(i / cols) * imgHmax,
       left: Math.floor(i / cols) * -windowW - windowW,
       scale: 1,
-      brightness: 20, // 2000%, for a splashy entrance
+      fxFactor: 20, // for brightness and blur
       node,
       promptNode,
     }
   })
 }
 
-function stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness) {
+function stepAnimation(d, speed, boxW, boxH, top, left, scale, fxFactor) {
   d.cw = mix(d.cw, boxW, speed)
   d.ch = mix(d.ch, boxH, speed)
   d.top = mix(d.top, top, speed)
   d.left = mix(d.left, left, speed)
   d.scale = mix(d.scale, scale, speed)
-  d.brightness = mix(d.brightness, brightness, speed)
+  d.fxFactor = mix(d.fxFactor, fxFactor, speed)
 
   return (
     Math.abs(boxW - d.cw) > 0.01 ||
@@ -297,7 +297,7 @@ function stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness) {
     Math.abs(top - d.top) > 0.01 ||
     Math.abs(left - d.left) > 0.01 ||
     Math.abs(scale - d.scale) > 0.01 ||
-    Math.abs(brightness - d.brightness) > 0.01
+    Math.abs(fxFactor - d.fxFactor) > 0.01
   )
 }
 
@@ -445,23 +445,20 @@ function scheduleRender() {
     let stillAnimating = false
     if (newActive != null) {
       currentTop = null // disable scrolling
-      let centerImageLeft, centerImageW
       { // center image
         let d = data[newActive]
         const ar = d.w / d.h
         let imgW = clamp(Math.min(d.w, boxWMaxBig), imgHFullScreen * ar, boxWMaxBig)
         imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig)
-        centerImageLeft = (windowW - imgW) / 2 // center horizontally
         const imgH = imgW / ar
-        centerImageW = imgW
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
         const top = scrollTop + (windowH - boxH) / 2
-        const left = centerImageLeft
+        const left = (windowW - imgW) / 2 // center horizontally
         const scale = 1
-        const brightness = 1
+        const fxFactor = 1
 
-        stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness)
+        stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, fxFactor)
       }
       // left images
       let currentLeft = linearHitW
@@ -477,18 +474,18 @@ function scheduleRender() {
         currentLeft -= boxW
         let left = currentLeft
         currentLeft -= boxesGapWBig
-        let scale, brightness
+        let scale, fxFactor
         if (left <= pageX && pageX <= left + boxW && top <= pageY && pageY <= top + boxH) { // hovering
           left += (pageX - (left + boxW / 2)) / 40
           top += (pageY - (top + boxH / 2)) / 40
           scale = 1.02
-          brightness = 0.5
+          fxFactor = 0.5
         } else {
           scale = 1
-          brightness = 0.2
+          fxFactor = 0.2
         }
 
-        stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness)
+        stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, fxFactor)
       }
       // right images
       currentLeft = windowW - linearHitW
@@ -503,18 +500,18 @@ function scheduleRender() {
         let top = scrollTop + (windowH - boxH) / 2
         let left = currentLeft
         currentLeft += boxW + boxesGapWBig
-        let scale, brightness
+        let scale, fxFactor
         if (left <= pageX && pageX <= left + boxW && top <= pageY && pageY <= top + boxH) { // hovering
           left += (pageX - (left + boxW / 2)) / 40
           top += (pageY - (top + boxH / 2)) / 40
           scale = 1.02
-          brightness = 0.5
+          fxFactor = 0.5
         } else {
           scale = 1
-          brightness = 0.2
+          fxFactor = 0.2
         }
 
-        stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness)
+        stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, fxFactor)
       }
 
     } else {
@@ -574,9 +571,9 @@ function scheduleRender() {
           } else {
             scale = 1
           }
-          const brightness = 1
+          const fxFactor = 1
 
-          stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness)
+          stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, fxFactor)
         }
 
         currentTop += rowHMax + boxesGapH
@@ -597,10 +594,10 @@ function scheduleRender() {
         node.style.width = `${d.cw}px`
         node.style.height = `${d.ch}px`
         node.style.transform = `translate3d(${d.left}px,${d.top}px,0) scale(${d.scale})` // safari now anti-aliases for hover, but then zoom in janks on big displays...
-        // we can't afford brightness & blur for all pics; too expensive for Safari & Chrome. E.g. when zomming out of a photo, keep scrolling; Chrome stops render on Studio Display
+        // we can't afford fxFactor & blur for all pics; too expensive for Safari & Chrome. E.g. when zomming out of a photo, keep scrolling; Chrome stops render on Studio Display
         node.style.filter = newActive != null && i === newActive - 1 || i === newActive || i === newActive + 1
-          ? `brightness(${d.brightness * 100}%) blur(${Math.max(0, 6 - d.brightness * 6)}px)` // blur these 3 only
-          : `brightness(${d.brightness * 100}%)` // blur of unrelated pics is too fast during transition from/to zoomed-in view to be seen anyway
+          ? `brightness(${d.fxFactor * 100}%) blur(${Math.max(0, 6 - d.fxFactor * 6)}px)` // blur these 3 only
+          : `brightness(${d.fxFactor * 100}%)` // blur of unrelated pics is too fast during transition from/to zoomed-in view to be seen anyway
 
         let img = node.children[0]
         if (i === newActive) {
