@@ -302,77 +302,29 @@ function stepAnimation(d, speed, boxW, boxH, top, left, scale, brightness) {
 }
 
 // === state
-let justDismissedActive = null
 let active = null
 let lastAnimatedRenderTime = null
 let zIndex = 1
 let inputs = {
   pointerXY: {pageX: 0, pageY: 0}, // btw, on page load, there's no way to render a first cursor state =(
+  key: null,
+  clickedTarget: null,
 }
 let advance = false
 
 window.addEventListener('resize', () => scheduleRender())
 window.addEventListener('scroll', () => scheduleRender())
 window.addEventListener('keydown', (e) => {
-  // TODO: cleanup, zIndex increase
-  if (e.code === 'Escape') {
-    if (active != null) justDismissedActive = active
-    active = null
+  if (e.code === 'Escape' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+    inputs.key = e.code
     scheduleRender()
-  } else if (e.code === 'ArrowLeft') {
-    if (active == null) {
-      active = 0
-      data[active].node.style.zIndex = zIndex++
-      scheduleRender()
-    } else if (active > 0) {
-      active--
-      data[active].node.style.zIndex = zIndex++
-      scheduleRender()
-    }
-  } else if (e.code === 'ArrowRight') {
-    if (active == null) {
-      active = 0
-      data[active].node.style.zIndex = zIndex++
-      scheduleRender()
-    } else if (active < data.length - 1) {
-      active++
-      data[active].node.style.zIndex = zIndex++
-      scheduleRender()
-    }
-  } else if (e.code === 'KeyA') {
+  } else if (e.code === 'KeyA') { // debug
     advance = true
     scheduleRender()
   }
 })
 window.addEventListener('click', (e) => {
-  const tagName = e.target.tagName
-  if (tagName === 'FIGCAPTION') { // select the whole prompt
-    let selection = window.getSelection()
-    let range = document.createRange()
-    range.selectNodeContents(e.target)
-    selection.removeAllRanges()
-    selection.addRange(range)
-  } else if ((tagName === 'DIV' && e.target.className === 'box') || tagName === 'IMG') {
-    let node = tagName === 'DIV' ? e.target : e.target.parentNode
-    for (let i = 0; i < data.length; i++) {
-      if (data[i].node === node) {
-        if (active === i) {
-          justDismissedActive = active
-          active = null
-        } else if (active === null) {
-          active = i
-          node.style.zIndex = zIndex++
-        } else {
-          active = i
-          node.style.zIndex = zIndex++
-        }
-        break
-      }
-    }
-  } else {
-    if (active != null) justDismissedActive = active
-    active = null
-  }
+  inputs.clickedTarget = e.target
   scheduleRender()
 })
 window.addEventListener('pointermove', (e) => {
@@ -423,6 +375,49 @@ function scheduleRender() {
     const imgHFullScreen = windowH - boxesGapHBig * 2 - promptHBig - promptGapBottom // TODO: adjust
     if (lastAnimatedRenderTime == null) lastAnimatedRenderTime = now // TODO: no mutation
 
+    // handle key
+    let newActive
+    if (inputs.key === 'Escape') {
+      newActive = null
+    } else if (inputs.key === 'ArrowLeft') {
+      newActive = active > 0 ? active - 1 : 0
+      data[newActive].node.style.zIndex = zIndex++
+    } else if (inputs.key === 'ArrowRight') {
+      newActive =
+        active == null ? 0
+        : active === data.length - 1 ? data.length - 1
+        : active + 1
+      data[newActive].node.style.zIndex = zIndex++
+    } else {
+      newActive = active
+    }
+    // handle click
+    if (inputs.clickedTarget != null) {
+      const tagName = inputs.clickedTarget.tagName
+      if (tagName === 'FIGCAPTION') { // select the whole prompt
+        let selection = window.getSelection()
+        let range = document.createRange()
+        range.selectNodeContents(inputs.clickedTarget)
+        selection.removeAllRanges()
+        selection.addRange(range)
+      } else if ((tagName === 'DIV' && inputs.clickedTarget.className === 'box') || tagName === 'IMG') {
+        let node = tagName === 'DIV' ? inputs.clickedTarget : inputs.clickedTarget.parentNode
+        for (let i = 0; i < data.length; i++) {
+          if (data[i].node === node) {
+            if (active === i) {
+              newActive = null
+            } else {
+              newActive = i
+              node.style.zIndex = zIndex++
+            }
+            break
+          }
+        }
+      } else {
+        newActive = null
+      }
+    }
+
     let imgsWH = []
     for (let i = 0; i < data.length; i++) {
       let d = data[i]
@@ -443,11 +438,11 @@ function scheduleRender() {
     // d = destination, x = current pos, C = speed constant above, n = number of times to loop
     // x_next = (d - x)(1 - C^n)+x = d(1 - C^n)-x(1 - C^n)+x = d(1 - C^n)-x(1 - C^n - 1) = d(1 - C^n)+xC^n = mix(d, x, C^n) = mix(x, d, 1 - C^n)
     let stillAnimating = false
-    if (active != null) {
+    if (newActive != null) {
       currentTop = null // disable scrolling
       let centerImageLeft, centerImageW
       { // center image
-        let d = data[active]
+        let d = data[newActive]
         const ar = d.w / d.h
         let imgW = clamp(Math.min(d.w, boxWMaxBig), imgHFullScreen * ar, boxWMaxBig)
         imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig)
@@ -465,7 +460,7 @@ function scheduleRender() {
       }
       // left images
       let currentLeft = clickStripW
-      for (let i = active - 1; i >= 0; i--) {
+      for (let i = newActive - 1; i >= 0; i--) {
         let d = data[i]
         const ar = d.w / d.h
         let imgW = clamp(Math.min(d.w, boxWMaxBig), imgHFullScreen * ar, boxWMaxBig)
@@ -492,7 +487,7 @@ function scheduleRender() {
       }
       // right images
       currentLeft = windowW - clickStripW
-      for (let i = active + 1; i < data.length; i++) {
+      for (let i = newActive + 1; i < data.length; i++) {
         let d = data[i]
         const ar = d.w / d.h
         let imgW = clamp(Math.min(d.w, boxWMaxBig), imgHFullScreen * ar, boxWMaxBig)
@@ -518,14 +513,14 @@ function scheduleRender() {
       }
 
     } else {
-      if (justDismissedActive != null) {
+      if (newActive == null && active != null) { // just dismissed zoom in
         let scrollAmountExtra = 0
         let doScroll = false
         let rowHMax = 0
-        for (let i = 0; i <= justDismissedActive; i++) {
+        for (let i = 0; i <= active; i++) {
           rowHMax = Math.max(rowHMax, imgsWH[i].imgH + promptH + promptGapBottom)
 
-          if (i === justDismissedActive) {
+          if (i === active) {
             const boxH = imgsWH[i].imgH + promptH + promptGapBottom
             let dismissedTop = scrollAmountExtra + (rowHMax - boxH) / 2
             if (dismissedTop <= scrollTop || dismissedTop + boxH >= scrollTop + windowH) {
@@ -598,12 +593,12 @@ function scheduleRender() {
         node.style.height = `${d.ch}px`
         node.style.transform = `translate3d(${d.left}px,${d.top}px,0) scale(${d.scale})` // safari now anti-aliases for hover, but then zoom in janks on big displays...
         // we can't afford brightness & blur for all pics; too expensive for Safari & Chrome. E.g. when zomming out of a photo, keep scrolling; Chrome stops render on Studio Display
-        node.style.filter = active != null && i === active - 1 || i === active || i === active + 1
+        node.style.filter = newActive != null && i === newActive - 1 || i === newActive || i === newActive + 1
           ? `brightness(${d.brightness * 100}%) blur(${Math.max(0, 6 - d.brightness * 6)}px)` // blur these 3 only
           : `brightness(${d.brightness * 100}%)` // blur of unrelated pics is too fast during transition from/to zoomed-in view to be seen anyway
 
         let img = node.children[0]
-        if (i === active) {
+        if (i === newActive) {
           node.style.cursor = 'zoom-out'
           promptNode.style.overflowY = 'auto'
           promptNode.style.height = `${promptHBig}px`
@@ -624,7 +619,7 @@ function scheduleRender() {
       } else if (node.parentNode != null) document.body.removeChild(node) // if previously present, remove
     }
 
-    document.body.style.cursor = active === null ? 'auto' : 'zoom-out'
+    document.body.style.cursor = newActive === null ? 'auto' : 'zoom-out'
     if (currentTop == null) {
       document.body.style.overflowY = 'hidden'
     } else {
@@ -635,7 +630,9 @@ function scheduleRender() {
 
     // === prepare for next frame
     scheduled = false
-    justDismissedActive = null
+    inputs.key = null
+    inputs.clickedTarget = null
+    active = newActive
     if (stillAnimating) {
       lastAnimatedRenderTime = now
       scheduleRender()
