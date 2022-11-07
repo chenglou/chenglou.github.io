@@ -296,7 +296,7 @@ function step_(config, destPos) {
 
   // usually we put mass here, but for animation purposes, specifying mass is a
   // bit redundant. you could simply adjust k and b accordingly
-  // let a = (Fspring + Fdamper) / mass;
+  // let a = (Fspring + Fdamper) / mass
   const a = Fspring + Fdamper
 
   const newV = v + a * secondPerFrame
@@ -375,16 +375,12 @@ function raf(f) {
 }
 let scheduled = false
 function scheduleRender() {
-  // return
-
   if (scheduled) return;
   scheduled = true
   // if (!advance) return
   // advance = false
 
   raf(function render(now) {
-
-
     // batched DOM reads
     // excludes scroll bar & invariant under safari pinch zoom
     const windowW = document.documentElement.clientWidth
@@ -671,90 +667,6 @@ function scheduleRender() {
 }
 
 scheduleRender()
-
-// noWobble: { stiffness: 170, damping: 26 }, // the default, if nothing provided
-// gentle: { stiffness: 120, damping: 14 },
-// wobbly: { stiffness: 180, damping: 12 },
-// stiff: { stiffness: 210, damping: 20 },
-
-let asd = document.createElement('div')
-asd.style.position = 'absolute'
-asd.style.borderRadius = '8px'
-asd.style.background = 'lightblue'
-asd.style.height = '70px'
-asd.style.width = '100px'
-document.body.appendChild(asd)
-
-let springX = {
-  pos: 0,
-  v: 0,
-  k: 250,
-  b: 25,
-  // k: 180,
-  // b: 12,
-}
-let springY = {
-  pos: 0,
-  v: 0,
-  k: 250,
-  b: 25,
-  // k: 180,
-  // b: 12,
-}
-let xy = {
-  x: 0,
-  y: 0,
-}
-window.addEventListener('mousemove', (e) => {
-  xy.x = e.pageX; xy.y = e.pageY
-  // draw()
-})
-window.addEventListener('mousedown', e => {
-  springX.v = 5000
-  springY.v = 5000
-})
-
-function step(config, destPos) {
-  let {pos, v, k, b} = config
-  const secondPerFrame = 1 / 60
-  // Spring stiffness, in kg / s^2
-  // for animations, destPos is really spring length (spring at rest). initial
-  // position is considered as the stretched/compressed position of a spring
-  const Fspring = -k * (pos - destPos);
-  // Damping, in kg / s
-  const Fdamper = -b * v;
-
-  // usually we put mass here, but for animation purposes, specifying mass is a
-  // bit redundant. you could simply adjust k and b accordingly
-  // let a = (Fspring + Fdamper) / mass;
-  const a = Fspring + Fdamper;
-
-  const newV = v + a * secondPerFrame;
-  const newX = pos + newV * secondPerFrame;
-
-  if (Math.abs(newV) < 0.01 && Math.abs(newX - destPos) < 0.01) {
-    config.pos = destPos;
-    config.v = 0;
-    return true
-  }
-
-  config.pos = newX;
-  config.v = newV;
-  return false;
-}
-function length(x, y) {
-  return Math.sqrt(x*x + y*y)
-}
-function draw() {
-  let done1 = step(springX, xy.x - 50)
-  let done2 = step(springY, xy.y - 35)
-  asd.style.left = `${springX.pos}px`
-  asd.style.top = `${springY.pos}px`
-
-  if (!done1 || !done2 || !done3 || true) requestAnimationFrame(draw)
-}
-// draw()
-
 </script>
 
 </body>
