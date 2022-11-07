@@ -271,34 +271,56 @@ let data; {
     node.append(img, promptNode)
     return {
       ...d,
-      cw,
-      ch,
-      top: windowH + Math.floor(i / cols) * imgHmax,
-      left: Math.floor(i / cols) * -windowW - windowW,
-      scale: 1,
-      fxFactor: 20, // for brightness and blur
+      cw: {pos: cw, v: 0},
+      ch: {pos: ch, v: 0},
+      top: {pos: windowH + Math.floor(i / cols) * imgHmax, v: 0},
+      left: {pos: Math.floor(i / cols) * -windowW - windowW, v: 0},
+      scale: {pos: 1, v: 0},
+      fxFactor: {pos: 20, v: 0}, // for brightness and blur
       node,
       promptNode,
     }
   })
 }
 
-function stepAnimation(d, speed, boxW, boxH, top, left, scale, fxFactor) {
-  d.cw = mix(d.cw, boxW, speed)
-  d.ch = mix(d.ch, boxH, speed)
-  d.top = mix(d.top, top, speed)
-  d.left = mix(d.left, left, speed)
-  d.scale = mix(d.scale, scale, speed)
-  d.fxFactor = mix(d.fxFactor, fxFactor, speed)
+function step_(config, destPos) {
+  const k = 230, b = 26
+  const {pos, v} = config
+  const secondPerFrame = 1 / 60
+  // Spring stiffness, in kg / s^2
+  // for animations, destPos is really spring length (spring at rest). initial
+  // position is considered as the stretched/compressed position of a spring
+  const Fspring = -k * (pos - destPos)
+  // Damping, in kg / s
+  const Fdamper = -b * v
 
-  return (
-    Math.abs(boxW - d.cw) > 0.01 ||
-    Math.abs(boxH - d.ch) > 0.01 ||
-    Math.abs(top - d.top) > 0.01 ||
-    Math.abs(left - d.left) > 0.01 ||
-    Math.abs(scale - d.scale) > 0.01 ||
-    Math.abs(fxFactor - d.fxFactor) > 0.01
-  )
+  // usually we put mass here, but for animation purposes, specifying mass is a
+  // bit redundant. you could simply adjust k and b accordingly
+  // let a = (Fspring + Fdamper) / mass;
+  const a = Fspring + Fdamper
+
+  const newV = v + a * secondPerFrame
+  const newX = pos + newV * secondPerFrame
+
+  if (Math.abs(newV) < 0.01 && Math.abs(newX - destPos) < 0.01) {
+    config.pos = destPos
+    config.v = 0
+    return false
+  }
+
+  config.pos = newX
+  config.v = newV
+  return true
+}
+
+function stepAnimation_(d, boxW, boxH, top, left, scale, fxFactor) {
+  let stillAnimating = step_(d.cw, boxW)
+  stillAnimating |= step_(d.ch, boxH)
+  stillAnimating |= step_(d.top, top)
+  stillAnimating |= step_(d.left, left)
+  stillAnimating |= step_(d.scale, scale)
+  stillAnimating |= step_(d.fxFactor, fxFactor)
+  return stillAnimating
 }
 
 // === state
@@ -353,12 +375,16 @@ function raf(f) {
 }
 let scheduled = false
 function scheduleRender() {
+  // return
+
   if (scheduled) return;
   scheduled = true
   // if (!advance) return
   // advance = false
 
   raf(function render(now) {
+
+
     // batched DOM reads
     // excludes scroll bar & invariant under safari pinch zoom
     const windowW = document.documentElement.clientWidth
@@ -439,7 +465,7 @@ function scheduleRender() {
     let scrollAmount = null
     let currentTop
     // every 16ms we go 20% of the distance from current position to end position
-    const speed = 1 - (1 - 0.2 / 16)**Math.floor(now - lastAnimatedRenderTime)
+    // const speed = 1 - (1 - 0.2 / 16)**Math.floor(now - lastAnimatedRenderTime)
     // d = destination, x = current pos, C = speed constant above, n = number of times to loop
     // x_next = (d - x)(1 - C^n)+x = d(1 - C^n)-x(1 - C^n)+x = d(1 - C^n)-x(1 - C^n - 1) = d(1 - C^n)+xC^n = mix(d, x, C^n) = mix(x, d, 1 - C^n)
     let stillAnimating = false
@@ -458,7 +484,7 @@ function scheduleRender() {
         const scale = 1
         const fxFactor = 1
 
-        stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, fxFactor)
+        stillAnimating |= stepAnimation_(d, boxW, boxH, top, left, scale, fxFactor)
       }
       // left images
       let currentLeft = linearHitW
@@ -485,7 +511,7 @@ function scheduleRender() {
           fxFactor = 0.2
         }
 
-        stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, fxFactor)
+        stillAnimating |= stepAnimation_(d, boxW, boxH, top, left, scale, fxFactor)
       }
       // right images
       currentLeft = windowW - linearHitW
@@ -511,7 +537,7 @@ function scheduleRender() {
           fxFactor = 0.2
         }
 
-        stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, fxFactor)
+        stillAnimating |= stepAnimation_(d, boxW, boxH, top, left, scale, fxFactor)
       }
 
     } else {
@@ -542,7 +568,7 @@ function scheduleRender() {
         if (doScroll||true) {
           // console.log('dismiss, scroll')
           for (let i = 0; i < data.length; i++) {
-            data[i].top += scrollAmountExtra - scrollTop
+            data[i].top.pos += scrollAmountExtra - scrollTop
           }
           scrollAmount = scrollAmountExtra
           scrollTop = scrollAmountExtra // TODO: comment on the timing, why scrollTop needs changed
@@ -559,9 +585,9 @@ function scheduleRender() {
         for (let j = 0; j < cols && i + j < data.length; j++) {
           const idx = i + j
           let d = data[idx]
-          let left, top, scale
           const boxW = imgsWH[idx].imgW
           const boxH = imgsWH[idx].imgH + promptH + promptGapBottom
+          let left, top, scale
           top = currentTop + (rowHMax - boxH) / 2 // TODO: these both include promptH + promptGapBottom. Simplify?
           left = boxesGapW + (boxWMax + boxesGapW) * j + (boxWMax - boxW) / 2 // center horizontally
           if (left <= pageX && pageX <= left + boxW && top <= pageY && pageY <= top + boxH) { // hovering
@@ -573,7 +599,7 @@ function scheduleRender() {
           }
           const fxFactor = 1
 
-          stillAnimating |= stepAnimation(d, speed, boxW, boxH, top, left, scale, fxFactor)
+          stillAnimating |= stepAnimation_(d, boxW, boxH, top, left, scale, fxFactor)
         }
 
         currentTop += rowHMax + boxesGapH
@@ -586,25 +612,25 @@ function scheduleRender() {
       let {node, promptNode} = d
       // only draw what's visible on screen
       if (
-        d.top <= scrollTop + windowH + UIBottomHMax &&
-        d.top + d.ch >= scrollTop - UITopHMax &&
-        d.left <= windowW &&
-        d.left + d.cw >= 0
+        d.top.pos <= scrollTop + windowH + UIBottomHMax &&
+        d.top.pos + d.ch.pos >= scrollTop - UITopHMax &&
+        d.left.pos <= windowW &&
+        d.left.pos + d.cw.pos >= 0
       ) { // disregard shadow & scaling for now; UIBottomHMax and UITopHMax are safe bigger values anyway
-        node.style.width = `${d.cw}px`
-        node.style.height = `${d.ch}px`
-        node.style.transform = `translate3d(${d.left}px,${d.top}px,0) scale(${d.scale})` // safari now anti-aliases for hover, but then zoom in janks on big displays...
+        node.style.width = `${d.cw.pos}px`
+        node.style.height = `${d.ch.pos}px`
+        node.style.transform = `translate3d(${d.left.pos}px,${d.top.pos}px,0) scale(${d.scale.pos})` // safari now anti-aliases for hover, but then zoom in janks on big displays...
         // we can't afford fxFactor & blur for all pics; too expensive for Safari & Chrome. E.g. when zomming out of a photo, keep scrolling; Chrome stops render on Studio Display
         node.style.filter = newActive != null && i === newActive - 1 || i === newActive || i === newActive + 1
-          ? `brightness(${d.fxFactor * 100}%) blur(${Math.max(0, 6 - d.fxFactor * 6)}px)` // blur these 3 only
-          : `brightness(${d.fxFactor * 100}%)` // blur of unrelated pics is too fast during transition from/to zoomed-in view to be seen anyway
+          ? `brightness(${d.fxFactor.pos * 100}%) blur(${Math.max(0, 6 - d.fxFactor.pos * 6)}px)` // blur these 3 only
+          : `brightness(${d.fxFactor.pos * 100}%)` // blur of unrelated pics is too fast during transition from/to zoomed-in view to be seen anyway
 
         let img = node.children[0]
         if (i === newActive) {
           node.style.cursor = 'zoom-out'
           promptNode.style.overflowY = 'auto'
           promptNode.style.height = `${promptHBig}px`
-          promptNode.style.top = `${d.ch - promptHBig - promptGapBottom}px`
+          promptNode.style.top = `${d.ch.pos - promptHBig - promptGapBottom}px`
           promptNode.style.lineClamp = promptNode.style.webkitLineClamp = 999
           img.style.display = 'block'
           let src = `https://mj-gallery.com/${d.id}/grid_0.webp`
@@ -613,7 +639,7 @@ function scheduleRender() {
           node.style.cursor = 'zoom-in'
           promptNode.style.overflowY = 'hidden'
           promptNode.style.height = `${promptH}px`
-          promptNode.style.top = `${d.ch - promptH - promptGapBottom}px`
+          promptNode.style.top = `${d.ch.pos - promptH - promptGapBottom}px`
           promptNode.style.lineClamp = promptNode.style.webkitLineClamp = 2
           img.style.display = 'none' // hide full res image for perf (yes it makes a difference, even on M1, with Studio Display)
         }
@@ -645,6 +671,89 @@ function scheduleRender() {
 }
 
 scheduleRender()
+
+// noWobble: { stiffness: 170, damping: 26 }, // the default, if nothing provided
+// gentle: { stiffness: 120, damping: 14 },
+// wobbly: { stiffness: 180, damping: 12 },
+// stiff: { stiffness: 210, damping: 20 },
+
+let asd = document.createElement('div')
+asd.style.position = 'absolute'
+asd.style.borderRadius = '8px'
+asd.style.background = 'lightblue'
+asd.style.height = '70px'
+asd.style.width = '100px'
+document.body.appendChild(asd)
+
+let springX = {
+  pos: 0,
+  v: 0,
+  k: 250,
+  b: 25,
+  // k: 180,
+  // b: 12,
+}
+let springY = {
+  pos: 0,
+  v: 0,
+  k: 250,
+  b: 25,
+  // k: 180,
+  // b: 12,
+}
+let xy = {
+  x: 0,
+  y: 0,
+}
+window.addEventListener('mousemove', (e) => {
+  xy.x = e.pageX; xy.y = e.pageY
+  // draw()
+})
+window.addEventListener('mousedown', e => {
+  springX.v = 5000
+  springY.v = 5000
+})
+
+function step(config, destPos) {
+  let {pos, v, k, b} = config
+  const secondPerFrame = 1 / 60
+  // Spring stiffness, in kg / s^2
+  // for animations, destPos is really spring length (spring at rest). initial
+  // position is considered as the stretched/compressed position of a spring
+  const Fspring = -k * (pos - destPos);
+  // Damping, in kg / s
+  const Fdamper = -b * v;
+
+  // usually we put mass here, but for animation purposes, specifying mass is a
+  // bit redundant. you could simply adjust k and b accordingly
+  // let a = (Fspring + Fdamper) / mass;
+  const a = Fspring + Fdamper;
+
+  const newV = v + a * secondPerFrame;
+  const newX = pos + newV * secondPerFrame;
+
+  if (Math.abs(newV) < 0.01 && Math.abs(newX - destPos) < 0.01) {
+    config.pos = destPos;
+    config.v = 0;
+    return true
+  }
+
+  config.pos = newX;
+  config.v = newV;
+  return false;
+}
+function length(x, y) {
+  return Math.sqrt(x*x + y*y)
+}
+function draw() {
+  let done1 = step(springX, xy.x - 50)
+  let done2 = step(springY, xy.y - 35)
+  asd.style.left = `${springX.pos}px`
+  asd.style.top = `${springY.pos}px`
+
+  if (!done1 || !done2 || !done3 || true) requestAnimationFrame(draw)
+}
+// draw()
 
 </script>
 
