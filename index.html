@@ -284,7 +284,7 @@ let data; {
 }
 
 function step_(config, destPos) {
-  const k = 230, b = 26
+  const k = 100, b = 20
   const {pos, v} = config
   const secondPerFrame = 1 / 60
   // Spring stiffness, in kg / s^2
@@ -302,24 +302,26 @@ function step_(config, destPos) {
   const newV = v + a * secondPerFrame
   const newX = pos + newV * secondPerFrame
 
-  if (Math.abs(newV) < 0.01 && Math.abs(newX - destPos) < 0.01) {
-    config.pos = destPos
-    config.v = 0
-    return false
-  }
-
   config.pos = newX
   config.v = newV
-  return true
 }
 
-function stepAnimation_(d, boxW, boxH, top, left, scale, fxFactor) {
-  let stillAnimating = step_(d.cw, boxW)
-  stillAnimating |= step_(d.ch, boxH)
-  stillAnimating |= step_(d.top, top)
-  stillAnimating |= step_(d.left, left)
-  stillAnimating |= step_(d.scale, scale)
-  stillAnimating |= step_(d.fxFactor, fxFactor)
+function stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor) {
+  for (let i = 0; i < frames; i++) {
+    step_(d.cw, boxW)
+    step_(d.ch, boxH)
+    step_(d.top, top)
+    step_(d.left, left)
+    step_(d.scale, scale)
+    step_(d.fxFactor, fxFactor)
+  }
+  let stillAnimating = false
+  if (Math.abs(d.cw.v) < 0.01 && Math.abs(boxW - d.cw.pos) < 0.01) {d.cw.v = 0; d.cw.pos = boxW} else stillAnimating = true
+  if (Math.abs(d.ch.v) < 0.01 && Math.abs(boxH - d.ch.pos) < 0.01) {d.ch.v = 0; d.ch.pos = boxH} else stillAnimating = true
+  if (Math.abs(d.top.v) < 0.01 && Math.abs(top - d.top.pos) < 0.01) {d.top.v = 0; d.top.pos = top} else stillAnimating = true
+  if (Math.abs(d.left.v) < 0.01 && Math.abs(left - d.left.pos) < 0.01) {d.left.v = 0; d.left.pos = left} else stillAnimating = true
+  if (Math.abs(d.scale.v) < 0.01 && Math.abs(scale - d.scale.pos) < 0.01) {d.scale.v = 0; d.scale.pos = scale} else stillAnimating = true
+  if (Math.abs(d.fxFactor.v) < 0.01 && Math.abs(fxFactor - d.fxFactor.pos) < 0.01) {d.fxFactor.v = 0; d.fxFactor.pos = fxFactor} else stillAnimating = true
   return stillAnimating
 }
 
@@ -370,7 +372,7 @@ document.body.append(dummyPlaceholder)
 let fakeDebugTime = 0
 function raf(f) {
   return requestAnimationFrame(f)
-  fakeDebugTime += 1000 / 60
+  fakeDebugTime += 10000 / 60
   f(fakeDebugTime)
 }
 let scheduled = false
@@ -395,7 +397,7 @@ function scheduleRender() {
     const linearHitW = 100 // left and right click region in linear mode
     const boxWMaxBig = windowW - boxesGapWBig * 2 - linearHitW * 2
     const imgHFullScreen = windowH - boxesGapHBig * 2 - promptHBig - promptGapBottom // TODO: adjust
-    if (lastAnimatedRenderTime == null) lastAnimatedRenderTime = now // TODO: no mutation
+    if (lastAnimatedRenderTime == null) lastAnimatedRenderTime = now // TODO: state mutation only at the end
 
     // handle key
     let newActive
@@ -460,11 +462,10 @@ function scheduleRender() {
 
     let scrollAmount = null
     let currentTop
-    // every 16ms we go 20% of the distance from current position to end position
-    // const speed = 1 - (1 - 0.2 / 16)**Math.floor(now - lastAnimatedRenderTime)
-    // d = destination, x = current pos, C = speed constant above, n = number of times to loop
-    // x_next = (d - x)(1 - C^n)+x = d(1 - C^n)-x(1 - C^n)+x = d(1 - C^n)-x(1 - C^n - 1) = d(1 - C^n)+xC^n = mix(d, x, C^n) = mix(x, d, 1 - C^n)
     let stillAnimating = false
+    const deltaTime = (now - lastAnimatedRenderTime) / 8 // simulation step 8ms
+    const frames = Math.floor(deltaTime)
+    lastAnimatedRenderTime += frames * 8
     if (newActive != null) {
       currentTop = null // disable scrolling
       { // center image
@@ -480,7 +481,7 @@ function scheduleRender() {
         const scale = 1
         const fxFactor = 1
 
-        stillAnimating |= stepAnimation_(d, boxW, boxH, top, left, scale, fxFactor)
+        stillAnimating |= stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor)
       }
       // left images
       let currentLeft = linearHitW
@@ -507,7 +508,7 @@ function scheduleRender() {
           fxFactor = 0.2
         }
 
-        stillAnimating |= stepAnimation_(d, boxW, boxH, top, left, scale, fxFactor)
+        stillAnimating |= stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor)
       }
       // right images
       currentLeft = windowW - linearHitW
@@ -533,7 +534,7 @@ function scheduleRender() {
           fxFactor = 0.2
         }
 
-        stillAnimating |= stepAnimation_(d, boxW, boxH, top, left, scale, fxFactor)
+        stillAnimating |= stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor)
       }
 
     } else {
@@ -595,7 +596,7 @@ function scheduleRender() {
           }
           const fxFactor = 1
 
-          stillAnimating |= stepAnimation_(d, boxW, boxH, top, left, scale, fxFactor)
+          stillAnimating |= stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor)
         }
 
         currentTop += rowHMax + boxesGapH
@@ -658,7 +659,6 @@ function scheduleRender() {
     inputs.clickedTarget = null
     active = newActive
     if (stillAnimating) {
-      lastAnimatedRenderTime = now
       scheduleRender()
     } else {
       lastAnimatedRenderTime = null
