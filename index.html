@@ -401,16 +401,28 @@ function scheduleRender() {
 
     // handle key
     let newActive
+    let touchedBoundary = null
     if (inputs.key === 'Escape') {
       newActive = null
     } else if (inputs.key === 'ArrowLeft') {
-      newActive = active > 0 ? active - 1 : 0
+      if (active == null) {
+        newActive = 0
+      } else if (active === 0) {
+        newActive = 0
+        touchedBoundary = 'left'
+      } else {
+        newActive = active - 1
+      }
       data[newActive].node.style.zIndex = zIndex++
     } else if (inputs.key === 'ArrowRight') {
-      newActive =
-        active == null ? 0
-        : active === data.length - 1 ? data.length - 1
-        : active + 1
+      if (active == null) {
+        newActive = 0
+      } else if (active === data.length - 1) {
+        newActive = data.length - 1
+        touchedBoundary = 'right'
+      } else {
+        newActive = active + 1
+      }
       data[newActive].node.style.zIndex = zIndex++
     } else {
       newActive = active
@@ -463,6 +475,14 @@ function scheduleRender() {
     let scrollAmount = null
     let currentTop
     let stillAnimating = false
+    let rubberBand
+    if (touchedBoundary === 'left') {
+      rubberBand = 2000
+    } else if (touchedBoundary === 'right') {
+      rubberBand = -2000
+    } else {
+      rubberBand = 0
+    }
     const deltaTime = (now - lastAnimatedRenderTime) / 8 // simulation step 8ms
     const frames = Math.floor(deltaTime)
     lastAnimatedRenderTime += frames * 8
@@ -481,6 +501,7 @@ function scheduleRender() {
         const scale = 1
         const fxFactor = 1
 
+        d.left.v += rubberBand
         stillAnimating |= stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor)
       }
       // left images
@@ -508,6 +529,7 @@ function scheduleRender() {
           fxFactor = 0.2
         }
 
+        d.left.v += rubberBand / 4
         stillAnimating |= stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor)
       }
       // right images
@@ -534,6 +556,7 @@ function scheduleRender() {
           fxFactor = 0.2
         }
 
+        d.left.v += rubberBand / 4
         stillAnimating |= stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor)
       }
 
