@@ -645,12 +645,15 @@ function scheduleRender() {
           ? `brightness(${d.fxFactor.pos * 100}%) blur(${Math.max(0, 6 - d.fxFactor.pos * 6)}px)` // blur these 3 only
           : `brightness(${d.fxFactor.pos * 100}%)` // blur of unrelated pics is too fast during transition from/to zoomed-in view to be seen anyway
 
+        const ar = d.w / d.h
+        const imgH = d.cw.pos / ar
+        promptNode.style.top = `${imgH}px`
+
         let img = node.children[0]
         if (i === newActive) {
           node.style.cursor = 'zoom-out'
           promptNode.style.overflowY = 'auto'
           promptNode.style.height = `${promptHBig}px`
-          promptNode.style.top = `${d.ch.pos - promptHBig - promptGapBottom}px`
           promptNode.style.lineClamp = promptNode.style.webkitLineClamp = 999
           img.style.display = 'block'
           let src = `https://mj-gallery.com/${d.id}/grid_0.webp`
@@ -659,7 +662,6 @@ function scheduleRender() {
           node.style.cursor = 'zoom-in'
           promptNode.style.overflowY = 'hidden'
           promptNode.style.height = `${promptH}px`
-          promptNode.style.top = `${d.ch.pos - promptH - promptGapBottom}px`
           promptNode.style.lineClamp = promptNode.style.webkitLineClamp = 2
           img.style.display = 'none' // hide full res image for perf (yes it makes a difference, even on M1, with Studio Display)
         }
