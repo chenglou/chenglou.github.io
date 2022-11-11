@@ -73,6 +73,9 @@ const boxesGapW = 24 // fixed gap looks nicer
 const boxesGapH = 24
 const boxesGapWBig = 52
 const boxesGapHBig = 28
+// 4ms for the spring animation's step. Typically 4 steps for 60fps and 2 for 120fps (frame time delta varies, so not always true)
+// could use 8ms instead but 120 means 8.33 ms per second, and the computation here doesn't fit in 0.33ms, which means sometime the simulation step wouldn't even run once, giving the illusion of jank
+const simulationStep = 4
 
 function colsBoxWMaxF(containerW) {
   const boxWMin = 220 // Make sure that on mobile, this min width is big enough not to show 2 images per row. Also, this won't be respected if view's tiny
@@ -282,9 +285,8 @@ let data; {
 }
 
 function step_(config, destPos) {
-  const k = 100, b = 20
+  const k = 220, b = 27
   const {pos, v} = config
-  const secondPerFrame = 1 / 60
   // Spring stiffness, in kg / s^2
   // for animations, destPos is really spring length (spring at rest). initial
   // position is considered as the stretched/compressed position of a spring
@@ -296,7 +298,7 @@ function step_(config, destPos) {
   // bit redundant. you could simply adjust k and b accordingly
   // let a = (Fspring + Fdamper) / mass
   const a = Fspring + Fdamper
-
+  const secondPerFrame = simulationStep / 1000
   const newV = v + a * secondPerFrame
   const newX = pos + newV * secondPerFrame
 
@@ -478,9 +480,9 @@ function scheduleRender() {
     let scrollAmount = null
     let currentTop
     let stillAnimating = false
-    const deltaTime = (now - lastAnimatedRenderTime) / 8 // simulation step 8ms
+    const deltaTime = (now - lastAnimatedRenderTime) / simulationStep
     const frames = Math.floor(deltaTime)
-    lastAnimatedRenderTime += frames * 8
+    lastAnimatedRenderTime += frames * simulationStep
     if (newActive != null) {
       currentTop = null // disable scrolling
       { // center image
