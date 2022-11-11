@@ -325,8 +325,10 @@ function stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor) {
   return stillAnimating
 }
 
+const hashImgId = window.location.hash.slice(1)
+const hashImgIndex = data.findIndex(({id}) => id === hashImgId)
 // === state
-let active = null
+let active = hashImgIndex === -1 ? null : hashImgIndex
 let lastAnimatedRenderTime = null
 let zIndex = 1
 let inputs = {
