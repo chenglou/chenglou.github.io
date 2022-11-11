@@ -684,7 +684,8 @@ function scheduleRender() {
     }
     if (scrollAmount != null) window.scrollTo({top: scrollAmount}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting
     if (newActive !== active) {
-      window.history.replaceState(null, null, `${window.location.pathname}${window.location.search}${newActive == null ? '' : '#' + data[newActive].id}`)
+      // can't use window.location.hash. Empty hash would refresh the page...
+      window.history.pushState(null, null, `${window.location.pathname}${window.location.search}${newActive == null ? '' : '#' + data[newActive].id}`)
     }
 
     // === prepare for next frame
