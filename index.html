@@ -325,10 +325,7 @@ function stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor) {
   return stillAnimating
 }
 
-const hashImgId = window.location.hash.slice(1)
-const hashImgIndex = data.findIndex(({id}) => id === hashImgId)
-// === state
-let active = hashImgIndex === -1 ? null : hashImgIndex
+// === state. Plus one in the URL's hash
 let lastAnimatedRenderTime = null
 let zIndex = 1
 let inputs = {
@@ -366,6 +363,9 @@ window.addEventListener('mousedown', (e) => {
   inputs.pointerXY.pageX = e.pageX; inputs.pointerXY.pageY = e.pageY
   scheduleRender()
 })
+window.addEventListener('popstate', (e) => {
+  scheduleRender()
+})
 
 let dummyPlaceholder = document.createElement('div')
 dummyPlaceholder.style.width = '1px' // make it tiny just in case it affects compositing... sigh
@@ -400,6 +400,10 @@ function scheduleRender() {
     const boxWMaxBig = windowW - boxesGapWBig * 2 - linearHitW * 2
     const imgHFullScreen = windowH - boxesGapHBig * 2 - promptHBig - promptGapBottom // TODO: adjust
     if (lastAnimatedRenderTime == null) lastAnimatedRenderTime = now // TODO: state mutation only at the end
+
+    const hashImgId = window.location.hash.slice(1)
+    let active = null
+    for (let i = 0; i < data.length; i++) if (data[i].id === hashImgId) active = i
 
     // handle key
     let newActive
@@ -679,6 +683,9 @@ function scheduleRender() {
       dummyPlaceholder.style.height = `${currentTop}px`
     }
     if (scrollAmount != null) window.scrollTo({top: scrollAmount}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting
+    if (newActive !== active) {
+      window.history.replaceState(null, null, `${window.location.pathname}${window.location.search}${newActive == null ? '' : '#' + data[newActive].id}`)
+    }
 
     // === prepare for next frame
     scheduled = false
