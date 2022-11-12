@@ -459,7 +459,7 @@ function scheduleRender() {
       }
     }
 
-    let imgsWH = [], rowsTop = [boxesGapH]
+    let imgsWH = [], rowsTop = [boxesGapH] // length: number of rows + 1
     {
       let rowHMax = 0
       for (let i = 0; i < data.length; i++) {
@@ -480,7 +480,7 @@ function scheduleRender() {
       }
     }
 
-    let scrollAmount = null
+    let newScrollTop = null // can't be initialized to scrollTop; scrollTop upon read is rounded off, so scrollTop !== scrollTop potentially...
     let stillAnimating = false
     const deltaTime = (now - lastAnimatedRenderTime) / simulationStep
     const frames = Math.floor(deltaTime)
@@ -515,7 +515,7 @@ function scheduleRender() {
         let left = currentLeft
         currentLeft -= boxesGapWBig
         let scale, fxFactor
-        if (left <= pageX && pageX <= left + boxW && top <= pageY && pageY <= top + boxH) { // hovering
+        if (i === newActive - 1 && pageX <= linearHitW) { // hovering
           left += (pageX - (left + boxW / 2)) / 40
           top += (pageY - (top + boxH / 2)) / 40
           scale = 1.02
@@ -541,7 +541,7 @@ function scheduleRender() {
         let left = currentLeft
         currentLeft += boxW + boxesGapWBig
         let scale, fxFactor
-        if (left <= pageX && pageX <= left + boxW && top <= pageY && pageY <= top + boxH) { // hovering
+        if (i === newActive + 1 && pageX >= windowW - linearHitW) { // hovering
           left += (pageX - (left + boxW / 2)) / 40
           top += (pageY - (top + boxH / 2)) / 40
           scale = 1.02
@@ -561,11 +561,10 @@ function scheduleRender() {
         const boxH = imgsWH[active].imgH + promptH + promptGapBottom
         // if the dismissed box isn't fully shown, scroll there
         if (activeTop <= scrollTop || activeTop + boxH >= scrollTop + windowH) {
-          scrollAmount = activeTop - boxesGapH - 40 // TODO: adjust
-          for (let i = 0; i < data.length; i++) {
-            data[i].top.pos += scrollAmount - scrollTop // TODO: comment
-          }
-          scrollTop = scrollAmount
+          newScrollTop = activeTop - boxesGapH - 40 // TODO: adjust
+          const delta = newScrollTop - scrollTop
+          scrollTop = newScrollTop
+          for (let i = 0; i < data.length; i++) data[i].top.pos += delta // magically, seamlessly zoom out from linear view's focused active box without vertical jitter
         }
       }
 
@@ -637,7 +636,7 @@ function scheduleRender() {
     document.body.style.cursor = newActive === null ? 'auto' : 'zoom-out'
     document.body.style.overflowY = newActive == null ? 'auto' : 'hidden'
     dummyPlaceholder.style.height = `${rowsTop[rowsTop.length - 1]}px`
-    if (scrollAmount != null) window.scrollTo({top: scrollAmount}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting
+    if (newScrollTop != null) window.scrollTo({top: newScrollTop}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting
     if (newActive !== active) {
       // can't use window.location.hash. Empty hash would refresh the page...
       window.history.pushState(null, null, `${window.location.pathname}${window.location.search}${newActive == null ? '' : '#' + data[newActive].id}`)
