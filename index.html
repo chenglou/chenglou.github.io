@@ -62,10 +62,6 @@
 <script>
 'use strict'
 
-function clamp(min, v, max) {
-  return v > max ? max : v < min ? min : v
-}
-
 const promptH = 47 /* magic number. Doesn't show the 3rd line nor cuts the 2nd line on safari, mobile safari and chrome */
 const promptHBig = 64
 const promptGapBottom = 8
@@ -489,8 +485,7 @@ function scheduleRender() {
       { // center image
         let d = data[newActive]
         const ar = d.w / d.h
-        let imgW = clamp(Math.min(d.w, boxWMaxBig), imgHFullScreen * ar, boxWMaxBig)
-        imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig)
+        const imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig)
         const imgH = imgW / ar
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
@@ -500,7 +495,6 @@ function scheduleRender() {
         const fxFactor = 1
 
         d.left.v += boundaryRubberBandVelocity
-
         stillAnimating |= stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor)
       }
       // left images
@@ -508,8 +502,7 @@ function scheduleRender() {
       for (let i = newActive - 1; i >= 0; i--) {
         let d = data[i]
         const ar = d.w / d.h
-        let imgW = clamp(Math.min(d.w, boxWMaxBig), imgHFullScreen * ar, boxWMaxBig)
-        imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig) * 0.7
+        const imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig) * 0.7
         const imgH = imgW / ar
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
@@ -536,8 +529,7 @@ function scheduleRender() {
       for (let i = newActive + 1; i < data.length; i++) {
         let d = data[i]
         const ar = d.w / d.h
-        let imgW = clamp(Math.min(d.w, boxWMaxBig), imgHFullScreen * ar, boxWMaxBig)
-        imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig) * 0.7
+        const imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig) * 0.7
         const imgH = imgW / ar
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
