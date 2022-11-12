@@ -459,14 +459,33 @@ function scheduleRender() {
       }
     }
 
+    let imgsWH = [], rowsTop = [boxesGapH]
+    {
+      let rowHMax = 0
+      for (let i = 0; i < data.length; i++) {
+        let d = data[i]
+        const ar = d.w / d.h
+        const imgHmax =
+          ar === 1 ? boxWMax * 0.9 // square aspect ratio area too big. Shrink it
+          : ar < 1 ? boxWMax * 1.05 // vertical images look a bit small. Grow it
+          : boxWMax
+        const imgW = Math.min(d.w, boxWMax, imgHmax * ar)
+        const imgH = imgW / ar
+        imgsWH.push({imgW, imgH})
+        rowHMax = Math.max(rowHMax, imgH)
+        if (i % cols === cols - 1 || i === data.length - 1) {
+          rowsTop.push(rowsTop[Math.floor(i / cols)] + rowHMax + promptH + promptGapBottom + boxesGapH)
+          rowHMax = 0
+        }
+      }
+    }
+
     let scrollAmount = null
-    let currentTop
     let stillAnimating = false
     const deltaTime = (now - lastAnimatedRenderTime) / simulationStep
     const frames = Math.floor(deltaTime)
     lastAnimatedRenderTime += frames * simulationStep
     if (newActive != null) {
-      currentTop = null // disable scrolling
       { // center image
         let d = data[newActive]
         const ar = d.w / d.h
@@ -537,26 +556,6 @@ function scheduleRender() {
       }
 
     } else {
-      let imgsWH = []
-      let rowsTop = [boxesGapH]
-      let rowHMax = 0
-      for (let i = 0; i < data.length; i++) {
-        let d = data[i]
-        const ar = d.w / d.h
-        const imgHmax =
-          ar === 1 ? boxWMax * 0.9 // square aspect ratio area too big. Shrink it
-          : ar < 1 ? boxWMax * 1.05 // vertical images look a bit small. Grow it
-          : boxWMax
-        const imgW = Math.min(d.w, boxWMax, imgHmax * ar)
-        const imgH = imgW / ar
-        imgsWH.push({imgW, imgH})
-        rowHMax = Math.max(rowHMax, imgH)
-        if (i % cols === cols - 1 || i === data.length - 1) {
-          rowsTop.push(rowsTop[Math.floor(i / cols)] + rowHMax + promptH + promptGapBottom + boxesGapH)
-          rowHMax = 0
-        }
-      }
-
       if (newActive == null && active != null) { // just dismissed zoom in
         const activeTop = rowsTop[Math.floor(active / cols)]
         const boxH = imgsWH[active].imgH + promptH + promptGapBottom
@@ -570,34 +569,25 @@ function scheduleRender() {
         }
       }
 
-      currentTop = boxesGapH
-      for (let i = 0; i < data.length; i += cols) {
-        let rowHMax = 0
-        for (let j = 0; j < cols && i + j < data.length; j++) rowHMax = Math.max(rowHMax, imgsWH[i + j].imgH)
-        rowHMax += promptH + promptGapBottom
-
-        let bigH = 0
-        for (let j = 0; j < cols && i + j < data.length; j++) {
-          const idx = i + j
-          let d = data[idx]
-          const boxW = imgsWH[idx].imgW
-          const boxH = imgsWH[idx].imgH + promptH + promptGapBottom
-          let left, top, scale
-          top = currentTop + (rowHMax - boxH) / 2 // TODO: these both include promptH + promptGapBottom. Simplify?
-          left = boxesGapW + (boxWMax + boxesGapW) * j + (boxWMax - boxW) / 2 // center horizontally
-          if (left <= pageX && pageX <= left + boxW && top <= pageY && pageY <= top + boxH) { // hovering
-            left += (pageX - (left + boxW / 2)) / 40
-            top += (pageY - (top + boxH / 2)) / 40
-            scale = 1.02
-          } else {
-            scale = 1
-          }
-          const fxFactor = 1
-
-          stillAnimating |= stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor)
+      for (let i = 0; i < data.length; i++) {
+        let d = data[i]
+        const currentRow = Math.floor(i / cols)
+        const boxW = imgsWH[i].imgW
+        const boxH = imgsWH[i].imgH + promptH + promptGapBottom
+        const rowHMax = rowsTop[currentRow + 1] - rowsTop[currentRow]
+        let top = rowsTop[currentRow] + (rowHMax - boxH) / 2
+        let left = boxesGapW + (boxWMax + boxesGapW) * (i % cols) + (boxWMax - boxW) / 2 // center horizontally
+        let scale
+        if (left <= pageX && pageX <= left + boxW && top <= pageY && pageY <= top + boxH) { // hovering
+          left += (pageX - (left + boxW / 2)) / 40
+          top += (pageY - (top + boxH / 2)) / 40
+          scale = 1.02
+        } else {
+          scale = 1
         }
+        const fxFactor = 1
 
-        currentTop += rowHMax + boxesGapH
+        stillAnimating |= stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor)
       }
 
     }
@@ -645,12 +635,8 @@ function scheduleRender() {
     }
 
     document.body.style.cursor = newActive === null ? 'auto' : 'zoom-out'
-    if (currentTop == null) {
-      document.body.style.overflowY = 'hidden'
-    } else {
-      document.body.style.overflowY = 'auto'
-      dummyPlaceholder.style.height = `${currentTop}px`
-    }
+    document.body.style.overflowY = newActive == null ? 'auto' : 'hidden'
+    dummyPlaceholder.style.height = `${rowsTop[rowsTop.length - 1]}px`
     if (scrollAmount != null) window.scrollTo({top: scrollAmount}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting
     if (newActive !== active) {
       // can't use window.location.hash. Empty hash would refresh the page...
