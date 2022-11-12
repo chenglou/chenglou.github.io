@@ -324,7 +324,7 @@ function stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor) {
 let lastAnimatedRenderTime = null
 let zIndex = 1
 let inputs = {
-  pointerXY: {pageX: 0, pageY: 0}, // btw, on page load, there's no way to render a first cursor state =(
+  pointerXY: {pageX: -1, pageY: -1}, // btw, on page load, there's no way to render a first cursor state =(
   key: null,
   clickedTarget: null,
 }
@@ -436,7 +436,7 @@ function scheduleRender() {
         range.selectNodeContents(inputs.clickedTarget)
         selection.removeAllRanges()
         selection.addRange(range)
-      } else if (active > 0 && pageX <= linearHitW) {
+      } else if (active > 0 && pageX >= 0 && pageX <= linearHitW) {
         // allow spamming clicks without accidentally clicking on an empty region on left/right side (and dismiss linear mode) during transition
         newActive = Math.max(active - 1, 0)
       } else if (active != null && active < data.length - 1 && pageX >= windowW - linearHitW) {
@@ -486,75 +486,39 @@ function scheduleRender() {
     const frames = Math.floor(deltaTime)
     lastAnimatedRenderTime += frames * simulationStep
     if (newActive != null) {
-      { // center image
-        let d = data[newActive]
-        const ar = d.w / d.h
-        const imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig)
-        const imgH = imgW / ar
-        const boxW = imgW
-        const boxH = imgH + promptHBig + promptGapBottom
-        const top = scrollTop + (windowH - boxH) / 2
-        const left = (windowW - imgW) / 2 // center horizontally
-        const scale = 1
-        const fxFactor = 1
-
-        d.left.v += boundaryRubberBandVelocity
-        stillAnimating |= stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor)
-      }
-      // left images
-      let currentLeft = linearHitW
+      let currentLeft = linearHitW + boxesGapWBig
       for (let i = newActive - 1; i >= 0; i--) {
         let d = data[i]
         const ar = d.w / d.h
         const imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig) * 0.7
-        const imgH = imgW / ar
-        const boxW = imgW
-        const boxH = imgH + promptHBig + promptGapBottom
-        let top = scrollTop + (windowH - boxH) / 2
-        currentLeft -= boxW
-        let left = currentLeft
-        currentLeft -= boxesGapWBig
-        let scale, fxFactor
-        if (i === newActive - 1 && pageX <= linearHitW) { // hovering
-          left += (pageX - (left + boxW / 2)) / 40
-          top += (pageY - (top + boxH / 2)) / 40
-          scale = 1.02
-          fxFactor = 0.5
-        } else {
-          scale = 1
-          fxFactor = 0.2
-        }
-
-        d.left.v += boundaryRubberBandVelocity / 4
-        stillAnimating |= stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor)
+        currentLeft -= imgW + boxesGapWBig
       }
-      // right images
-      currentLeft = windowW - linearHitW
-      for (let i = newActive + 1; i < data.length; i++) {
+
+      for (let i = 0; i < data.length; i++) {
         let d = data[i]
         const ar = d.w / d.h
-        const imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig) * 0.7
+        const imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig) * (i === newActive ? 1 : 0.7)
         const imgH = imgW / ar
         const boxW = imgW
         const boxH = imgH + promptHBig + promptGapBottom
         let top = scrollTop + (windowH - boxH) / 2
-        let left = currentLeft
-        currentLeft += boxW + boxesGapWBig
+        let left = i === newActive ? (windowW - imgW) / 2 : currentLeft
         let scale, fxFactor
-        if (i === newActive + 1 && pageX >= windowW - linearHitW) { // hovering
+        if ((pageX >= 0 && pageX <= linearHitW && i === newActive - 1) || (pageX >= windowW - linearHitW && i === newActive + 1)) { // hovering
           left += (pageX - (left + boxW / 2)) / 40
           top += (pageY - (top + boxH / 2)) / 40
           scale = 1.02
           fxFactor = 0.5
         } else {
           scale = 1
-          fxFactor = 0.2
+          fxFactor = i === newActive ? 1 : 0.2
         }
 
-        d.left.v += boundaryRubberBandVelocity / 4
+        d.left.v += boundaryRubberBandVelocity / (i === newActive ? 1 : 4)
         stillAnimating |= stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor)
-      }
 
+        currentLeft = i === newActive ? windowW - linearHitW : currentLeft + imgW + boxesGapWBig
+      }
     } else {
       if (newActive == null && active != null) { // just dismissed zoom in
         const activeTop = rowsTop[Math.floor(active / cols)]
