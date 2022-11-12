@@ -459,19 +459,6 @@ function scheduleRender() {
       }
     }
 
-    let imgsWH = []
-    for (let i = 0; i < data.length; i++) {
-      let d = data[i]
-      const ar = d.w / d.h
-      const imgHmax =
-        ar === 1 ? boxWMax * 0.9 // square aspect ratio area too big. Shrink it
-        : ar < 1 ? boxWMax * 1.05 // vertical images look a bit small. Grow it
-        : boxWMax
-      const imgW = Math.min(d.w, boxWMax, imgHmax * ar)
-      const imgH = imgW / ar
-      imgsWH.push({imgW, imgH})
-    }
-
     let scrollAmount = null
     let currentTop
     let stillAnimating = false
@@ -550,36 +537,36 @@ function scheduleRender() {
       }
 
     } else {
-      if (newActive == null && active != null) { // just dismissed zoom in
-        scrollAmount = 0
-        let doScroll = false
-        let rowHMax = 0
-        for (let i = 0; i <= active; i++) {
-          rowHMax = Math.max(rowHMax, imgsWH[i].imgH + promptH + promptGapBottom)
-
-          if (i === active) {
-            const boxH = imgsWH[i].imgH + promptH + promptGapBottom
-            let dismissedTop = scrollAmount + (rowHMax - boxH) / 2
-            if (dismissedTop <= scrollTop || dismissedTop + boxH >= scrollTop + windowH) {
-              doScroll = true
-            }
-            break
-          }
-
-          if (i % cols === cols - 1) {
-            scrollAmount += rowHMax + boxesGapH
-            rowHMax = 0
-          }
+      let imgsWH = []
+      let rowsTop = [boxesGapH]
+      let rowHMax = 0
+      for (let i = 0; i < data.length; i++) {
+        let d = data[i]
+        const ar = d.w / d.h
+        const imgHmax =
+          ar === 1 ? boxWMax * 0.9 // square aspect ratio area too big. Shrink it
+          : ar < 1 ? boxWMax * 1.05 // vertical images look a bit small. Grow it
+          : boxWMax
+        const imgW = Math.min(d.w, boxWMax, imgHmax * ar)
+        const imgH = imgW / ar
+        imgsWH.push({imgW, imgH})
+        rowHMax = Math.max(rowHMax, imgH)
+        if (i % cols === cols - 1 || i === data.length - 1) {
+          rowsTop.push(rowsTop[Math.floor(i / cols)] + rowHMax + promptH + promptGapBottom + boxesGapH)
+          rowHMax = 0
         }
+      }
 
-        scrollAmount -= boxesGapH + 40 // TODO: adjust
-
-        if (doScroll||true) {
-          // console.log('dismiss, scroll')
+      if (newActive == null && active != null) { // just dismissed zoom in
+        const activeTop = rowsTop[Math.floor(active / cols)]
+        const boxH = imgsWH[active].imgH + promptH + promptGapBottom
+        // if the dismissed box isn't fully shown, scroll there
+        if (activeTop <= scrollTop || activeTop + boxH >= scrollTop + windowH) {
+          scrollAmount = activeTop - boxesGapH - 40 // TODO: adjust
           for (let i = 0; i < data.length; i++) {
-            data[i].top.pos += scrollAmount - scrollTop
+            data[i].top.pos += scrollAmount - scrollTop // TODO: comment
           }
-          scrollTop = scrollAmount // TODO: comment on the timing, why scrollTop needs changed
+          scrollTop = scrollAmount
         }
       }
 
