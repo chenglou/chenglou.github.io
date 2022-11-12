@@ -285,7 +285,9 @@ let data; {
 }
 
 function step_(config, destPos) {
-  const k = 220, b = 27
+  // https://blog.maximeheckel.com/posts/the-physics-behind-spring-animations/
+  // lol this totally seems copied from https://github.com/chenglou/react-motion/blob/9e3ce95bacaa9a1b259f969870a21c727232cc68/src/stepper.js
+  const k = 225, b = 27, t = simulationStep / 1000
   const {pos, v} = config
   // Spring stiffness, in kg / s^2
   // for animations, destPos is really spring length (spring at rest). initial
@@ -298,9 +300,8 @@ function step_(config, destPos) {
   // bit redundant. you could simply adjust k and b accordingly
   // let a = (Fspring + Fdamper) / mass
   const a = Fspring + Fdamper
-  const secondPerFrame = simulationStep / 1000
-  const newV = v + a * secondPerFrame
-  const newX = pos + newV * secondPerFrame
+  const newV = v + a * t
+  const newX = pos + newV * t
 
   config.pos = newX
   config.v = newV
