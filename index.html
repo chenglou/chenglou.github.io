@@ -285,12 +285,10 @@ function step_(config, destPos) {
   // lol this totally seems copied from https://github.com/chenglou/react-motion/blob/9e3ce95bacaa9a1b259f969870a21c727232cc68/src/stepper.js
   const k = 225, b = 27, t = simulationStep / 1000
   const {pos, v} = config
-  // Spring stiffness, in kg / s^2
   // for animations, destPos is really spring length (spring at rest). initial
   // position is considered as the stretched/compressed position of a spring
-  const Fspring = -k * (pos - destPos)
-  // Damping, in kg / s
-  const Fdamper = -b * v
+  const Fspring = -k * (pos - destPos) // Spring stiffness, in kg / s^2
+  const Fdamper = -b * v // Damping, in kg / s
 
   // usually we put mass here, but for animation purposes, specifying mass is a
   // bit redundant. you could simply adjust k and b accordingly
@@ -553,7 +551,7 @@ function scheduleRender() {
 
     } else {
       if (newActive == null && active != null) { // just dismissed zoom in
-        let scrollAmountExtra = 0
+        scrollAmount = 0
         let doScroll = false
         let rowHMax = 0
         for (let i = 0; i <= active; i++) {
@@ -561,7 +559,7 @@ function scheduleRender() {
 
           if (i === active) {
             const boxH = imgsWH[i].imgH + promptH + promptGapBottom
-            let dismissedTop = scrollAmountExtra + (rowHMax - boxH) / 2
+            let dismissedTop = scrollAmount + (rowHMax - boxH) / 2
             if (dismissedTop <= scrollTop || dismissedTop + boxH >= scrollTop + windowH) {
               doScroll = true
             }
@@ -569,20 +567,19 @@ function scheduleRender() {
           }
 
           if (i % cols === cols - 1) {
-            scrollAmountExtra += rowHMax + boxesGapH
+            scrollAmount += rowHMax + boxesGapH
             rowHMax = 0
           }
         }
 
-        scrollAmountExtra -= boxesGapH + 40 // TODO: adjust
+        scrollAmount -= boxesGapH + 40 // TODO: adjust
 
         if (doScroll||true) {
           // console.log('dismiss, scroll')
           for (let i = 0; i < data.length; i++) {
-            data[i].top.pos += scrollAmountExtra - scrollTop
+            data[i].top.pos += scrollAmount - scrollTop
           }
-          scrollAmount = scrollAmountExtra
-          scrollTop = scrollAmountExtra // TODO: comment on the timing, why scrollTop needs changed
+          scrollTop = scrollAmount // TODO: comment on the timing, why scrollTop needs changed
         }
       }
 
