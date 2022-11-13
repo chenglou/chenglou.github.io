@@ -429,6 +429,10 @@ function scheduleRender() {
       newActive = active
     }
     // handle click
+    const pointerPlace1D =
+      pageX >= 0 && pageX <= hitAreaW1D ? 'left'
+      : pageX >= windowW - hitAreaW1D ? 'right'
+      : null
     if (inputs.clickedTarget != null) {
       const tagName = inputs.clickedTarget.tagName
       if (tagName === 'FIGCAPTION') { // select the whole prompt
@@ -437,10 +441,10 @@ function scheduleRender() {
         range.selectNodeContents(inputs.clickedTarget)
         selection.removeAllRanges()
         selection.addRange(range)
-      } else if (active > 0 && pageX >= 0 && pageX <= hitAreaW1D) {
+      } else if (active > 0 && pointerPlace1D === 'left') {
         // allow spamming clicks without accidentally clicking on an empty region on left/right side (and dismiss 1D mode) during transition
         newActive = Math.max(active - 1, 0)
-      } else if (active != null && active < data.length - 1 && pageX >= windowW - hitAreaW1D) {
+      } else if (active != null && active < data.length - 1 && pointerPlace1D === 'right') {
         newActive = Math.min(active + 1, data.length - 1)
       } else if ((tagName === 'DIV' && inputs.clickedTarget.className === 'box') || tagName === 'IMG') {
         let node = tagName === 'DIV' ? inputs.clickedTarget : inputs.clickedTarget.parentNode
@@ -505,7 +509,7 @@ function scheduleRender() {
         let top = scrollTop + (windowH - boxH) / 2
         let left = i === newActive ? (windowW - imgW) / 2 : currentLeft
         let scale, fxFactor
-        if ((pageX >= 0 && pageX <= hitAreaW1D && i === newActive - 1) || (pageX >= windowW - hitAreaW1D && i === newActive + 1)) { // hovering
+        if ((pointerPlace1D === 'left' && i === newActive - 1) || (pointerPlace1D === 'right' && i === newActive + 1)) { // hovering
           left += (pageX - (left + boxW / 2)) / 40
           top += (pageY - (top + boxH / 2)) / 40
           scale = 1.02
@@ -598,8 +602,13 @@ function scheduleRender() {
       } else if (node.parentNode != null) document.body.removeChild(node) // if previously present, remove
     }
 
-    document.body.style.cursor = newActive === null ? 'auto' : 'zoom-out'
-    document.body.style.overflowY = newActive == null ? 'auto' : 'hidden'
+    if (newActive === null) {
+      document.body.style.cursor = 'auto'
+      document.body.style.overflowY = 'auto'
+    } else {
+      document.body.style.cursor = pointerPlace1D === 'left' || pointerPlace1D === 'right' ? 'zoom-in' : 'zoom-out'
+      document.body.style.overflowY = 'hidden'
+    }
     dummyPlaceholder.style.height = `${rowsTop[rowsTop.length - 1]}px`
     if (newScrollTop != null) window.scrollTo({top: newScrollTop}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting
     if (newActive !== active) {
