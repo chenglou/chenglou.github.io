@@ -495,14 +495,14 @@ function scheduleRender() {
       for (let i = newActive - 1; i >= 0; i--) {
         let d = data[i]
         const ar = d.w / d.h
-        const imgSizeX = Math.min(d.w, img1DSizeY * ar, box1DMaxSizeX) * 0.7
+        const imgSizeX = Math.min(d.w, box1DMaxSizeX, img1DSizeY * ar) * 0.7
         currentLeft -= imgSizeX + boxes1DGapX
       }
 
       for (let i = 0; i < data.length; i++) {
         let d = data[i]
         const ar = d.w / d.h
-        const imgSizeX = Math.min(d.w, img1DSizeY * ar, box1DMaxSizeX) * (i === newActive ? 1 : 0.7)
+        const imgSizeX = Math.min(d.w, box1DMaxSizeX, img1DSizeY * ar) * (i === newActive ? 1 : 0.7)
         const imgSizeY = imgSizeX / ar
         const boxSizeX = imgSizeX
         const boxSizeY = imgSizeY + prompt1DSizeY + promptGapBottom
