@@ -333,18 +333,19 @@ let inputs = {
 const debug = false // only need to toggle this
 let debugTimestamp = 0
 const raf = debug ? function raf(f) {
-    debugTimestamp += 1000 / 60
-    f(debugTimestamp)
+  debugTimestamp += 1000 / 60
+  f(debugTimestamp)
 } : requestAnimationFrame
 
 window.addEventListener('resize', () => scheduleRender())
 window.addEventListener('scroll', () => scheduleRender())
+window.addEventListener('popstate', (e) => {scheduleRender()})
 window.addEventListener('keydown', (e) => {
   if (e.code === 'Escape' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
     inputs.key = e.code
     scheduleRender()
-  } else if (e.code === 'KeyA') { // debug
-    scheduleRender(true)
+  } else if (e.code === 'KeyA') {
+    scheduleRender(true) // debug
   }
 })
 window.addEventListener('click', (e) => {
@@ -362,9 +363,6 @@ window.addEventListener('pointermove', (e) => {
 window.addEventListener('mousedown', (e) => {
   // also update position. Maybe pointer never moved (page refresh, right click, move, then left click to dismiss, etc.)
   inputs.pointer.x = e.pageX; inputs.pointer.y = e.pageY
-  scheduleRender()
-})
-window.addEventListener('popstate', (e) => {
   scheduleRender()
 })
 
@@ -549,7 +547,6 @@ function scheduleRender(debugForceRender) {
 
         stillAnimating |= stepAnimation_(d, frames, boxSizeX, boxSizeY, top, left, scale, fxFactor)
       }
-
     }
 
     let zIndex = 1
