@@ -278,7 +278,6 @@ let data; {
       scale: {pos: 1, v: 0},
       fxFactor: {pos: 20, v: 0}, // for brightness and blur
       node,
-      promptNode,
     }
   })
 }
@@ -561,7 +560,7 @@ function scheduleRender() {
 
     for (let i = 0; i < data.length; i++) {
       let d = data[i]
-      let {node, promptNode} = d
+      let {node} = d
       // only draw what's visible on screen
       if (
         d.top.pos <= scrollTop + windowSizeY + UIMaxSizeBottom &&
@@ -577,23 +576,23 @@ function scheduleRender() {
           ? `brightness(${d.fxFactor.pos * 100}%) blur(${Math.max(0, 6 - d.fxFactor.pos * 6)}px)` // blur these 3 only
           : `brightness(${d.fxFactor.pos * 100}%)` // blur of unrelated pics is too fast during transition from/to 1D mode to be seen anyway
 
+        let img = node.children[0], prompt = node.children[1]
         const imgSizeY = d.sizeX.pos / d.ar
-        promptNode.style.top = `${imgSizeY}px`
+        prompt.style.top = `${imgSizeY}px`
 
-        let img = node.children[0]
         if (i === newActive) {
           node.style.cursor = 'zoom-out'
-          promptNode.style.overflowY = 'auto'
-          promptNode.style.height = `${prompt1DSizeY}px`
-          promptNode.style.lineClamp = promptNode.style.webkitLineClamp = 999
+          prompt.style.overflowY = 'auto'
+          prompt.style.height = `${prompt1DSizeY}px`
+          prompt.style.lineClamp = prompt.style.webkitLineClamp = 999
           img.style.display = 'block'
           let src = `https://mj-gallery.com/${d.id}/grid_0.webp`
           if (!stillAnimating && img.src !== src) img.src = src // load the full res image
         } else {
           node.style.cursor = 'zoom-in'
-          promptNode.style.overflowY = 'hidden'
-          promptNode.style.height = `${promptSizeY}px`
-          promptNode.style.lineClamp = promptNode.style.webkitLineClamp = 2
+          prompt.style.overflowY = 'hidden'
+          prompt.style.height = `${promptSizeY}px`
+          prompt.style.lineClamp = prompt.style.webkitLineClamp = 2
           img.style.display = 'none' // hide full res image for perf (yes it makes a difference, even on M1, with Studio Display)
         }
         if (node.parentNode == null) document.body.appendChild(node) // if previously absent, add
