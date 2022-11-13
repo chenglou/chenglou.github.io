@@ -11,8 +11,7 @@
       /* inline background noise. No network request/failure possible */
       background-image: url(data:image/png;base64,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);
       background-color: rgb(1 5 19);
-      /* for debugging background/scroll movement */
-      /*background: repeating-linear-gradient(#e66465 0%, #9198e5 5%);*/
+      /*background: repeating-linear-gradient(#e66465 0%, #9198e5 5%);*/ /* for debugging background/scroll movement */
     }
     body {
       overflow-x: hidden;
@@ -62,20 +61,22 @@
 <script>
 'use strict'
 
-const promptH = 47 /* magic number. Doesn't show the 3rd line nor cuts the 2nd line on safari, mobile safari and chrome */
-const promptHBig = 64
+function clamp(min, v, max) {
+  return v > max ? max : v < min ? min : v
+}
+
+const promptH = 47 // magic number. Doesn't show the 3rd line nor cuts the 2nd line on safari, mobile safari and chrome
+const promptH1D = 64 // size in 1d mode
 const promptGapBottom = 8
-const boxesGapW = 24 // fixed gap looks nicer
-const boxesGapH = 24
-const boxesGapWBig = 52
-const boxesGapHBig = 28
+const boxesGapW = 24, boxesGapH = 24
+const boxesGapW1D = 52, boxesGapH1D = 28
 // 4ms for the spring animation's step. Typically 4 steps for 60fps and 2 for 120fps (frame time delta varies, so not always true)
 // could use 8ms instead but 120 means 8.33 ms per second, and the computation here doesn't fit in 0.33ms, which means sometime the simulation step wouldn't even run once, giving the illusion of jank
 const simulationStep = 4
 
 function colsBoxWMaxF(containerW) {
   const boxWMin = 220 // Make sure that on mobile, this min width is big enough not to show 2 images per row. Also, this won't be respected if view's tiny
-  const cols = Math.max(1, Math.min(7, Math.floor((containerW - boxesGapW) / (boxWMin + boxesGapW)))) // boxesGapW for body's left and right too
+  const cols = clamp(1, Math.floor((containerW - boxesGapW) / (boxWMin + boxesGapW)), 7) // boxesGapW for body's left and right too
   const boxWMax = (containerW - boxesGapW - cols * boxesGapW) / cols
   return {cols, boxWMax}
 }
@@ -255,7 +256,7 @@ let data; {
     const ar = d.w / d.h
     const cw = Math.min(d.w, boxWMax, imgHmax * ar)
     const ch = cw / ar + promptH
-    // upon zooming into the big image view, swapping out an img src for a higher-res one would cause a flash of blank image in certain cases. Instead, we put the low-res image as a background-image on the container, then the high-res image as a real img on top. Hand-rolled double buffering...
+    // upon zooming into 1D mode (big image), swapping out an img src for a higher-res one would cause a flash of blank image in certain cases. Instead, we put the low-res image as a background-image on the container, then the high-res image as a real img on top. Hand-rolled double buffering...
     let node = document.createElement('div')
         node.className = 'box'
         // node.tabIndex = i + 1 // uncomment when dismiss focus isn't this ugly blue hue anymore
@@ -391,9 +392,9 @@ function scheduleRender() {
 
     const {cols, boxWMax} = colsBoxWMaxF(windowW)
     const {pageX, pageY} = inputs.pointerXY
-    const linearHitW = 100 // left and right click region in linear mode
-    const boxWMaxBig = windowW - boxesGapWBig * 2 - linearHitW * 2
-    const imgHFullScreen = windowH - boxesGapHBig * 2 - promptHBig - promptGapBottom // TODO: adjust
+    const hitAreaW1D = 100 // left and right click region in 1D mode
+    const boxWMax1D = windowW - boxesGapW1D * 2 - hitAreaW1D * 2
+    const imgHFullScreen = windowH - boxesGapH1D * 2 - promptH1D - promptGapBottom // TODO: adjust
     if (lastAnimatedRenderTime == null) lastAnimatedRenderTime = now // TODO: state mutation only at the end
 
     const hashImgId = window.location.hash.slice(1)
@@ -436,10 +437,10 @@ function scheduleRender() {
         range.selectNodeContents(inputs.clickedTarget)
         selection.removeAllRanges()
         selection.addRange(range)
-      } else if (active > 0 && pageX >= 0 && pageX <= linearHitW) {
-        // allow spamming clicks without accidentally clicking on an empty region on left/right side (and dismiss linear mode) during transition
+      } else if (active > 0 && pageX >= 0 && pageX <= hitAreaW1D) {
+        // allow spamming clicks without accidentally clicking on an empty region on left/right side (and dismiss 1D mode) during transition
         newActive = Math.max(active - 1, 0)
-      } else if (active != null && active < data.length - 1 && pageX >= windowW - linearHitW) {
+      } else if (active != null && active < data.length - 1 && pageX >= windowW - hitAreaW1D) {
         newActive = Math.min(active + 1, data.length - 1)
       } else if ((tagName === 'DIV' && inputs.clickedTarget.className === 'box') || tagName === 'IMG') {
         let node = tagName === 'DIV' ? inputs.clickedTarget : inputs.clickedTarget.parentNode
@@ -486,25 +487,25 @@ function scheduleRender() {
     const frames = Math.floor(deltaTime)
     lastAnimatedRenderTime += frames * simulationStep
     if (newActive != null) {
-      let currentLeft = linearHitW + boxesGapWBig
+      let currentLeft = hitAreaW1D + boxesGapW1D
       for (let i = newActive - 1; i >= 0; i--) {
         let d = data[i]
         const ar = d.w / d.h
-        const imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig) * 0.7
-        currentLeft -= imgW + boxesGapWBig
+        const imgW = Math.min(d.w, imgHFullScreen * ar, boxWMax1D) * 0.7
+        currentLeft -= imgW + boxesGapW1D
       }
 
       for (let i = 0; i < data.length; i++) {
         let d = data[i]
         const ar = d.w / d.h
-        const imgW = Math.min(d.w, imgHFullScreen * ar, boxWMaxBig) * (i === newActive ? 1 : 0.7)
+        const imgW = Math.min(d.w, imgHFullScreen * ar, boxWMax1D) * (i === newActive ? 1 : 0.7)
         const imgH = imgW / ar
         const boxW = imgW
-        const boxH = imgH + promptHBig + promptGapBottom
+        const boxH = imgH + promptH1D + promptGapBottom
         let top = scrollTop + (windowH - boxH) / 2
         let left = i === newActive ? (windowW - imgW) / 2 : currentLeft
         let scale, fxFactor
-        if ((pageX >= 0 && pageX <= linearHitW && i === newActive - 1) || (pageX >= windowW - linearHitW && i === newActive + 1)) { // hovering
+        if ((pageX >= 0 && pageX <= hitAreaW1D && i === newActive - 1) || (pageX >= windowW - hitAreaW1D && i === newActive + 1)) { // hovering
           left += (pageX - (left + boxW / 2)) / 40
           top += (pageY - (top + boxH / 2)) / 40
           scale = 1.02
@@ -517,7 +518,7 @@ function scheduleRender() {
         d.left.v += boundaryRubberBandVelocity / (i === newActive ? 1 : 4)
         stillAnimating |= stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor)
 
-        currentLeft = i === newActive ? windowW - linearHitW : currentLeft + imgW + boxesGapWBig
+        currentLeft = i === newActive ? windowW - hitAreaW1D : currentLeft + imgW + boxesGapW1D
       }
     } else {
       if (newActive == null && active != null) { // just dismissed zoom in
@@ -528,7 +529,7 @@ function scheduleRender() {
           newScrollTop = activeTop - boxesGapH - 40 // TODO: adjust
           const delta = newScrollTop - scrollTop
           scrollTop = newScrollTop
-          for (let i = 0; i < data.length; i++) data[i].top.pos += delta // magically, seamlessly zoom out from linear view's focused active box without vertical jitter
+          for (let i = 0; i < data.length; i++) data[i].top.pos += delta // magically, seamlessly zoom out from 1D mode's focused active box without vertical jitter
         }
       }
 
@@ -571,7 +572,7 @@ function scheduleRender() {
         // we can't afford fxFactor & blur for all pics; too expensive for Safari & Chrome. E.g. when zomming out of a photo, keep scrolling; Chrome stops render on Studio Display
         node.style.filter = newActive != null && i === newActive - 1 || i === newActive || i === newActive + 1
           ? `brightness(${d.fxFactor.pos * 100}%) blur(${Math.max(0, 6 - d.fxFactor.pos * 6)}px)` // blur these 3 only
-          : `brightness(${d.fxFactor.pos * 100}%)` // blur of unrelated pics is too fast during transition from/to zoomed-in view to be seen anyway
+          : `brightness(${d.fxFactor.pos * 100}%)` // blur of unrelated pics is too fast during transition from/to 1D mode to be seen anyway
 
         const ar = d.w / d.h
         const imgH = d.cw.pos / ar
@@ -581,7 +582,7 @@ function scheduleRender() {
         if (i === newActive) {
           node.style.cursor = 'zoom-out'
           promptNode.style.overflowY = 'auto'
-          promptNode.style.height = `${promptHBig}px`
+          promptNode.style.height = `${promptH1D}px`
           promptNode.style.lineClamp = promptNode.style.webkitLineClamp = 999
           img.style.display = 'block'
           let src = `https://mj-gallery.com/${d.id}/grid_0.webp`
