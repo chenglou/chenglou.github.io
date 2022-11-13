@@ -268,7 +268,9 @@ let data; {
         promptNode.textContent = d.prompt
     node.append(img, promptNode)
     return {
-      ...d,
+      id: d.id,
+      naturalSizeX: d.w,
+      ar, // aspect ratio
       sizeX: {pos: sizeX, v: 0},
       sizeY: {pos: sizeY, v: 0},
       top: {pos: windowSizeY + Math.floor(i / cols) * imgMaxSizeY, v: 0},
@@ -469,13 +471,12 @@ function scheduleRender() {
       let rowMaxSizeY = 0
       for (let i = 0; i < data.length; i++) {
         let d = data[i]
-        const ar = d.w / d.h
         const imgMaxSizeY =
-          ar === 1 ? boxMaxSizeX * 0.9 // square aspect ratio area too big. Shrink it
-          : ar < 1 ? boxMaxSizeX * 1.05 // vertical images look a bit small. Grow it
+          d.ar === 1 ? boxMaxSizeX * 0.9 // square aspect ratio area too big. Shrink it
+          : d.ar < 1 ? boxMaxSizeX * 1.05 // vertical images look a bit small. Grow it
           : boxMaxSizeX
-        const sizeX = Math.min(d.w, boxMaxSizeX, imgMaxSizeY * ar)
-        const sizeY = sizeX / ar
+        const sizeX = Math.min(d.naturalSizeX, boxMaxSizeX, imgMaxSizeY * d.ar)
+        const sizeY = sizeX / d.ar
         imgs.push({sizeX, sizeY})
         rowMaxSizeY = Math.max(rowMaxSizeY, sizeY)
         if (i % cols === cols - 1 || i === data.length - 1) {
@@ -494,16 +495,14 @@ function scheduleRender() {
       let currentLeft = hitArea1DSizeX + boxes1DGapX
       for (let i = newActive - 1; i >= 0; i--) {
         let d = data[i]
-        const ar = d.w / d.h
-        const imgSizeX = Math.min(d.w, box1DMaxSizeX, img1DSizeY * ar) * 0.7
+        const imgSizeX = Math.min(d.naturalSizeX, box1DMaxSizeX, img1DSizeY * d.ar) * 0.7
         currentLeft -= imgSizeX + boxes1DGapX
       }
 
       for (let i = 0; i < data.length; i++) {
         let d = data[i]
-        const ar = d.w / d.h
-        const imgSizeX = Math.min(d.w, box1DMaxSizeX, img1DSizeY * ar) * (i === newActive ? 1 : 0.7)
-        const imgSizeY = imgSizeX / ar
+        const imgSizeX = Math.min(d.naturalSizeX, box1DMaxSizeX, img1DSizeY * d.ar) * (i === newActive ? 1 : 0.7)
+        const imgSizeY = imgSizeX / d.ar
         const boxSizeX = imgSizeX
         const boxSizeY = imgSizeY + prompt1DSizeY + promptGapBottom
         let top = scrollTop + (windowSizeY - boxSizeY) / 2
@@ -578,8 +577,7 @@ function scheduleRender() {
           ? `brightness(${d.fxFactor.pos * 100}%) blur(${Math.max(0, 6 - d.fxFactor.pos * 6)}px)` // blur these 3 only
           : `brightness(${d.fxFactor.pos * 100}%)` // blur of unrelated pics is too fast during transition from/to 1D mode to be seen anyway
 
-        const ar = d.w / d.h
-        const imgSizeY = d.sizeX.pos / ar
+        const imgSizeY = d.sizeX.pos / d.ar
         promptNode.style.top = `${imgSizeY}px`
 
         let img = node.children[0]
