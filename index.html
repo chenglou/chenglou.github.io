@@ -330,7 +330,13 @@ let inputs = {
   key: null,
   clickedTarget: null,
 }
-let debugAdvance = false
+// === debug
+const debug = false // only need to toggle this
+let debugTimestamp = 0
+const raf = debug ? function raf(f) {
+    debugTimestamp += 1000 / 60
+    f(debugTimestamp)
+} : requestAnimationFrame
 
 window.addEventListener('resize', () => scheduleRender())
 window.addEventListener('scroll', () => scheduleRender())
@@ -339,8 +345,7 @@ window.addEventListener('keydown', (e) => {
     inputs.key = e.code
     scheduleRender()
   } else if (e.code === 'KeyA') { // debug
-    debugAdvance = true
-    scheduleRender()
+    scheduleRender(true)
   }
 })
 window.addEventListener('click', (e) => {
@@ -368,18 +373,11 @@ let dummyPlaceholder = document.createElement('div')
 dummyPlaceholder.style.width = '1px' // make it tiny just in case it affects compositing... sigh
 document.body.append(dummyPlaceholder)
 
-let fakeDebugTime = 0
-function raf(f) {
-  return requestAnimationFrame(f)
-  fakeDebugTime += 1000 / 60
-  f(fakeDebugTime)
-}
 let scheduled = false
-function scheduleRender() {
+function scheduleRender(debugForceRender) {
+  if (debug && !debugForceRender) return;
   if (scheduled) return;
   scheduled = true
-  // if (!debugAdvance) return
-  // debugAdvance = false
 
   raf(function render(now) {
     // batched DOM reads
