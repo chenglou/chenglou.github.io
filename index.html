@@ -530,10 +530,10 @@ function scheduleRender() {
         const boxH = imgsWH[active].imgH + promptH + promptGapBottom
         // if the dismissed box isn't fully shown, scroll there
         if (activeTop <= scrollTop || activeTop + boxH >= scrollTop + windowH) {
-          newScrollTop = activeTop - boxesGapH - 40 // TODO: adjust
+          newScrollTop = activeTop - boxesGapH - 40 // Peek a little higher to show the previous row
           const delta = newScrollTop - scrollTop
           scrollTop = newScrollTop
-          for (let i = 0; i < data.length; i++) data[i].top.pos += delta // magically, seamlessly zoom out from 1D mode's focused active box without vertical jitter
+          for (let i = 0; i < data.length; i++) data[i].top.pos += delta // magically & seamlessly zoom out from 1D mode's focused active box without vertical jitter
         }
       }
 
