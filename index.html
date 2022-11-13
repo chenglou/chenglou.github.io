@@ -325,7 +325,7 @@ function stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor) {
 let lastAnimatedRenderTime = null
 let zIndex = 1
 let inputs = {
-  pointerXY: {pageX: -1, pageY: -1}, // btw, on page load, there's no way to render a first cursor state =(
+  pointer: {pageX: -1, pageY: -1}, // btw, on page load, there's no way to render a first cursor state =(
   key: null,
   clickedTarget: null,
 }
@@ -350,13 +350,13 @@ window.addEventListener('pointermove', (e) => {
   // when scrolling (which updates `render`), a container's pointermove doesn't trigger; e.offsetX/Y (coordinates local
   // to container) would be stale. So we have to use global coords anyway. Might as well attach to window
   // We need to listen window-wide anyway, since custom selection needs to know when the cursor dragged into a comment from outside
-  inputs.pointerXY.pageX = e.pageX; inputs.pointerXY.pageY = e.pageY // can exceed document bounds, e.g. dragging reports back out-of-bound values
+  inputs.pointer.pageX = e.pageX; inputs.pointer.pageY = e.pageY // can exceed document bounds, e.g. dragging reports back out-of-bound values
   scheduleRender()
 })
 // safari pointerdown isn't fired on the first left click after dismissing context menus... back to mousedown
 window.addEventListener('mousedown', (e) => {
   // also update position. Maybe pointer never moved (page refresh, right click, move, then left click to dismiss, etc.)
-  inputs.pointerXY.pageX = e.pageX; inputs.pointerXY.pageY = e.pageY
+  inputs.pointer.pageX = e.pageX; inputs.pointer.pageY = e.pageY
   scheduleRender()
 })
 window.addEventListener('popstate', (e) => {
@@ -391,7 +391,7 @@ function scheduleRender() {
     const UITopHMax = 100, UIBottomHMax = 150 // random conservative numbers
 
     const {cols, boxWMax} = colsBoxWMaxF(windowW)
-    const {pageX, pageY} = inputs.pointerXY
+    const {pageX, pageY} = inputs.pointer
     const hitAreaW1D = 100 // left and right click region in 1D mode
     const boxWMax1D = windowW - boxesGapW1D * 2 - hitAreaW1D * 2
     const imgHFullScreen = windowH - boxesGapH1D * 2 - promptH1D - promptGapBottom // TODO: adjust
@@ -402,7 +402,7 @@ function scheduleRender() {
 
     // handle key
     let newActive
-    let boundaryRubberBandVelocity = 0
+    let edgeRubberBandVelocity = 0
     if (inputs.key === 'Escape') {
       newActive = null
     } else if (inputs.key === 'ArrowLeft') {
@@ -410,7 +410,7 @@ function scheduleRender() {
         newActive = 0
       } else if (active === 0) {
         newActive = 0
-        boundaryRubberBandVelocity = 2000
+        edgeRubberBandVelocity = 2000
       } else {
         newActive = active - 1
       }
@@ -420,7 +420,7 @@ function scheduleRender() {
         newActive = 0
       } else if (active === data.length - 1) {
         newActive = data.length - 1
-        boundaryRubberBandVelocity = -2000
+        edgeRubberBandVelocity = -2000
       } else {
         newActive = active + 1
       }
@@ -519,7 +519,7 @@ function scheduleRender() {
           fxFactor = i === newActive ? 1 : 0.2
         }
 
-        d.left.v += boundaryRubberBandVelocity / (i === newActive ? 1 : 4)
+        d.left.v += edgeRubberBandVelocity / (i === newActive ? 1 : 4)
         stillAnimating |= stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor)
 
         currentLeft = i === newActive ? windowW - hitAreaW1D : currentLeft + imgW + boxesGapW1D
@@ -612,7 +612,6 @@ function scheduleRender() {
     dummyPlaceholder.style.height = `${rowsTop[rowsTop.length - 1]}px`
     if (newScrollTop != null) window.scrollTo({top: newScrollTop}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting
     if (newActive !== active) {
-      // can't use window.location.hash. Empty hash would refresh the page...
       window.history.pushState(null, null, `${window.location.pathname}${window.location.search}${newActive == null ? '' : '#' + data[newActive].id}`)
     }
 
