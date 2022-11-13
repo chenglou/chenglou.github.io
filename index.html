@@ -324,7 +324,6 @@ function stepAnimation_(d, frames, boxSizeX, boxSizeY, top, left, scale, fxFacto
 
 // === state. Plus one in the URL's hash
 let lastAnimatedRenderTime = null
-let zIndex = 1
 let inputs = {
   pointer: {x: -1, y: -1}, // btw, on page load, there's no way to render a first cursor state =(
   key: null,
@@ -413,7 +412,6 @@ function scheduleRender(debugForceRender) {
       } else {
         newActive = active - 1
       }
-      data[newActive].node.style.zIndex = zIndex++
     } else if (inputs.key === 'ArrowRight') {
       if (active == null) {
         newActive = 0
@@ -423,7 +421,6 @@ function scheduleRender(debugForceRender) {
       } else {
         newActive = active + 1
       }
-      data[newActive].node.style.zIndex = zIndex++
     } else {
       newActive = active
     }
@@ -453,7 +450,6 @@ function scheduleRender(debugForceRender) {
               newActive = null
             } else {
               newActive = i
-              node.style.zIndex = zIndex++
             }
             break
           }
@@ -556,6 +552,7 @@ function scheduleRender(debugForceRender) {
 
     }
 
+    let zIndex = 1
     for (let i = 0; i < data.length; i++) {
       let d = data[i]
       let {node} = d
@@ -580,6 +577,7 @@ function scheduleRender(debugForceRender) {
 
         if (i === newActive) {
           node.style.cursor = 'zoom-out'
+          node.style.zIndex = data.length + 999 // guaranteed above everything
           prompt.style.overflowY = 'auto'
           prompt.style.height = `${prompt1DSizeY}px`
           prompt.style.lineClamp = prompt.style.webkitLineClamp = 999
@@ -588,6 +586,7 @@ function scheduleRender(debugForceRender) {
           if (!stillAnimating && img.src !== src) img.src = src // load the full res image
         } else {
           node.style.cursor = 'zoom-in'
+          node.style.zIndex = zIndex++
           prompt.style.overflowY = 'hidden'
           prompt.style.height = `${promptSizeY}px`
           prompt.style.lineClamp = prompt.style.webkitLineClamp = 2
