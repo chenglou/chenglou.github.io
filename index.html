@@ -65,27 +65,27 @@ function clamp(min, v, max) {
   return v > max ? max : v < min ? min : v
 }
 
-const promptH = 47 // magic number. Doesn't show the 3rd line nor cuts the 2nd line on safari, mobile safari and chrome
-const promptH1D = 64 // size in 1d mode
+const promptSizeY = 47 // magic number. Doesn't show the 3rd line nor cuts the 2nd line on safari, mobile safari and chrome
+const prompt1DSizeY = 64 // size in 1d mode
 const promptGapBottom = 8
-const boxesGapW = 24, boxesGapH = 24
-const boxesGapW1D = 52, boxesGapH1D = 28
+const boxesGapX = 24, boxesGapY = 24
+const boxes1DGapX = 52, boxes1DGapY = 28
 // 4ms for the spring animation's step. Typically 4 steps for 60fps and 2 for 120fps (frame time delta varies, so not always true)
 // could use 8ms instead but 120 means 8.33 ms per second, and the computation here doesn't fit in 0.33ms, which means sometime the simulation step wouldn't even run once, giving the illusion of jank
 const simulationStep = 4
 
-function colsBoxWMaxF(containerW) {
-  const boxWMin = 220 // Make sure that on mobile, this min width is big enough not to show 2 images per row. Also, this won't be respected if view's tiny
-  const cols = clamp(1, Math.floor((containerW - boxesGapW) / (boxWMin + boxesGapW)), 7) // boxesGapW for body's left and right too
-  const boxWMax = (containerW - boxesGapW - cols * boxesGapW) / cols
-  return {cols, boxWMax}
+function colsBoxMaxSizeXF(containerSizeX) {
+  const boxMinSizeX = 220 // Make sure that on mobile, this min width is big enough not to show 2 images per row. Also, this won't be respected if view's tiny
+  const cols = clamp(1, Math.floor((containerSizeX - boxesGapX) / (boxMinSizeX + boxesGapX)), 7) // boxesGapX for body's left and right too
+  const boxMaxSizeX = (containerSizeX - boxesGapX - cols * boxesGapX) / cols
+  return {cols, boxMaxSizeX}
 }
 
 let data; {
-  const windowW = document.documentElement.clientWidth
-  const windowH = document.documentElement.clientHeight
-  const {cols, boxWMax} = colsBoxWMaxF(windowW)
-  const imgHmax = boxWMax + 100 // TODO: adjust this better
+  const windowSizeX = document.documentElement.clientWidth
+  const windowSizeY = document.documentElement.clientHeight
+  const {cols, boxMaxSizeX} = colsBoxMaxSizeXF(windowSizeX)
+  const imgMaxSizeY = boxMaxSizeX + 100 // TODO: adjust this better
   data = [
     {id: 'adae74c4-65c5-4245-87e1-c0fbc81c2c27', w: 1024, h: 1792, prompt: `liquid gold melting over white bird skull mask, cyberpunk rococo`},
     {id: 'f0485122-e83e-492c-aa63-42a28015e45d', w: 1664, h: 2432, prompt: `futuristic soldier with bird skull mask, rococo`},
@@ -254,8 +254,8 @@ let data; {
     {id: '14465d26-a41e-4cc7-9a70-c7de8a0e28b3', w: 1408, h: 1792, prompt: `three-body problem, cinematic`},
   ].map((d, i) => {
     const ar = d.w / d.h
-    const cw = Math.min(d.w, boxWMax, imgHmax * ar)
-    const ch = cw / ar + promptH
+    const sizeX = Math.min(d.w, boxMaxSizeX, imgMaxSizeY * ar)
+    const sizeY = sizeX / ar + promptSizeY
     // upon zooming into 1D mode (big image), swapping out an img src for a higher-res one would cause a flash of blank image in certain cases. Instead, we put the low-res image as a background-image on the container, then the high-res image as a real img on top. Hand-rolled double buffering...
     let node = document.createElement('div')
         node.className = 'box'
@@ -269,10 +269,10 @@ let data; {
     node.append(img, promptNode)
     return {
       ...d,
-      cw: {pos: cw, v: 0},
-      ch: {pos: ch, v: 0},
-      top: {pos: windowH + Math.floor(i / cols) * imgHmax, v: 0},
-      left: {pos: Math.floor(i / cols) * -windowW - windowW, v: 0},
+      sizeX: {pos: sizeX, v: 0},
+      sizeY: {pos: sizeY, v: 0},
+      top: {pos: windowSizeY + Math.floor(i / cols) * imgMaxSizeY, v: 0},
+      left: {pos: Math.floor(i / cols) * -windowSizeX - windowSizeX, v: 0},
       scale: {pos: 1, v: 0},
       fxFactor: {pos: 20, v: 0}, // for brightness and blur
       node,
@@ -302,18 +302,18 @@ function step_(config, destPos) {
   config.v = newV
 }
 
-function stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor) {
+function stepAnimation_(d, frames, boxSizeX, boxSizeY, top, left, scale, fxFactor) {
   for (let i = 0; i < frames; i++) {
-    step_(d.cw, boxW)
-    step_(d.ch, boxH)
+    step_(d.sizeX, boxSizeX)
+    step_(d.sizeY, boxSizeY)
     step_(d.top, top)
     step_(d.left, left)
     step_(d.scale, scale)
     step_(d.fxFactor, fxFactor)
   }
   let stillAnimating = false
-  if (Math.abs(d.cw.v)       < 0.01 && Math.abs(boxW - d.cw.pos)           < 0.01) {d.cw.v       = 0; d.cw.pos       = boxW    } else stillAnimating = true
-  if (Math.abs(d.ch.v)       < 0.01 && Math.abs(boxH - d.ch.pos)           < 0.01) {d.ch.v       = 0; d.ch.pos       = boxH    } else stillAnimating = true
+  if (Math.abs(d.sizeX.v)    < 0.01 && Math.abs(boxSizeX - d.sizeX.pos)    < 0.01) {d.sizeX.v    = 0; d.sizeX.pos    = boxSizeX} else stillAnimating = true
+  if (Math.abs(d.sizeY.v)    < 0.01 && Math.abs(boxSizeY - d.sizeY.pos)    < 0.01) {d.sizeY.v    = 0; d.sizeY.pos    = boxSizeY} else stillAnimating = true
   if (Math.abs(d.top.v)      < 0.01 && Math.abs(top - d.top.pos)           < 0.01) {d.top.v      = 0; d.top.pos      = top     } else stillAnimating = true
   if (Math.abs(d.left.v)     < 0.01 && Math.abs(left - d.left.pos)         < 0.01) {d.left.v     = 0; d.left.pos     = left    } else stillAnimating = true
   if (Math.abs(d.scale.v)    < 0.01 && Math.abs(scale - d.scale.pos)       < 0.01) {d.scale.v    = 0; d.scale.pos    = scale   } else stillAnimating = true
@@ -325,7 +325,7 @@ function stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor) {
 let lastAnimatedRenderTime = null
 let zIndex = 1
 let inputs = {
-  pointer: {pageX: -1, pageY: -1}, // btw, on page load, there's no way to render a first cursor state =(
+  pointer: {x: -1, y: -1}, // btw, on page load, there's no way to render a first cursor state =(
   key: null,
   clickedTarget: null,
 }
@@ -350,13 +350,13 @@ window.addEventListener('pointermove', (e) => {
   // when scrolling (which updates `render`), a container's pointermove doesn't trigger; e.offsetX/Y (coordinates local
   // to container) would be stale. So we have to use global coords anyway. Might as well attach to window
   // We need to listen window-wide anyway, since custom selection needs to know when the cursor dragged into a comment from outside
-  inputs.pointer.pageX = e.pageX; inputs.pointer.pageY = e.pageY // can exceed document bounds, e.g. dragging reports back out-of-bound values
+  inputs.pointer.x = e.pageX; inputs.pointer.y = e.pageY // can exceed document bounds, e.g. dragging reports back out-of-bound values
   scheduleRender()
 })
 // safari pointerdown isn't fired on the first left click after dismissing context menus... back to mousedown
 window.addEventListener('mousedown', (e) => {
   // also update position. Maybe pointer never moved (page refresh, right click, move, then left click to dismiss, etc.)
-  inputs.pointer.pageX = e.pageX; inputs.pointer.pageY = e.pageY
+  inputs.pointer.x = e.pageX; inputs.pointer.y = e.pageY
   scheduleRender()
 })
 window.addEventListener('popstate', (e) => {
@@ -383,18 +383,18 @@ function scheduleRender() {
   raf(function render(now) {
     // batched DOM reads
     // excludes scroll bar & invariant under safari pinch zoom
-    const windowW = document.documentElement.clientWidth
+    const windowSizeX = document.documentElement.clientWidth
     // invariant under safari pinch zoom (this way, when zoomed in, we don't occlude away rows outside of the zoomed-in view; if we did, when we zoom out again we wouldn't see those occluded rows until we release our fingers. During safari pinch, no event is triggered so we couldn't have updated the occlusion in real time)
-    const windowH = document.documentElement.clientHeight
+    const windowSizeY = document.documentElement.clientHeight
     let scrollTop = window.scrollY
     // don't forget top & bottom safari UI chrome sizes when vertically occluding, since they're transluscent so we can't over-occlude by ignoring them
-    const UITopHMax = 100, UIBottomHMax = 150 // random conservative numbers
+    const UIMaxSizeTop = 100, UIMaxSizeBottom = 150 // random conservative numbers
 
-    const {cols, boxWMax} = colsBoxWMaxF(windowW)
-    const {pageX, pageY} = inputs.pointer
-    const hitAreaW1D = 100 // left and right click region in 1D mode
-    const boxWMax1D = windowW - boxesGapW1D * 2 - hitAreaW1D * 2
-    const imgHFullScreen = windowH - boxesGapH1D * 2 - promptH1D - promptGapBottom // TODO: adjust
+    const {cols, boxMaxSizeX} = colsBoxMaxSizeXF(windowSizeX)
+    const {pointer} = inputs
+    const hitArea1DSizeX = 100 // left and right click region in 1D mode
+    const box1DMaxSizeX = windowSizeX - boxes1DGapX * 2 - hitArea1DSizeX * 2
+    const img1DSizeY = windowSizeY - boxes1DGapY * 2 - prompt1DSizeY - promptGapBottom // TODO: adjust
     if (lastAnimatedRenderTime == null) lastAnimatedRenderTime = now // TODO: state mutation only at the end
 
     const hashImgId = window.location.hash.slice(1)
@@ -402,7 +402,7 @@ function scheduleRender() {
 
     // handle key
     let newActive
-    let edgeRubberBandVelocity = 0
+    let edgeRubberBandVelocityX = 0
     if (inputs.key === 'Escape') {
       newActive = null
     } else if (inputs.key === 'ArrowLeft') {
@@ -410,7 +410,7 @@ function scheduleRender() {
         newActive = 0
       } else if (active === 0) {
         newActive = 0
-        edgeRubberBandVelocity = 2000
+        edgeRubberBandVelocityX = 2000
       } else {
         newActive = active - 1
       }
@@ -420,7 +420,7 @@ function scheduleRender() {
         newActive = 0
       } else if (active === data.length - 1) {
         newActive = data.length - 1
-        edgeRubberBandVelocity = -2000
+        edgeRubberBandVelocityX = -2000
       } else {
         newActive = active + 1
       }
@@ -430,8 +430,8 @@ function scheduleRender() {
     }
     // handle click
     const pointerPlace1D =
-      pageX >= 0 && pageX <= hitAreaW1D ? 'left'
-      : pageX >= windowW - hitAreaW1D ? 'right'
+      pointer.x >= 0 && pointer.x <= hitArea1DSizeX ? 'left'
+      : pointer.x >= windowSizeX - hitArea1DSizeX ? 'right'
       : null
     if (inputs.clickedTarget != null) {
       const tagName = inputs.clickedTarget.tagName
@@ -464,23 +464,23 @@ function scheduleRender() {
       }
     }
 
-    let imgsWH = [], rowsTop = [boxesGapH] // length: number of rows + 1
+    let imgs = [], rowsTop = [boxesGapY] // length: number of rows + 1
     {
-      let rowHMax = 0
+      let rowMaxSizeY = 0
       for (let i = 0; i < data.length; i++) {
         let d = data[i]
         const ar = d.w / d.h
-        const imgHmax =
-          ar === 1 ? boxWMax * 0.9 // square aspect ratio area too big. Shrink it
-          : ar < 1 ? boxWMax * 1.05 // vertical images look a bit small. Grow it
-          : boxWMax
-        const imgW = Math.min(d.w, boxWMax, imgHmax * ar)
-        const imgH = imgW / ar
-        imgsWH.push({imgW, imgH})
-        rowHMax = Math.max(rowHMax, imgH)
+        const imgMaxSizeY =
+          ar === 1 ? boxMaxSizeX * 0.9 // square aspect ratio area too big. Shrink it
+          : ar < 1 ? boxMaxSizeX * 1.05 // vertical images look a bit small. Grow it
+          : boxMaxSizeX
+        const sizeX = Math.min(d.w, boxMaxSizeX, imgMaxSizeY * ar)
+        const sizeY = sizeX / ar
+        imgs.push({sizeX, sizeY})
+        rowMaxSizeY = Math.max(rowMaxSizeY, sizeY)
         if (i % cols === cols - 1 || i === data.length - 1) {
-          rowsTop.push(rowsTop[Math.floor(i / cols)] + rowHMax + promptH + promptGapBottom + boxesGapH)
-          rowHMax = 0
+          rowsTop.push(rowsTop[Math.floor(i / cols)] + rowMaxSizeY + promptSizeY + promptGapBottom + boxesGapY)
+          rowMaxSizeY = 0
         }
       }
     }
@@ -491,27 +491,27 @@ function scheduleRender() {
     const frames = Math.floor(deltaTime)
     lastAnimatedRenderTime += frames * simulationStep
     if (newActive != null) {
-      let currentLeft = hitAreaW1D + boxesGapW1D
+      let currentLeft = hitArea1DSizeX + boxes1DGapX
       for (let i = newActive - 1; i >= 0; i--) {
         let d = data[i]
         const ar = d.w / d.h
-        const imgW = Math.min(d.w, imgHFullScreen * ar, boxWMax1D) * 0.7
-        currentLeft -= imgW + boxesGapW1D
+        const imgSizeX = Math.min(d.w, img1DSizeY * ar, box1DMaxSizeX) * 0.7
+        currentLeft -= imgSizeX + boxes1DGapX
       }
 
       for (let i = 0; i < data.length; i++) {
         let d = data[i]
         const ar = d.w / d.h
-        const imgW = Math.min(d.w, imgHFullScreen * ar, boxWMax1D) * (i === newActive ? 1 : 0.7)
-        const imgH = imgW / ar
-        const boxW = imgW
-        const boxH = imgH + promptH1D + promptGapBottom
-        let top = scrollTop + (windowH - boxH) / 2
-        let left = i === newActive ? (windowW - imgW) / 2 : currentLeft
+        const imgSizeX = Math.min(d.w, img1DSizeY * ar, box1DMaxSizeX) * (i === newActive ? 1 : 0.7)
+        const imgSizeY = imgSizeX / ar
+        const boxSizeX = imgSizeX
+        const boxSizeY = imgSizeY + prompt1DSizeY + promptGapBottom
+        let top = scrollTop + (windowSizeY - boxSizeY) / 2
+        let left = i === newActive ? (windowSizeX - imgSizeX) / 2 : currentLeft
         let scale, fxFactor
         if ((pointerPlace1D === 'left' && i === newActive - 1) || (pointerPlace1D === 'right' && i === newActive + 1)) { // hovering
-          left += (pageX - (left + boxW / 2)) / 40
-          top += (pageY - (top + boxH / 2)) / 40
+          left += (pointer.x - (left + boxSizeX / 2)) / 40
+          top += (pointer.y - (top + boxSizeY / 2)) / 40
           scale = 1.02
           fxFactor = 0.5
         } else {
@@ -519,18 +519,18 @@ function scheduleRender() {
           fxFactor = i === newActive ? 1 : 0.2
         }
 
-        d.left.v += edgeRubberBandVelocity / (i === newActive ? 1 : 4)
-        stillAnimating |= stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor)
+        d.left.v += edgeRubberBandVelocityX / (i === newActive ? 1 : 4)
+        stillAnimating |= stepAnimation_(d, frames, boxSizeX, boxSizeY, top, left, scale, fxFactor)
 
-        currentLeft = i === newActive ? windowW - hitAreaW1D : currentLeft + imgW + boxesGapW1D
+        currentLeft = i === newActive ? windowSizeX - hitArea1DSizeX : currentLeft + imgSizeX + boxes1DGapX
       }
     } else {
       if (newActive == null && active != null) { // just dismissed zoom in
         const activeTop = rowsTop[Math.floor(active / cols)]
-        const boxH = imgsWH[active].imgH + promptH + promptGapBottom
+        const boxSizeY = imgs[active].sizeY + promptSizeY + promptGapBottom
         // if the dismissed box isn't fully shown, scroll there
-        if (activeTop <= scrollTop || activeTop + boxH >= scrollTop + windowH) {
-          newScrollTop = activeTop - boxesGapH - 40 // Peek a little higher to show the previous row
+        if (activeTop <= scrollTop || activeTop + boxSizeY >= scrollTop + windowSizeY) {
+          newScrollTop = activeTop - boxesGapY - 40 // Peek a little higher to show the previous row
           const delta = newScrollTop - scrollTop
           scrollTop = newScrollTop
           for (let i = 0; i < data.length; i++) data[i].top.pos += delta // magically & seamlessly zoom out from 1D mode's focused active box without vertical jitter
@@ -540,22 +540,22 @@ function scheduleRender() {
       for (let i = 0; i < data.length; i++) {
         let d = data[i]
         const currentRow = Math.floor(i / cols)
-        const boxW = imgsWH[i].imgW
-        const boxH = imgsWH[i].imgH + promptH + promptGapBottom
-        const rowHMax = rowsTop[currentRow + 1] - rowsTop[currentRow]
-        let top = rowsTop[currentRow] + (rowHMax - boxH) / 2
-        let left = boxesGapW + (boxWMax + boxesGapW) * (i % cols) + (boxWMax - boxW) / 2 // center horizontally
+        const boxSizeX = imgs[i].sizeX
+        const boxSizeY = imgs[i].sizeY + promptSizeY + promptGapBottom
+        const rowMaxSizeY = rowsTop[currentRow + 1] - rowsTop[currentRow]
+        let top = rowsTop[currentRow] + (rowMaxSizeY - boxSizeY) / 2
+        let left = boxesGapX + (boxMaxSizeX + boxesGapX) * (i % cols) + (boxMaxSizeX - boxSizeX) / 2 // center horizontally
         let scale
-        if (left <= pageX && pageX <= left + boxW && top <= pageY && pageY <= top + boxH) { // hovering
-          left += (pageX - (left + boxW / 2)) / 40
-          top += (pageY - (top + boxH / 2)) / 40
+        if (left <= pointer.x && pointer.x <= left + boxSizeX && top <= pointer.y && pointer.y <= top + boxSizeY) { // hovering
+          left += (pointer.x - (left + boxSizeX / 2)) / 40
+          top += (pointer.y - (top + boxSizeY / 2)) / 40
           scale = 1.02
         } else {
           scale = 1
         }
         const fxFactor = 1
 
-        stillAnimating |= stepAnimation_(d, frames, boxW, boxH, top, left, scale, fxFactor)
+        stillAnimating |= stepAnimation_(d, frames, boxSizeX, boxSizeY, top, left, scale, fxFactor)
       }
 
     }
@@ -565,13 +565,13 @@ function scheduleRender() {
       let {node, promptNode} = d
       // only draw what's visible on screen
       if (
-        d.top.pos <= scrollTop + windowH + UIBottomHMax &&
-        d.top.pos + d.ch.pos >= scrollTop - UITopHMax &&
-        d.left.pos <= windowW &&
-        d.left.pos + d.cw.pos >= 0
-      ) { // disregard shadow & scaling for now; UIBottomHMax and UITopHMax are safe bigger values anyway
-        node.style.width = `${d.cw.pos}px`
-        node.style.height = `${d.ch.pos}px`
+        d.top.pos <= scrollTop + windowSizeY + UIMaxSizeBottom &&
+        d.top.pos + d.sizeY.pos >= scrollTop - UIMaxSizeTop &&
+        d.left.pos <= windowSizeX &&
+        d.left.pos + d.sizeX.pos >= 0
+      ) { // disregard shadow & scaling for now; UIMaxSizeBottom and UIMaxSizeTop are safe bigger values anyway
+        node.style.width = `${d.sizeX.pos}px`
+        node.style.height = `${d.sizeY.pos}px`
         node.style.transform = `translate3d(${d.left.pos}px,${d.top.pos}px,0) scale(${d.scale.pos})` // safari now anti-aliases for hover, but then zoom in janks on big displays...
         // we can't afford fxFactor & blur for all pics; too expensive for Safari & Chrome. E.g. when zomming out of a photo, keep scrolling; Chrome stops render on Studio Display
         node.style.filter = newActive != null && i === newActive - 1 || i === newActive || i === newActive + 1
@@ -579,14 +579,14 @@ function scheduleRender() {
           : `brightness(${d.fxFactor.pos * 100}%)` // blur of unrelated pics is too fast during transition from/to 1D mode to be seen anyway
 
         const ar = d.w / d.h
-        const imgH = d.cw.pos / ar
-        promptNode.style.top = `${imgH}px`
+        const imgSizeY = d.sizeX.pos / ar
+        promptNode.style.top = `${imgSizeY}px`
 
         let img = node.children[0]
         if (i === newActive) {
           node.style.cursor = 'zoom-out'
           promptNode.style.overflowY = 'auto'
-          promptNode.style.height = `${promptH1D}px`
+          promptNode.style.height = `${prompt1DSizeY}px`
           promptNode.style.lineClamp = promptNode.style.webkitLineClamp = 999
           img.style.display = 'block'
           let src = `https://mj-gallery.com/${d.id}/grid_0.webp`
@@ -594,7 +594,7 @@ function scheduleRender() {
         } else {
           node.style.cursor = 'zoom-in'
           promptNode.style.overflowY = 'hidden'
-          promptNode.style.height = `${promptH}px`
+          promptNode.style.height = `${promptSizeY}px`
           promptNode.style.lineClamp = promptNode.style.webkitLineClamp = 2
           img.style.display = 'none' // hide full res image for perf (yes it makes a difference, even on M1, with Studio Display)
         }
