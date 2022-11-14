@@ -463,7 +463,7 @@ function scheduleRender(debugForceRender) {
       for (let i = 0; i < data.length; i++) {
         let d = data[i]
         const imgMaxSizeY =
-          d.ar === 1 ? boxMaxSizeX * 0.9 // square aspect ratio area too big. Shrink it
+          d.ar === 1 ? boxMaxSizeX * 0.85 // square aspect ratio area too big. Shrink it
           : d.ar < 1 ? boxMaxSizeX * 1.05 // vertical images look a bit small. Grow it
           : boxMaxSizeX
         const sizeX = Math.min(d.naturalSizeX, boxMaxSizeX, imgMaxSizeY * d.ar)
