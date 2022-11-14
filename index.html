@@ -549,7 +549,6 @@ function scheduleRender(debugForceRender) {
       }
     }
 
-    let zIndex = 1
     for (let i = 0; i < data.length; i++) {
       let d = data[i]
       let {node} = d
@@ -583,7 +582,7 @@ function scheduleRender(debugForceRender) {
           if (!stillAnimating && img.src !== src) img.src = src // load the full res image
         } else {
           node.style.cursor = 'zoom-in'
-          node.style.zIndex = zIndex++
+          node.style.zIndex = i + 1 // simple proper z-index management
           prompt.style.overflowY = 'hidden'
           prompt.style.height = `${promptSizeY}px`
           prompt.style.lineClamp = prompt.style.webkitLineClamp = 2
