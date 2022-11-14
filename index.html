@@ -440,7 +440,7 @@ function scheduleRender(debugForceRender) {
       }
     }
 
-    let imgs = [], rowsTop = [boxesGapY] // length: number of rows + 1
+    let boxes = [], rowsTop = [boxesGapY] // length: number of rows + 1
     {
       let rowMaxSizeY = 0
       for (let i = 0; i < data.length; i++) {
@@ -450,11 +450,11 @@ function scheduleRender(debugForceRender) {
           : d.ar < 1 ? boxMaxSizeX * 1.05 // vertical images look a bit small. Grow it
           : boxMaxSizeX
         const sizeX = Math.min(d.naturalSizeX, boxMaxSizeX, imgMaxSizeY * d.ar)
-        const sizeY = sizeX / d.ar
-        imgs.push({sizeX, sizeY})
+        const sizeY = sizeX / d.ar + promptSizeY + promptGapBottom
+        boxes.push({sizeX, sizeY})
         rowMaxSizeY = Math.max(rowMaxSizeY, sizeY)
         if (i % cols === cols - 1 || i === data.length - 1) {
-          rowsTop.push(rowsTop[Math.floor(i / cols)] + rowMaxSizeY + promptSizeY + promptGapBottom + boxesGapY)
+          rowsTop.push(rowsTop[Math.floor(i / cols)] + rowMaxSizeY + boxesGapY)
           rowMaxSizeY = 0
         }
       }
@@ -464,9 +464,8 @@ function scheduleRender(debugForceRender) {
     if (newActive == null) {
       if (newActive == null && active != null) { // just dismissed 1D mode
         const activeTop = rowsTop[Math.floor(active / cols)]
-        const boxSizeY = imgs[active].sizeY + promptSizeY + promptGapBottom
         // if the dismissed box isn't fully shown, scroll there
-        if (activeTop <= scrollTop || activeTop + boxSizeY >= scrollTop + windowSizeY) {
+        if (activeTop <= scrollTop || activeTop + boxes[active].sizeY >= scrollTop + windowSizeY) {
           newScrollTop = activeTop - boxesGapY - 40 // Peek a little higher to show the previous row
           const delta = newScrollTop - scrollTop
           scrollTop = newScrollTop
@@ -475,22 +474,20 @@ function scheduleRender(debugForceRender) {
       }
 
       for (let i = 0; i < data.length; i++) {
-        let d = data[i]
+        let d = data[i], b = boxes[i]
         const currentRow = Math.floor(i / cols)
-        const boxSizeX = imgs[i].sizeX
-        const boxSizeY = imgs[i].sizeY + promptSizeY + promptGapBottom
         const rowMaxSizeY = rowsTop[currentRow + 1] - rowsTop[currentRow]
-        let top = rowsTop[currentRow] + (rowMaxSizeY - boxSizeY) / 2
-        let left = boxesGapX + (boxMaxSizeX + boxesGapX) * (i % cols) + (boxMaxSizeX - boxSizeX) / 2 // center horizontally
+        let top = rowsTop[currentRow] + (rowMaxSizeY - b.sizeY) / 2
+        let left = boxesGapX + (boxMaxSizeX + boxesGapX) * (i % cols) + (boxMaxSizeX - b.sizeX) / 2 // center horizontally
         let scale
-        if (left <= pointer.x && pointer.x <= left + boxSizeX && top <= pointer.y && pointer.y <= top + boxSizeY) { // hovering
-          left += (pointer.x - (left + boxSizeX / 2)) / 40
-          top += (pointer.y - (top + boxSizeY / 2)) / 40
+        if (left <= pointer.x && pointer.x <= left + b.sizeX && top <= pointer.y && pointer.y <= top + b.sizeY) { // hovering
+          left += (pointer.x - (left + b.sizeX / 2)) / 40
+          top += (pointer.y - (top + b.sizeY / 2)) / 40
           scale = 1.02
         } else {
           scale = 1
         }
-        d.sizeX.dest = boxSizeX; d.sizeY.dest = boxSizeY; d.top.dest = top; d.left.dest = left; d.scale.dest = scale; d.fxFactor.dest = 1
+        d.sizeX.dest = b.sizeX; d.sizeY.dest = b.sizeY; d.top.dest = top; d.left.dest = left; d.scale.dest = scale; d.fxFactor.dest = 1
       }
     } else {
       let currentLeft = hitArea1DSizeX + boxes1DGapX
