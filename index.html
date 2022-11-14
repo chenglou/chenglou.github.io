@@ -473,28 +473,28 @@ function scheduleRender(debugForceRender) {
         let d = data[i]
         const imgSizeX = Math.min(d.naturalSizeX, box1DMaxSizeX, img1DSizeY * d.ar) * (i === newActive ? 1 : 0.7)
         const imgSizeY = imgSizeX / d.ar
-        const boxSizeX = imgSizeX
         const boxSizeY = imgSizeY + prompt1DSizeY + promptGapBottom
-        let top = scrollTop + (windowSizeY - boxSizeY) / 2
-        let left = i === newActive ? (windowSizeX - imgSizeX) / 2 : currentLeft
-        let scale, fxFactor
-        if ((pointerPlace1D === 'left' && i === newActive - 1) || (pointerPlace1D === 'right' && i === newActive + 1)) { // hovering
-          left += (pointer.x - (left + boxSizeX / 2)) / 40
-          top += (pointer.y - (top + boxSizeY / 2)) / 40
-          scale = 1.02
-          fxFactor = 0.5
-        } else {
-          scale = 1
-          fxFactor = i === newActive ? 1 : 0.2
-        }
-
-        d.sizeX.dest = boxSizeX; d.sizeY.dest = boxSizeY; d.top.dest = top; d.left.dest = left; d.scale.dest = scale; d.fxFactor.dest = fxFactor
+        d.sizeX.dest = imgSizeX
+        d.sizeY.dest = boxSizeY
+        d.top.dest = scrollTop + (windowSizeY - boxSizeY) / 2
+        d.left.dest = i === newActive ? (windowSizeX - imgSizeX) / 2 : currentLeft
         d.left.v += edgeRubberBandVelocityX / (i === newActive ? 1 : 4)
+        d.scale.dest = 1
+        d.fxFactor.dest = 0.2
 
         currentLeft = i === newActive ? windowSizeX - hitArea1DSizeX : currentLeft + imgSizeX + boxes1DGapX
       }
+      // special adjustments
+      data[newActive].fxFactor.dest = 1
+      if (pointerPlace1D === 'left' || pointerPlace1D === 'right') { // hovering
+        let d = data[pointerPlace1D === 'left' ? newActive - 1 : newActive + 1]
+        d.left.dest += (pointer.x - (d.left.dest + d.sizeX.dest / 2)) / 40
+        d.top.dest += (pointer.y - (d.top.dest + d.sizeY.dest / 2)) / 40
+        d.scale.dest = 1.02
+        d.fxFactor.dest = 0.5
+      }
     } else {
-      if (newActive == null && active != null) { // just dismissed zoom in
+      if (newActive == null && active != null) { // just dismissed 1D mode
         const activeTop = rowsTop[Math.floor(active / cols)]
         const boxSizeY = imgs[active].sizeY + promptSizeY + promptGapBottom
         // if the dismissed box isn't fully shown, scroll there
