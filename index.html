@@ -461,7 +461,38 @@ function scheduleRender(debugForceRender) {
     }
 
     let newScrollTop = null // can't be initialized to scrollTop; scrollTop upon read is rounded off, so scrollTop !== scrollTop potentially...
-    if (newActive != null) {
+    if (newActive == null) {
+      if (newActive == null && active != null) { // just dismissed 1D mode
+        const activeTop = rowsTop[Math.floor(active / cols)]
+        const boxSizeY = imgs[active].sizeY + promptSizeY + promptGapBottom
+        // if the dismissed box isn't fully shown, scroll there
+        if (activeTop <= scrollTop || activeTop + boxSizeY >= scrollTop + windowSizeY) {
+          newScrollTop = activeTop - boxesGapY - 40 // Peek a little higher to show the previous row
+          const delta = newScrollTop - scrollTop
+          scrollTop = newScrollTop
+          for (let i = 0; i < data.length; i++) data[i].top.pos += delta // magically & seamlessly zoom out from 1D mode's focused active box without vertical jitter
+        }
+      }
+
+      for (let i = 0; i < data.length; i++) {
+        let d = data[i]
+        const currentRow = Math.floor(i / cols)
+        const boxSizeX = imgs[i].sizeX
+        const boxSizeY = imgs[i].sizeY + promptSizeY + promptGapBottom
+        const rowMaxSizeY = rowsTop[currentRow + 1] - rowsTop[currentRow]
+        let top = rowsTop[currentRow] + (rowMaxSizeY - boxSizeY) / 2
+        let left = boxesGapX + (boxMaxSizeX + boxesGapX) * (i % cols) + (boxMaxSizeX - boxSizeX) / 2 // center horizontally
+        let scale
+        if (left <= pointer.x && pointer.x <= left + boxSizeX && top <= pointer.y && pointer.y <= top + boxSizeY) { // hovering
+          left += (pointer.x - (left + boxSizeX / 2)) / 40
+          top += (pointer.y - (top + boxSizeY / 2)) / 40
+          scale = 1.02
+        } else {
+          scale = 1
+        }
+        d.sizeX.dest = boxSizeX; d.sizeY.dest = boxSizeY; d.top.dest = top; d.left.dest = left; d.scale.dest = scale; d.fxFactor.dest = 1
+      }
+    } else {
       let currentLeft = hitArea1DSizeX + boxes1DGapX
       for (let i = newActive - 1; i >= 0; i--) {
         let d = data[i]
@@ -492,37 +523,6 @@ function scheduleRender(debugForceRender) {
         d.top.dest += (pointer.y - (d.top.dest + d.sizeY.dest / 2)) / 40
         d.scale.dest = 1.02
         d.fxFactor.dest = 0.5
-      }
-    } else {
-      if (newActive == null && active != null) { // just dismissed 1D mode
-        const activeTop = rowsTop[Math.floor(active / cols)]
-        const boxSizeY = imgs[active].sizeY + promptSizeY + promptGapBottom
-        // if the dismissed box isn't fully shown, scroll there
-        if (activeTop <= scrollTop || activeTop + boxSizeY >= scrollTop + windowSizeY) {
-          newScrollTop = activeTop - boxesGapY - 40 // Peek a little higher to show the previous row
-          const delta = newScrollTop - scrollTop
-          scrollTop = newScrollTop
-          for (let i = 0; i < data.length; i++) data[i].top.pos += delta // magically & seamlessly zoom out from 1D mode's focused active box without vertical jitter
-        }
-      }
-
-      for (let i = 0; i < data.length; i++) {
-        let d = data[i]
-        const currentRow = Math.floor(i / cols)
-        const boxSizeX = imgs[i].sizeX
-        const boxSizeY = imgs[i].sizeY + promptSizeY + promptGapBottom
-        const rowMaxSizeY = rowsTop[currentRow + 1] - rowsTop[currentRow]
-        let top = rowsTop[currentRow] + (rowMaxSizeY - boxSizeY) / 2
-        let left = boxesGapX + (boxMaxSizeX + boxesGapX) * (i % cols) + (boxMaxSizeX - boxSizeX) / 2 // center horizontally
-        let scale
-        if (left <= pointer.x && pointer.x <= left + boxSizeX && top <= pointer.y && pointer.y <= top + boxSizeY) { // hovering
-          left += (pointer.x - (left + boxSizeX / 2)) / 40
-          top += (pointer.y - (top + boxSizeY / 2)) / 40
-          scale = 1.02
-        } else {
-          scale = 1
-        }
-        d.sizeX.dest = boxSizeX; d.sizeY.dest = boxSizeY; d.top.dest = top; d.left.dest = left; d.scale.dest = scale; d.fxFactor.dest = 1
       }
     }
 
