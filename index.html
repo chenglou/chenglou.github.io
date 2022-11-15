@@ -533,7 +533,8 @@ function render(now) {
   }
 
   // === run animation
-  const steps = lastAnimatedRenderTime == null ? 0 : Math.floor((now - lastAnimatedRenderTime) / simulationStep)
+  const newLastAnimatedRenderTime = lastAnimatedRenderTime == null ? now : lastAnimatedRenderTime
+  const steps = Math.floor((now - newLastAnimatedRenderTime) / simulationStep)
   let stillAnimating = false
   for (let i = 0; i < data.length; i++) {
     let d = data[i]
@@ -608,7 +609,7 @@ function render(now) {
   inputs.clickedTarget = null
   active = newActive
   if (stillAnimating) {
-    lastAnimatedRenderTime += steps * simulationStep
+    lastAnimatedRenderTime = newLastAnimatedRenderTime + steps * simulationStep
     return true
   } else {
     lastAnimatedRenderTime = null
