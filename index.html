@@ -70,8 +70,8 @@ const prompt1DSizeY = 64 // size in 1d mode
 const promptGapBottom = 8
 const boxesGapX = 24, boxesGapY = 24
 const boxes1DGapX = 52, boxes1DGapY = 28
-// 4ms for the spring animation's step. Typically 4 steps for 60fps and 2 for 120fps (frame time delta varies, so not always true)
-// could use 8ms instead but 120 means 8.33 ms per second, and the computation here doesn't fit in 0.33ms, which means sometime the simulation step wouldn't even run once, giving the illusion of jank
+// 4ms/step for the spring animation's step. Typically 4 steps for 60fps (16.6ms per frame) and 2 for 120fps (8.3ms per frame). Frame time delta varies, so not always true
+// could use 8ms instead but 120fps' 8.3ms per frame means the computation might not fit in 0.3ms, which means sometime the simulation step wouldn't even run once, giving the illusion of jank
 const simulationStep = 4
 
 function colsBoxMaxSizeXF(containerSizeX) {
@@ -370,7 +370,6 @@ function scheduleRender(debugForceRender) {
     const hitArea1DSizeX = 100 // left and right click region in 1D mode
     const box1DMaxSizeX = windowSizeX - boxes1DGapX * 2 - hitArea1DSizeX * 2
     const img1DSizeY = windowSizeY - boxes1DGapY * 2 - prompt1DSizeY - promptGapBottom // TODO: adjust
-    if (lastAnimatedRenderTime == null) lastAnimatedRenderTime = now // TODO: state mutation only at the end
 
     const hashImgId = window.location.hash.slice(1)
     let active = null; for (let i = 0; i < data.length; i++) if (data[i].id === hashImgId) active = i
@@ -441,7 +440,6 @@ function scheduleRender(debugForceRender) {
               if ((data[j].left.dest <= pointerXLocal && pointerXLocal < data[j].left.dest + boxes[j].sizeX)
                 && (data[j].top.dest <= pointerYLocal && pointerYLocal < data[j].top.dest + boxes[j].sizeY)) { // pointer on this box
                 newActive = j
-                break
               }
             }
           }
@@ -525,12 +523,11 @@ function scheduleRender(debugForceRender) {
     }
 
     // run animation
-    const deltaTime = (now - lastAnimatedRenderTime) / simulationStep
-    const frames = Math.floor(deltaTime)
+    const steps = lastAnimatedRenderTime == null ? 0 : Math.floor((now - lastAnimatedRenderTime) / simulationStep)
     let stillAnimating = false
     for (let i = 0; i < data.length; i++) {
       let d = data[i]
-      for (let i = 0; i < frames; i++) {
+      for (let i = 0; i < steps; i++) {
         stepSpring(d.sizeX)
         stepSpring(d.sizeY)
         stepSpring(d.top)
@@ -602,7 +599,7 @@ function scheduleRender(debugForceRender) {
     inputs.clickedTarget = null
     active = newActive
     if (stillAnimating) {
-      lastAnimatedRenderTime += frames * simulationStep
+      lastAnimatedRenderTime += steps * simulationStep
       scheduleRender()
     } else {
       lastAnimatedRenderTime = null
