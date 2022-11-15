@@ -375,7 +375,7 @@ function scheduleRender(debugForceRender) {
     let active = null; for (let i = 0; i < data.length; i++) if (data[i].id === hashImgId) active = i
 
     // used for hit testing & layouting
-    let boxes = [], rowsTop = [boxesGapY] // length: number of rows + 1
+    let boxesSizeX = [], boxesSizeY = [], rowsTop = [boxesGapY] // length: number of rows + 1
     {
       let rowMaxSizeY = 0
       for (let i = 0; i < data.length; i++) {
@@ -386,7 +386,8 @@ function scheduleRender(debugForceRender) {
           : boxMaxSizeX
         const sizeX = Math.min(d.naturalSizeX, boxMaxSizeX, imgMaxSizeY * d.ar)
         const sizeY = sizeX / d.ar + promptSizeY + promptGapBottom
-        boxes.push({sizeX, sizeY})
+        boxesSizeX.push(sizeX)
+        boxesSizeY.push(sizeY)
         rowMaxSizeY = Math.max(rowMaxSizeY, sizeY)
         if (i % cols === cols - 1 || i === data.length - 1) {
           rowsTop.push(rowsTop[Math.floor(i / cols)] + rowMaxSizeY + boxesGapY)
@@ -437,8 +438,8 @@ function scheduleRender(debugForceRender) {
         for (let i = 0; i < rowsTop.length - 1; i++) {
           if (rowsTop[i] <= pointerYLocal && pointerYLocal < rowsTop[i + 1]) { // pointer on this row
             for (let j = i * cols; j < (i + 1) * cols; j++) {
-              if ((data[j].left.dest <= pointerXLocal && pointerXLocal < data[j].left.dest + boxes[j].sizeX)
-                && (data[j].top.dest <= pointerYLocal && pointerYLocal < data[j].top.dest + boxes[j].sizeY)) { // pointer on this box
+              if ((data[j].left.dest <= pointerXLocal && pointerXLocal < data[j].left.dest + boxesSizeX[j])
+                && (data[j].top.dest <= pointerYLocal && pointerYLocal < data[j].top.dest + boxesSizeY[j])) { // pointer on this box
                 newActive = j
               }
             }
@@ -460,7 +461,7 @@ function scheduleRender(debugForceRender) {
       if (newActive == null && active != null) { // just dismissed 1D mode
         const activeTop = rowsTop[Math.floor(active / cols)]
         // if the dismissed box isn't fully shown, scroll there
-        if (activeTop <= scrollTop || activeTop + boxes[active].sizeY >= scrollTop + windowSizeY) {
+        if (activeTop <= scrollTop || activeTop + boxesSizeY[active] >= scrollTop + windowSizeY) {
           newScrollTop = activeTop - boxesGapY - 40 // Peek a little higher to show the previous row
           const delta = newScrollTop - scrollTop
           scrollTop = newScrollTop
@@ -469,21 +470,22 @@ function scheduleRender(debugForceRender) {
       }
 
       for (let i = 0; i < data.length; i++) {
-        let d = data[i], b = boxes[i]
+        let d = data[i]
+        const sizeX = boxesSizeX[i], sizeY = boxesSizeY[i]
         const currentRow = Math.floor(i / cols)
         const rowMaxSizeY = rowsTop[currentRow + 1] - rowsTop[currentRow]
-        let top = rowsTop[currentRow] + (rowMaxSizeY - b.sizeY) / 2
-        let left = boxesGapX + (boxMaxSizeX + boxesGapX) * (i % cols) + (boxMaxSizeX - b.sizeX) / 2 // center horizontally
+        let top = rowsTop[currentRow] + (rowMaxSizeY - sizeY) / 2
+        let left = boxesGapX + (boxMaxSizeX + boxesGapX) * (i % cols) + (boxMaxSizeX - sizeX) / 2 // center horizontally
         let scale
-        if (left <= pointerXLocal && pointerXLocal <= left + b.sizeX && top <= pointerYLocal && pointerYLocal <= top + b.sizeY) { // hovering
+        if (left <= pointerXLocal && pointerXLocal <= left + sizeX && top <= pointerYLocal && pointerYLocal <= top + sizeY) { // hovering
           cursor = 'zoom-in'
-          left += (pointerXLocal - (left + b.sizeX / 2)) / 40
-          top += (pointerYLocal - (top + b.sizeY / 2)) / 40
+          left += (pointerXLocal - (left + sizeX / 2)) / 40
+          top += (pointerYLocal - (top + sizeY / 2)) / 40
           scale = 1.02
         } else {
           scale = 1
         }
-        d.sizeX.dest = b.sizeX; d.sizeY.dest = b.sizeY; d.top.dest = top; d.left.dest = left; d.scale.dest = scale; d.fxFactor.dest = 1
+        d.sizeX.dest = sizeX; d.sizeY.dest = sizeY; d.top.dest = top; d.left.dest = left; d.scale.dest = scale; d.fxFactor.dest = 1
       }
     } else {
       let currentLeft = hitArea1DSizeX + boxes1DGapX
