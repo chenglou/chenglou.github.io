@@ -81,6 +81,29 @@ function colsBoxMaxSizeXF(containerSizeX) {
   return {cols, boxMaxSizeX}
 }
 
+function spring(pos, v) {
+  return {pos, v, dest: pos}
+}
+function stepSpring(config) {
+  // https://blog.maximeheckel.com/posts/the-physics-behind-spring-animations/
+  // lol this totally seems copied from https://github.com/chenglou/react-motion/blob/9e3ce95bacaa9a1b259f969870a21c727232cc68/src/stepper.js
+  const k = 225, b = 27, t = simulationStep / 1000
+  const {pos, v, dest} = config
+  // for animations, dest is really spring length (spring at rest). initial
+  // position is considered as the stretched/compressed position of a spring
+  const Fspring = -k * (pos - dest) // Spring stiffness, in kg / s^2
+  const Fdamper = -b * v // Damping, in kg / s
+  // usually we put mass here, but for animation purposes, specifying mass is a
+  // bit redundant. you could simply adjust k and b accordingly
+  // const a = (Fspring + Fdamper) / mass
+  const a = Fspring + Fdamper
+  const newV = v + a * t
+  const newX = pos + newV * t
+
+  config.pos = newX
+  config.v = newV
+}
+
 let data; {
   const windowSizeX = document.documentElement.clientWidth
   const windowSizeY = document.documentElement.clientHeight
@@ -267,42 +290,19 @@ let data; {
         promptNode.className = 'prompt'
         promptNode.textContent = d.prompt
     node.append(img, promptNode)
-    const top = windowSizeY + Math.floor(i / cols) * imgMaxSizeY
-    const left = Math.floor(i / cols) * -windowSizeX - windowSizeX
     return {
       id: d.id,
       naturalSizeX: d.w,
       ar, // aspect ratio
-      sizeX: {pos: sizeX, dest: sizeX, v: 0},
-      sizeY: {pos: sizeY, dest: sizeY, v: 0},
-      top: {pos: top, dest: top, v: 0},
-      left: {pos: left, dest: left, v: 0},
-      scale: {pos: 1, dest: 1, v: 0},
-      fxFactor: {pos: 20, dest: 20, v: 0}, // for brightness and blur
+      sizeX: spring(sizeX, 0),
+      sizeY: spring(sizeY, 0),
+      top: spring(windowSizeY + Math.floor(i / cols) * imgMaxSizeY, 0),
+      left: spring(Math.floor(i / cols) * -windowSizeX - windowSizeX, 0),
+      scale: spring(1, 0),
+      fxFactor: spring(20, 0), // for brightness and blur
       node,
     }
   })
-}
-
-function stepSpring(config) {
-  // https://blog.maximeheckel.com/posts/the-physics-behind-spring-animations/
-  // lol this totally seems copied from https://github.com/chenglou/react-motion/blob/9e3ce95bacaa9a1b259f969870a21c727232cc68/src/stepper.js
-  const k = 225, b = 27, t = simulationStep / 1000
-  const {pos, v, dest} = config
-  // for animations, dest is really spring length (spring at rest). initial
-  // position is considered as the stretched/compressed position of a spring
-  const Fspring = -k * (pos - dest) // Spring stiffness, in kg / s^2
-  const Fdamper = -b * v // Damping, in kg / s
-
-  // usually we put mass here, but for animation purposes, specifying mass is a
-  // bit redundant. you could simply adjust k and b accordingly
-  // let a = (Fspring + Fdamper) / mass
-  const a = Fspring + Fdamper
-  const newV = v + a * t
-  const newX = pos + newV * t
-
-  config.pos = newX
-  config.v = newV
 }
 
 // === debug
