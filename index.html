@@ -416,7 +416,7 @@ function render(now) {
     : active
 
   // === handle pointer move & click-related state change
-  const pointerPlace1D =
+  const pointerArea1D =
     pointerXLocal >= 0 && pointerXLocal <= hitArea1DSizeX ? 'left'
     : pointerXLocal >= windowSizeX - hitArea1DSizeX ? 'right'
     : null
@@ -434,9 +434,9 @@ function render(now) {
           newActive = i
         }
       }
-    } else if (active > 0 && pointerPlace1D === 'left') { // 1D mode
+    } else if (active > 0 && pointerArea1D === 'left') { // 1D mode
       newActive = Math.max(active - 1, 0) // allow spamming clicks without accidentally clicking on an empty region on left/right side (and dismiss 1D mode) during transition
-    } else if (active < data.length - 1 && pointerPlace1D === 'right') {
+    } else if (active < data.length - 1 && pointerArea1D === 'right') {
       newActive = Math.min(active + 1, data.length - 1)
     } else {
       newActive = null
@@ -505,9 +505,9 @@ function render(now) {
     }
     // special adjustments
     data[newActive].fxFactor.dest = 1
-    if (pointerPlace1D === 'left' || pointerPlace1D === 'right') { // hovering
+    if ((pointerArea1D === 'left' && newActive > 0) || (pointerArea1D === 'right' && newActive < data.length - 1)) { // hovering
+      let d = data[pointerArea1D === 'left' ? newActive - 1 : newActive + 1]
       cursor = 'zoom-in'
-      let d = data[pointerPlace1D === 'left' ? newActive - 1 : newActive + 1]
       d.left.dest += (pointerXLocal - (d.left.dest + d.sizeX.dest / 2)) / hoverMagnetFactor
       d.top.dest += (pointerYLocal - (d.top.dest + d.sizeY.dest / 2)) / hoverMagnetFactor
       d.scale.dest = 1.02
