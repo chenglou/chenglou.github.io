@@ -84,24 +84,27 @@ function colsBoxMaxSizeXF(containerSizeX) {
 function spring(pos, v) {
   return {pos, v, dest: pos}
 }
-function stepSpring(config) {
+function springStep(config) {
   // https://blog.maximeheckel.com/posts/the-physics-behind-spring-animations/
   // lol this totally seems copied from https://github.com/chenglou/react-motion/blob/9e3ce95bacaa9a1b259f969870a21c727232cc68/src/stepper.js
   const k = 225, b = 27, t = simulationStep / 1000
   const {pos, v, dest} = config
-  // for animations, dest is really spring length (spring at rest). initial
-  // position is considered as the stretched/compressed position of a spring
+  // for animations, dest is actually spring at rest. Current position is the spring's stretched/compressed state
   const Fspring = -k * (pos - dest) // Spring stiffness, in kg / s^2
   const Fdamper = -b * v // Damping, in kg / s
-  // usually we put mass here, but for animation purposes, specifying mass is a
-  // bit redundant. you could simply adjust k and b accordingly
-  // const a = (Fspring + Fdamper) / mass
-  const a = Fspring + Fdamper
+  const a = Fspring + Fdamper // a needs to be divided by mass, but we'll assume mass of 1. Adjust k and b to change spring curve instead
   const newV = v + a * t
-  const newX = pos + newV * t
+  const newPos = pos + newV * t
 
-  config.pos = newX
-  config.v = newV
+  config.pos = newPos; config.v = newV
+}
+function springRoundIfDone(config) {
+  if (Math.abs(config.v) < 0.01 && Math.abs(config.dest - config.pos) < 0.01) {
+    config.v = 0
+    config.pos = config.dest
+    return true
+  }
+  return false
 }
 
 let data; {
@@ -524,19 +527,19 @@ function render(now) {
   for (let i = 0; i < data.length; i++) {
     let d = data[i]
     for (let i = 0; i < steps; i++) {
-      stepSpring(d.sizeX)
-      stepSpring(d.sizeY)
-      stepSpring(d.top)
-      stepSpring(d.left)
-      stepSpring(d.scale)
-      stepSpring(d.fxFactor)
+      springStep(d.sizeX)
+      springStep(d.sizeY)
+      springStep(d.top)
+      springStep(d.left)
+      springStep(d.scale)
+      springStep(d.fxFactor)
     }
-    if (Math.abs(d.sizeX.v)    < 0.01 && Math.abs(d.sizeX.dest - d.sizeX.pos)       < 0.01) {d.sizeX.v    = 0; d.sizeX.pos    = d.sizeX.dest   } else stillAnimating = true
-    if (Math.abs(d.sizeY.v)    < 0.01 && Math.abs(d.sizeY.dest - d.sizeY.pos)       < 0.01) {d.sizeY.v    = 0; d.sizeY.pos    = d.sizeY.dest   } else stillAnimating = true
-    if (Math.abs(d.top.v)      < 0.01 && Math.abs(d.top.dest - d.top.pos)           < 0.01) {d.top.v      = 0; d.top.pos      = d.top.dest     } else stillAnimating = true
-    if (Math.abs(d.left.v)     < 0.01 && Math.abs(d.left.dest - d.left.pos)         < 0.01) {d.left.v     = 0; d.left.pos     = d.left.dest    } else stillAnimating = true
-    if (Math.abs(d.scale.v)    < 0.01 && Math.abs(d.scale.dest - d.scale.pos)       < 0.01) {d.scale.v    = 0; d.scale.pos    = d.scale.dest   } else stillAnimating = true
-    if (Math.abs(d.fxFactor.v) < 0.01 && Math.abs(d.fxFactor.dest - d.fxFactor.pos) < 0.01) {d.fxFactor.v = 0; d.fxFactor.pos = d.fxFactor.dest} else stillAnimating = true
+    if (!springRoundIfDone(d.sizeX)) stillAnimating = true
+    if (!springRoundIfDone(d.sizeY)) stillAnimating = true
+    if (!springRoundIfDone(d.top)) stillAnimating = true
+    if (!springRoundIfDone(d.left)) stillAnimating = true
+    if (!springRoundIfDone(d.scale)) stillAnimating = true
+    if (!springRoundIfDone(d.fxFactor)) stillAnimating = true
   }
 
   // === finally, render
