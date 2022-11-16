@@ -428,14 +428,10 @@ function render(now) {
       selection.removeAllRanges()
       selection.addRange(range)
     } else if (active == null) { // in 2D grid mode. Find the box the pointer's on
-      for (let i = 0; i < rowsTop.length - 1; i++) {
-        if (rowsTop[i] <= pointerYLocal && pointerYLocal < rowsTop[i + 1]) { // pointer on this row
-          for (let j = i * cols; j < (i + 1) * cols; j++) {
-            if ((data[j].left.dest <= pointerXLocal && pointerXLocal < data[j].left.dest + boxesSizeX[j])
-              && (data[j].top.dest <= pointerYLocal && pointerYLocal < data[j].top.dest + boxesSizeY[j])) { // pointer on this box
-              newActive = j
-            }
-          }
+      for (let i = 0; i < data.length; i++) {
+        const left = data[i].left.dest, top = data[i].top.dest
+        if (left <= pointerXLocal && pointerXLocal < left + boxesSizeX[i] && top <= pointerYLocal && pointerYLocal < top + boxesSizeY[i]) { // pointer on this box
+          newActive = i
         }
       }
     } else if (active > 0 && pointerPlace1D === 'left') { // 1D mode
