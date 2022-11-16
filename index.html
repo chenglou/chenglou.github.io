@@ -403,34 +403,19 @@ function render(now) {
     }
   }
 
-  // === handle key
-  let newActive
-  let edgeRubberBandVelocityX = 0
-  if (inputs.key === 'Escape') {
-    newActive = null
-  } else if (inputs.key === 'ArrowLeft') {
-    if (active == null) {
-      newActive = 0
-    } else if (active === 0) {
-      newActive = 0
-      edgeRubberBandVelocityX = 2000
-    } else {
-      newActive = active - 1
-    }
-  } else if (inputs.key === 'ArrowRight') {
-    if (active == null) {
-      newActive = 0
-    } else if (active === data.length - 1) {
-      newActive = data.length - 1
-      edgeRubberBandVelocityX = -2000
-    } else {
-      newActive = active + 1
-    }
-  } else {
-    newActive = active
-  }
+  // === handle key-related state change
+  const edgeRubberBandVelocityX =
+    inputs.key === 'ArrowLeft' && active === 0 ? 2000
+    : inputs.key === 'ArrowRight' && active === data.length - 1 ? -2000
+    : 0
+  let newActive =
+    inputs.key === 'Escape' ? null
+    : inputs.key != null && active == null ? 0
+    : inputs.key === 'ArrowLeft' ? Math.max(0, active - 1)
+    : inputs.key === 'ArrowRight' ? Math.min(data.length - 1, active + 1)
+    : active
 
-  // === handle pointer move & click
+  // === handle pointer move & click-related state change
   const pointerPlace1D =
     pointerXLocal >= 0 && pointerXLocal <= hitArea1DSizeX ? 'left'
     : pointerXLocal >= windowSizeX - hitArea1DSizeX ? 'right'
@@ -465,12 +450,13 @@ function render(now) {
   // === calculate new layout & cursor
   let cursor = 'auto'
   let newScrollTop = null // can't be initialized to scrollTop; scrollTop upon read is rounded off, so scrollTop !== scrollTop potentially...
+  const hoverMagnetFactor = 40
   if (newActive == null) {
     if (newActive == null && active != null) { // just dismissed 1D mode
       const activeTop = rowsTop[Math.floor(active / cols)]
       // if the dismissed box isn't fully shown, scroll there
       if (activeTop <= scrollTop || activeTop + boxesSizeY[active] >= scrollTop + windowSizeY) {
-        newScrollTop = activeTop - boxesGapY - 40 // Peek a little higher to show the previous row
+        newScrollTop = activeTop - boxesGapY - 44 // Peek a little higher to show the previous row
         const delta = newScrollTop - scrollTop
         scrollTop = newScrollTop
         for (let i = 0; i < data.length; i++) data[i].top.pos += delta // magically & seamlessly zoom out from 1D mode's focused active box without vertical jitter
@@ -484,16 +470,19 @@ function render(now) {
       const rowMaxSizeY = rowsTop[currentRow + 1] - rowsTop[currentRow]
       let top = rowsTop[currentRow] + (rowMaxSizeY - sizeY) / 2
       let left = boxesGapX + (boxMaxSizeX + boxesGapX) * (i % cols) + (boxMaxSizeX - sizeX) / 2 // center horizontally
-      let scale
       if (left <= pointerXLocal && pointerXLocal <= left + sizeX && top <= pointerYLocal && pointerYLocal <= top + sizeY) { // hovering
         cursor = 'zoom-in'
-        left += (pointerXLocal - (left + sizeX / 2)) / 40
-        top += (pointerYLocal - (top + sizeY / 2)) / 40
-        scale = 1.02
+        left += (pointerXLocal - (left + sizeX / 2)) / hoverMagnetFactor
+        top += (pointerYLocal - (top + sizeY / 2)) / hoverMagnetFactor
+        d.scale.dest = 1.02
       } else {
-        scale = 1
+        d.scale.dest = 1
       }
-      d.sizeX.dest = sizeX; d.sizeY.dest = sizeY; d.top.dest = top; d.left.dest = left; d.scale.dest = scale; d.fxFactor.dest = 1
+      d.sizeX.dest = sizeX
+      d.sizeY.dest = sizeY
+      d.top.dest = top
+      d.left.dest = left
+      d.fxFactor.dest = 1
     }
   } else {
     let currentLeft = hitArea1DSizeX + boxes1DGapX
@@ -523,8 +512,8 @@ function render(now) {
     if (pointerPlace1D === 'left' || pointerPlace1D === 'right') { // hovering
       cursor = 'zoom-in'
       let d = data[pointerPlace1D === 'left' ? newActive - 1 : newActive + 1]
-      d.left.dest += (pointerXLocal - (d.left.dest + d.sizeX.dest / 2)) / 40
-      d.top.dest += (pointerYLocal - (d.top.dest + d.sizeY.dest / 2)) / 40
+      d.left.dest += (pointerXLocal - (d.left.dest + d.sizeX.dest / 2)) / hoverMagnetFactor
+      d.top.dest += (pointerYLocal - (d.top.dest + d.sizeY.dest / 2)) / hoverMagnetFactor
       d.scale.dest = 1.02
       d.fxFactor.dest = 0.5
     } else {
@@ -599,7 +588,7 @@ function render(now) {
   document.body.style.cursor = cursor
   document.body.style.overflowY = newActive === null ? 'auto' : 'hidden'
   dummyPlaceholder.style.height = `${rowsTop[rowsTop.length - 1]}px`
-  if (newScrollTop != null) window.scrollTo({top: newScrollTop}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting
+  if (newScrollTop != null) window.scrollTo({top: newScrollTop}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting. Btw this will trigger scroll and another render
   if (newActive !== active) {
     window.history.pushState(null, null, `${window.location.pathname}${window.location.search}${newActive == null ? '' : '#' + data[newActive].id}`)
   }
