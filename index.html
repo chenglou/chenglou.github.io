@@ -38,7 +38,7 @@
       position: absolute; /* rest near bottom even when image isn't loaded yet */
       width: 100%;
       box-sizing: border-box;
-      padding: 8px 12px 8px 12px;
+      padding: 8px 12px 0px 12px;
       overflow: hidden;
       font-family: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; /* same as midjourney's */
       color: rgb(192, 198, 205);
@@ -65,9 +65,9 @@ function clamp(min, v, max) {
   return v > max ? max : v < min ? min : v
 }
 
-const promptSizeY = 47 // magic number. Doesn't show the 3rd line nor cuts the 2nd line on safari, mobile safari and chrome
-const prompt1DSizeY = 64 // size in 1d mode
-const promptGapBottom = 8
+const promptPaddingBottom = 8
+const promptSizeY = 47 + promptPaddingBottom // 47 is a magic number. Doesn't show the 3rd line nor cuts the 2nd line on safari, mobile safari and chrome
+const prompt1DSizeY = 64 + promptPaddingBottom // size in 1d mode
 const boxesGapX = 24, boxesGapY = 24
 const boxes1DGapX = 52, boxes1DGapY = 28
 // 4ms/step for the spring animation's step. Typically 4 steps for 60fps (16.6ms per frame) and 2 for 120fps (8.3ms per frame). Frame time delta varies, so not always true
@@ -379,7 +379,7 @@ function render(now) {
   const pointerXLocal = inputs.pointer.x + window.scrollX, pointerYLocal = inputs.pointer.y + scrollTop // "local" to document.body (global would be unaffected by scrollX/Y, aka global is relative to the screen)
   const hitArea1DSizeX = 100 // left and right click region in 1D mode
   const box1DMaxSizeX = windowSizeX - boxes1DGapX * 2 - hitArea1DSizeX * 2
-  const img1DSizeY = windowSizeY - boxes1DGapY * 2 - prompt1DSizeY - promptGapBottom // TODO: adjust
+  const img1DSizeY = windowSizeY - boxes1DGapY * 2 - prompt1DSizeY // TODO: adjust
 
   const hashImgId = window.location.hash.slice(1)
   let focused = null; for (let i = 0; i < data.length; i++) if (data[i].id === hashImgId) focused = i
@@ -436,7 +436,7 @@ function render(now) {
         : d.ar < 1 ? boxMaxSizeX * 1.05 // vertical images look a bit small. Grow it
         : boxMaxSizeX
       const sizeX = Math.min(d.naturalSizeX, boxMaxSizeX, imgMaxSizeY * d.ar)
-      const sizeY = sizeX / d.ar + promptSizeY + promptGapBottom
+      const sizeY = sizeX / d.ar + promptSizeY
       boxesSizeX.push(sizeX)
       boxesSizeY.push(sizeY)
       rowMaxSizeY = Math.max(rowMaxSizeY, sizeY)
@@ -494,7 +494,7 @@ function render(now) {
       let d = data[i]
       const imgSizeX = Math.min(d.naturalSizeX, box1DMaxSizeX, img1DSizeY * d.ar) * (i === newFocused ? 1 : 0.7)
       const imgSizeY = imgSizeX / d.ar
-      const boxSizeY = imgSizeY + prompt1DSizeY + promptGapBottom
+      const boxSizeY = imgSizeY + prompt1DSizeY
       d.sizeX.dest = imgSizeX
       d.sizeY.dest = boxSizeY
       d.top.dest = scrollTop + (windowSizeY - boxSizeY) / 2
@@ -567,7 +567,7 @@ function render(now) {
       if (i === newFocused) {
         node.style.zIndex = data.length + 999 // guaranteed above everything
         prompt.style.overflowY = 'auto'
-        prompt.style.height = `${prompt1DSizeY}px`
+        prompt.style.height = `${prompt1DSizeY - promptPaddingBottom}px`
         prompt.style.lineClamp = prompt.style.webkitLineClamp = 999
         img.style.display = 'block'
         let src = `https://mj-gallery.com/${d.id}/grid_0.webp`
@@ -575,7 +575,7 @@ function render(now) {
       } else {
         node.style.zIndex = i + 1 // simple proper z-index management
         prompt.style.overflowY = 'hidden'
-        prompt.style.height = `${promptSizeY}px`
+        prompt.style.height = `${promptSizeY - promptPaddingBottom}px`
         prompt.style.lineClamp = prompt.style.webkitLineClamp = 2
         img.style.display = 'none' // hide full res image for perf (yes it makes a difference, even on M1, with Studio Display)
       }
