@@ -384,28 +384,6 @@ function render(now) {
   const hashImgId = window.location.hash.slice(1)
   let focused = null; for (let i = 0; i < data.length; i++) if (data[i].id === hashImgId) focused = i
 
-  // used for hit testing & layouting
-  let boxesSizeX = [], boxesSizeY = [], rowsTop = [boxesGapY] // length: number of rows + 1
-  {
-    let rowMaxSizeY = 0
-    for (let i = 0; i < data.length; i++) {
-      let d = data[i]
-      const imgMaxSizeY =
-        d.ar === 1 ? boxMaxSizeX * 0.85 // square aspect ratio area too big. Shrink it
-        : d.ar < 1 ? boxMaxSizeX * 1.05 // vertical images look a bit small. Grow it
-        : boxMaxSizeX
-      const sizeX = Math.min(d.naturalSizeX, boxMaxSizeX, imgMaxSizeY * d.ar)
-      const sizeY = sizeX / d.ar + promptSizeY + promptGapBottom
-      boxesSizeX.push(sizeX)
-      boxesSizeY.push(sizeY)
-      rowMaxSizeY = Math.max(rowMaxSizeY, sizeY)
-      if (i % cols === cols - 1 || i === data.length - 1) {
-        rowsTop.push(rowsTop[Math.floor(i / cols)] + rowMaxSizeY + boxesGapY)
-        rowMaxSizeY = 0
-      }
-    }
-  }
-
   // === handle key-related state change
   const edgeRubberBandVelocityX =
     inputs.key === 'ArrowLeft' && focused === 0 ? 2000
@@ -432,8 +410,9 @@ function render(now) {
       selection.addRange(range)
     } else if (focused == null) { // in 2D grid mode. Find the box the pointer's on
       for (let i = 0; i < data.length; i++) {
-        const left = data[i].left.dest, top = data[i].top.dest
-        if (left <= pointerXLocal && pointerXLocal < left + boxesSizeX[i] && top <= pointerYLocal && pointerYLocal < top + boxesSizeY[i]) { // pointer on this box
+        // hittest boxes should be static and not follow the current animated state most of the time. But we can do either
+        const left = data[i].left.dest, top = data[i].top.dest, sizeX = data[i].sizeX.dest, sizeY = data[i].sizeY.dest
+        if (left <= pointerXLocal && pointerXLocal < left + sizeX && top <= pointerYLocal && pointerYLocal < top + sizeY) { // pointer on this box
           newFocused = i
         }
       }
@@ -447,6 +426,26 @@ function render(now) {
   }
 
   // === calculate new layout & cursor
+  let boxesSizeX = [], boxesSizeY = [], rowsTop = [boxesGapY] // length: number of rows + 1
+  {
+    let rowMaxSizeY = 0
+    for (let i = 0; i < data.length; i++) {
+      let d = data[i]
+      const imgMaxSizeY =
+        d.ar === 1 ? boxMaxSizeX * 0.85 // square aspect ratio area too big. Shrink it
+        : d.ar < 1 ? boxMaxSizeX * 1.05 // vertical images look a bit small. Grow it
+        : boxMaxSizeX
+      const sizeX = Math.min(d.naturalSizeX, boxMaxSizeX, imgMaxSizeY * d.ar)
+      const sizeY = sizeX / d.ar + promptSizeY + promptGapBottom
+      boxesSizeX.push(sizeX)
+      boxesSizeY.push(sizeY)
+      rowMaxSizeY = Math.max(rowMaxSizeY, sizeY)
+      if (i % cols === cols - 1 || i === data.length - 1) {
+        rowsTop.push(rowsTop[Math.floor(i / cols)] + rowMaxSizeY + boxesGapY)
+        rowMaxSizeY = 0
+      }
+    }
+  }
   let cursor = 'auto'
   let newScrollTop = null // can't be initialized to scrollTop; scrollTop upon read is rounded off, so scrollTop !== scrollTop potentially...
   const hoverMagnetFactor = 40
