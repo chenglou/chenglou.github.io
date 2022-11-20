@@ -465,7 +465,7 @@ function render(now) {
       let d = data[i]
       const sizeX = boxesSizeX[i], sizeY = boxesSizeY[i]
       const currentRow = Math.floor(i / cols)
-      const rowMaxSizeY = rowsTop[currentRow + 1] - rowsTop[currentRow]
+      const rowMaxSizeY = rowsTop[currentRow + 1] - boxesGapY - rowsTop[currentRow] // this is restoring the rowMaxSizeY info above, kinda weird
       let top = rowsTop[currentRow] + (rowMaxSizeY - sizeY) / 2
       let left = boxesGapX + (boxMaxSizeX + boxesGapX) * (i % cols) + (boxMaxSizeX - sizeX) / 2 // center horizontally
       if (left <= pointerXLocal && pointerXLocal <= left + sizeX && top <= pointerYLocal && pointerYLocal <= top + sizeY) { // hovering
