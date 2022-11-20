@@ -382,7 +382,7 @@ function render(now) {
   const img1DSizeY = windowSizeY - boxes1DGapY * 2 - prompt1DSizeY - promptGapBottom // TODO: adjust
 
   const hashImgId = window.location.hash.slice(1)
-  let active = null; for (let i = 0; i < data.length; i++) if (data[i].id === hashImgId) active = i
+  let focused = null; for (let i = 0; i < data.length; i++) if (data[i].id === hashImgId) focused = i
 
   // used for hit testing & layouting
   let boxesSizeX = [], boxesSizeY = [], rowsTop = [boxesGapY] // length: number of rows + 1
@@ -408,15 +408,15 @@ function render(now) {
 
   // === handle key-related state change
   const edgeRubberBandVelocityX =
-    inputs.key === 'ArrowLeft' && active === 0 ? 2000
-    : inputs.key === 'ArrowRight' && active === data.length - 1 ? -2000
+    inputs.key === 'ArrowLeft' && focused === 0 ? 2000
+    : inputs.key === 'ArrowRight' && focused === data.length - 1 ? -2000
     : 0
-  let newActive =
+  let newFocused =
     inputs.key === 'Escape' ? null
-    : inputs.key != null && active == null ? 0
-    : inputs.key === 'ArrowLeft' ? Math.max(0, active - 1)
-    : inputs.key === 'ArrowRight' ? Math.min(data.length - 1, active + 1)
-    : active
+    : inputs.key != null && focused == null ? 0
+    : inputs.key === 'ArrowLeft' ? Math.max(0, focused - 1)
+    : inputs.key === 'ArrowRight' ? Math.min(data.length - 1, focused + 1)
+    : focused
 
   // === handle pointer move & click-related state change
   const pointerArea1D =
@@ -430,19 +430,19 @@ function render(now) {
       range.selectNodeContents(inputs.clickedTarget)
       selection.removeAllRanges()
       selection.addRange(range)
-    } else if (active == null) { // in 2D grid mode. Find the box the pointer's on
+    } else if (focused == null) { // in 2D grid mode. Find the box the pointer's on
       for (let i = 0; i < data.length; i++) {
         const left = data[i].left.dest, top = data[i].top.dest
         if (left <= pointerXLocal && pointerXLocal < left + boxesSizeX[i] && top <= pointerYLocal && pointerYLocal < top + boxesSizeY[i]) { // pointer on this box
-          newActive = i
+          newFocused = i
         }
       }
-    } else if (active > 0 && pointerArea1D === 'left') { // 1D mode
-      newActive = Math.max(active - 1, 0) // allow spamming clicks without accidentally clicking on an empty region on left/right side (and dismiss 1D mode) during transition
-    } else if (active < data.length - 1 && pointerArea1D === 'right') {
-      newActive = Math.min(active + 1, data.length - 1)
+    } else if (focused > 0 && pointerArea1D === 'left') { // 1D mode
+      newFocused = Math.max(focused - 1, 0) // allow spamming clicks without accidentally clicking on an empty region on left/right side (and dismiss 1D mode) during transition
+    } else if (focused < data.length - 1 && pointerArea1D === 'right') {
+      newFocused = Math.min(focused + 1, data.length - 1)
     } else {
-      newActive = null
+      newFocused = null
     }
   }
 
@@ -450,15 +450,15 @@ function render(now) {
   let cursor = 'auto'
   let newScrollTop = null // can't be initialized to scrollTop; scrollTop upon read is rounded off, so scrollTop !== scrollTop potentially...
   const hoverMagnetFactor = 40
-  if (newActive == null) {
-    if (newActive == null && active != null) { // just dismissed 1D mode
-      const activeTop = rowsTop[Math.floor(active / cols)]
+  if (newFocused == null) {
+    if (newFocused == null && focused != null) { // just dismissed 1D mode
+      const focusedTop = rowsTop[Math.floor(focused / cols)]
       // if the dismissed box isn't fully shown, scroll there
-      if (activeTop <= scrollTop || activeTop + boxesSizeY[active] >= scrollTop + windowSizeY) {
-        newScrollTop = activeTop - boxesGapY - 44 // Peek a little higher to show the previous row
+      if (focusedTop <= scrollTop || focusedTop + boxesSizeY[focused] >= scrollTop + windowSizeY) {
+        newScrollTop = focusedTop - boxesGapY - 44 // Peek a little higher to show the previous row
         const delta = newScrollTop - scrollTop
         scrollTop = newScrollTop
-        for (let i = 0; i < data.length; i++) data[i].top.pos += delta // magically & seamlessly zoom out from 1D mode's focused active box without vertical jitter
+        for (let i = 0; i < data.length; i++) data[i].top.pos += delta // magically & seamlessly zoom out from 1D mode's focused focused box without vertical jitter
       }
     }
 
@@ -485,7 +485,7 @@ function render(now) {
     }
   } else {
     let currentLeft = hitArea1DSizeX + boxes1DGapX
-    for (let i = newActive - 1; i >= 0; i--) {
+    for (let i = newFocused - 1; i >= 0; i--) {
       let d = data[i]
       const imgSizeX = Math.min(d.naturalSizeX, box1DMaxSizeX, img1DSizeY * d.ar) * 0.7
       currentLeft -= imgSizeX + boxes1DGapX
@@ -493,23 +493,23 @@ function render(now) {
 
     for (let i = 0; i < data.length; i++) {
       let d = data[i]
-      const imgSizeX = Math.min(d.naturalSizeX, box1DMaxSizeX, img1DSizeY * d.ar) * (i === newActive ? 1 : 0.7)
+      const imgSizeX = Math.min(d.naturalSizeX, box1DMaxSizeX, img1DSizeY * d.ar) * (i === newFocused ? 1 : 0.7)
       const imgSizeY = imgSizeX / d.ar
       const boxSizeY = imgSizeY + prompt1DSizeY + promptGapBottom
       d.sizeX.dest = imgSizeX
       d.sizeY.dest = boxSizeY
       d.top.dest = scrollTop + (windowSizeY - boxSizeY) / 2
-      d.left.dest = i === newActive ? (windowSizeX - imgSizeX) / 2 : currentLeft
-      d.left.v += edgeRubberBandVelocityX / (i === newActive ? 1 : 4)
+      d.left.dest = i === newFocused ? (windowSizeX - imgSizeX) / 2 : currentLeft
+      d.left.v += edgeRubberBandVelocityX / (i === newFocused ? 1 : 4)
       d.scale.dest = 1
       d.fxFactor.dest = 0.2
 
-      currentLeft = i === newActive ? windowSizeX - hitArea1DSizeX : currentLeft + imgSizeX + boxes1DGapX
+      currentLeft = i === newFocused ? windowSizeX - hitArea1DSizeX : currentLeft + imgSizeX + boxes1DGapX
     }
     // special adjustments
-    data[newActive].fxFactor.dest = 1
-    if ((pointerArea1D === 'left' && newActive > 0) || (pointerArea1D === 'right' && newActive < data.length - 1)) { // hovering
-      let d = data[pointerArea1D === 'left' ? newActive - 1 : newActive + 1]
+    data[newFocused].fxFactor.dest = 1
+    if ((pointerArea1D === 'left' && newFocused > 0) || (pointerArea1D === 'right' && newFocused < data.length - 1)) { // hovering
+      let d = data[pointerArea1D === 'left' ? newFocused - 1 : newFocused + 1]
       cursor = 'zoom-in'
       d.left.dest += (pointerXLocal - (d.left.dest + d.sizeX.dest / 2)) / hoverMagnetFactor
       d.top.dest += (pointerYLocal - (d.top.dest + d.sizeY.dest / 2)) / hoverMagnetFactor
@@ -557,7 +557,7 @@ function render(now) {
       node.style.height = `${d.sizeY.pos}px`
       node.style.transform = `translate3d(${d.left.pos}px,${d.top.pos}px,0) scale(${d.scale.pos})` // safari now anti-aliases for hover, but then zoom in janks on big displays...
       // we can't afford fxFactor & blur for all pics; too expensive for Safari & Chrome. E.g. when zomming out of a photo, keep scrolling; Chrome stops render on Studio Display
-      node.style.filter = newActive != null && i === newActive - 1 || i === newActive || i === newActive + 1
+      node.style.filter = newFocused != null && i === newFocused - 1 || i === newFocused || i === newFocused + 1
         ? `brightness(${d.fxFactor.pos * 100}%) blur(${Math.max(0, 6 - d.fxFactor.pos * 6)}px)` // blur these 3 only
         : `brightness(${d.fxFactor.pos * 100}%)` // blur of unrelated pics is too fast during transition from/to 1D mode to be seen anyway
 
@@ -565,7 +565,7 @@ function render(now) {
       const imgSizeY = d.sizeX.pos / d.ar
       prompt.style.top = `${imgSizeY}px`
 
-      if (i === newActive) {
+      if (i === newFocused) {
         node.style.zIndex = data.length + 999 // guaranteed above everything
         prompt.style.overflowY = 'auto'
         prompt.style.height = `${prompt1DSizeY}px`
@@ -585,17 +585,17 @@ function render(now) {
   }
 
   document.body.style.cursor = cursor
-  document.body.style.overflowY = newActive === null ? 'auto' : 'hidden'
+  document.body.style.overflowY = newFocused === null ? 'auto' : 'hidden'
   dummyPlaceholder.style.height = `${rowsTop[rowsTop.length - 1]}px`
   if (newScrollTop != null) window.scrollTo({top: newScrollTop}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting. Btw this will trigger scroll and another render
-  if (newActive !== active) {
-    window.history.pushState(null, null, `${window.location.pathname}${window.location.search}${newActive == null ? '' : '#' + data[newActive].id}`)
+  if (newFocused !== focused) {
+    window.history.pushState(null, null, `${window.location.pathname}${window.location.search}${newFocused == null ? '' : '#' + data[newFocused].id}`)
   }
 
   // === prepare for next frame
   inputs.key = null
   inputs.clickedTarget = null
-  active = newActive
+  focused = newFocused
   if (stillAnimating) {
     lastAnimatedRenderTime = newLastAnimatedRenderTime + steps * simulationStep
     return true
