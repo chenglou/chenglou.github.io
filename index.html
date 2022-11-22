@@ -70,6 +70,7 @@ const promptSizeY = 47 + promptPaddingBottom // 47 is a magic number. Doesn't sh
 const prompt1DSizeY = 64 + promptPaddingBottom // size in 1d mode
 const boxesGapX = 24, boxesGapY = 24
 const boxes1DGapX = 52, boxes1DGapY = 28
+const windowPaddingTop = 40
 // 4ms/step for the spring animation's step. Typically 4 steps for 60fps (16.6ms per frame) and 2 for 120fps (8.3ms per frame). Frame time delta varies, so not always true
 // could use 8ms instead but 120fps' 8.3ms per frame means the computation might not fit in 0.3ms, which means sometime the simulation step wouldn't even run once, giving the illusion of jank
 const simulationStep = 4
@@ -378,8 +379,6 @@ function render(now) {
   const {cols, boxMaxSizeX} = colsBoxMaxSizeXF(windowSizeX)
   const pointerXLocal = inputs.pointer.x + window.scrollX, pointerYLocal = inputs.pointer.y + scrollTop // "local" to document.body (global would be unaffected by scrollX/Y, aka global is relative to the screen)
   const hitArea1DSizeX = 100 // left and right click region in 1D mode
-  const box1DMaxSizeX = windowSizeX - boxes1DGapX * 2 - hitArea1DSizeX * 2
-  const img1DSizeY = windowSizeY - boxes1DGapY * 2 - prompt1DSizeY // TODO: adjust
 
   const hashImgId = window.location.hash.slice(1)
   let focused = null; for (let i = 0; i < data.length; i++) if (data[i].id === hashImgId) focused = i
@@ -426,7 +425,7 @@ function render(now) {
   }
 
   // === calculate new layout & cursor
-  let boxesSizeX = [], boxesSizeY = [], rowsTop = [boxesGapY] // length: number of rows + 1
+  let boxesSizeX = [], boxesSizeY = [], rowsTop = [windowPaddingTop] // length: number of rows + 1
   {
     let rowMaxSizeY = 0
     for (let i = 0; i < data.length; i++) {
@@ -483,6 +482,9 @@ function render(now) {
       d.fxFactor.dest = 1
     }
   } else {
+    const img1DSizeY = windowSizeY - windowPaddingTop - prompt1DSizeY - boxes1DGapY
+    const box1DMaxSizeX = windowSizeX - boxes1DGapX * 2 - hitArea1DSizeX * 2
+
     let currentLeft = hitArea1DSizeX + boxes1DGapX
     for (let i = newFocused - 1; i >= 0; i--) {
       let d = data[i]
@@ -497,7 +499,7 @@ function render(now) {
       const boxSizeY = imgSizeY + prompt1DSizeY
       d.sizeX.dest = imgSizeX
       d.sizeY.dest = boxSizeY
-      d.top.dest = scrollTop + (windowSizeY - boxSizeY) / 2
+      d.top.dest = scrollTop + Math.max(windowPaddingTop, (windowSizeY - boxSizeY) / 2)
       d.left.dest = i === newFocused ? (windowSizeX - imgSizeX) / 2 : currentLeft
       d.left.v += edgeRubberBandVelocityX / (i === newFocused ? 1 : 4)
       d.scale.dest = 1
