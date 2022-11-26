@@ -82,7 +82,7 @@ function colsBoxMaxSizeXF(containerSizeX) {
   return {cols, boxMaxSizeX}
 }
 
-function spring(pos, v) {
+function spring(pos, v = 0) {
   return {pos, v, dest: pos}
 }
 function springStep(config) {
@@ -298,12 +298,12 @@ let data; {
       id: d.id,
       naturalSizeX: d.w,
       ar, // aspect ratio
-      sizeX: spring(sizeX, 0),
-      sizeY: spring(sizeY, 0),
-      x: spring(Math.floor(i / cols) * -windowSizeX - windowSizeX, 0),
-      y: spring(windowSizeY + Math.floor(i / cols) * imgMaxSizeY, 0),
-      scale: spring(1, 0),
-      fxFactor: spring(20, 0), // for brightness and blur
+      sizeX: spring(sizeX),
+      sizeY: spring(sizeY),
+      x: spring(Math.floor(i / cols) * -windowSizeX - windowSizeX),
+      y: spring(windowSizeY + Math.floor(i / cols) * imgMaxSizeY),
+      scale: spring(1),
+      fxFactor: spring(20), // for brightness and blur
       node,
     }
   })
