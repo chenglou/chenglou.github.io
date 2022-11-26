@@ -300,8 +300,8 @@ let data; {
       ar, // aspect ratio
       sizeX: spring(sizeX, 0),
       sizeY: spring(sizeY, 0),
-      top: spring(windowSizeY + Math.floor(i / cols) * imgMaxSizeY, 0),
-      left: spring(Math.floor(i / cols) * -windowSizeX - windowSizeX, 0),
+      x: spring(Math.floor(i / cols) * -windowSizeX - windowSizeX, 0),
+      y: spring(windowSizeY + Math.floor(i / cols) * imgMaxSizeY, 0),
       scale: spring(1, 0),
       fxFactor: spring(20, 0), // for brightness and blur
       node,
@@ -409,9 +409,10 @@ function render(now) {
       selection.addRange(range)
     } else if (focused == null) { // in 2D grid mode. Find the box the pointer's on
       for (let i = 0; i < data.length; i++) {
+        let d = data[i]
         // hittest boxes should be static and not follow the current animated state most of the time. But we can do either
-        const left = data[i].left.dest, top = data[i].top.dest, sizeX = data[i].sizeX.dest, sizeY = data[i].sizeY.dest
-        if (left <= pointerXLocal && pointerXLocal < left + sizeX && top <= pointerYLocal && pointerYLocal < top + sizeY) { // pointer on this box
+        const x = d.x.dest, y = d.y.dest, sizeX = d.sizeX.dest, sizeY = d.sizeY.dest
+        if (x <= pointerXLocal && pointerXLocal < x + sizeX && y <= pointerYLocal && pointerYLocal < y + sizeY) { // pointer on this box
           newFocused = i
         }
       }
@@ -456,7 +457,7 @@ function render(now) {
         newScrollTop = focusedTop - boxesGapY - 44 // Peek a little higher to show the previous row
         const delta = newScrollTop - scrollTop
         scrollTop = newScrollTop
-        for (let i = 0; i < data.length; i++) data[i].top.pos += delta // magically & seamlessly zoom out from 1D mode's focused focused box without vertical jitter
+        for (let i = 0; i < data.length; i++) data[i].y.pos += delta // magically & seamlessly zoom out from 1D mode's focused focused box without vertical jitter
       }
     }
 
@@ -465,20 +466,20 @@ function render(now) {
       const sizeX = boxesSizeX[i], sizeY = boxesSizeY[i]
       const currentRow = Math.floor(i / cols)
       const rowMaxSizeY = rowsTop[currentRow + 1] - boxesGapY - rowsTop[currentRow] // this is restoring the rowMaxSizeY info above, kinda weird
-      let top = rowsTop[currentRow] + (rowMaxSizeY - sizeY) / 2
-      let left = boxesGapX + (boxMaxSizeX + boxesGapX) * (i % cols) + (boxMaxSizeX - sizeX) / 2 // center horizontally
-      if (left <= pointerXLocal && pointerXLocal <= left + sizeX && top <= pointerYLocal && pointerYLocal <= top + sizeY) { // hovering
+      let y = rowsTop[currentRow] + (rowMaxSizeY - sizeY) / 2
+      let x = boxesGapX + (boxMaxSizeX + boxesGapX) * (i % cols) + (boxMaxSizeX - sizeX) / 2 // center horizontally
+      if (x <= pointerXLocal && pointerXLocal <= x + sizeX && y <= pointerYLocal && pointerYLocal <= y + sizeY) { // hovering
         cursor = 'zoom-in'
-        left += (pointerXLocal - (left + sizeX / 2)) / hoverMagnetFactor
-        top += (pointerYLocal - (top + sizeY / 2)) / hoverMagnetFactor
+        x += (pointerXLocal - (x + sizeX / 2)) / hoverMagnetFactor
+        y += (pointerYLocal - (y + sizeY / 2)) / hoverMagnetFactor
         d.scale.dest = 1.02
       } else {
         d.scale.dest = 1
       }
       d.sizeX.dest = sizeX
       d.sizeY.dest = sizeY
-      d.top.dest = top
-      d.left.dest = left
+      d.y.dest = y
+      d.x.dest = x
       d.fxFactor.dest = 1
     }
   } else {
@@ -499,9 +500,9 @@ function render(now) {
       const boxSizeY = imgSizeY + prompt1DSizeY
       d.sizeX.dest = imgSizeX
       d.sizeY.dest = boxSizeY
-      d.top.dest = scrollTop + Math.max(windowPaddingTop, (windowSizeY - boxSizeY) / 2)
-      d.left.dest = i === newFocused ? (windowSizeX - imgSizeX) / 2 : currentLeft
-      d.left.v += edgeRubberBandVelocityX / (i === newFocused ? 1 : 4)
+      d.y.dest = scrollTop + Math.max(windowPaddingTop, (windowSizeY - boxSizeY) / 2)
+      d.x.dest = i === newFocused ? (windowSizeX - imgSizeX) / 2 : currentLeft
+      d.x.v += edgeRubberBandVelocityX / (i === newFocused ? 1 : 4)
       d.scale.dest = 1
       d.fxFactor.dest = 0.2
 
@@ -512,8 +513,8 @@ function render(now) {
     if ((pointerArea1D === 'left' && newFocused > 0) || (pointerArea1D === 'right' && newFocused < data.length - 1)) { // hovering
       let d = data[pointerArea1D === 'left' ? newFocused - 1 : newFocused + 1]
       cursor = 'zoom-in'
-      d.left.dest += (pointerXLocal - (d.left.dest + d.sizeX.dest / 2)) / hoverMagnetFactor
-      d.top.dest += (pointerYLocal - (d.top.dest + d.sizeY.dest / 2)) / hoverMagnetFactor
+      d.x.dest += (pointerXLocal - (d.x.dest + d.sizeX.dest / 2)) / hoverMagnetFactor
+      d.y.dest += (pointerYLocal - (d.y.dest + d.sizeY.dest / 2)) / hoverMagnetFactor
       d.scale.dest = 1.02
       d.fxFactor.dest = 0.5
     } else {
@@ -527,18 +528,18 @@ function render(now) {
   let stillAnimating = false
   for (let i = 0; i < data.length; i++) {
     let d = data[i]
-    for (let i = 0; i < steps; i++) {
+    for (let j = 0; j < steps; j++) {
       springStep(d.sizeX)
       springStep(d.sizeY)
-      springStep(d.top)
-      springStep(d.left)
+      springStep(d.x)
+      springStep(d.y)
       springStep(d.scale)
       springStep(d.fxFactor)
     }
     if (!springRoundIfDone(d.sizeX)) stillAnimating = true
     if (!springRoundIfDone(d.sizeY)) stillAnimating = true
-    if (!springRoundIfDone(d.top)) stillAnimating = true
-    if (!springRoundIfDone(d.left)) stillAnimating = true
+    if (!springRoundIfDone(d.x)) stillAnimating = true
+    if (!springRoundIfDone(d.y)) stillAnimating = true
     if (!springRoundIfDone(d.scale)) stillAnimating = true
     if (!springRoundIfDone(d.fxFactor)) stillAnimating = true
   }
@@ -549,14 +550,14 @@ function render(now) {
     let {node} = d
     // only draw what's visible on screen
     if (
-      d.top.pos <= scrollTop + windowSizeY + UIMaxSizeBottom &&
-      d.top.pos + d.sizeY.pos >= scrollTop - UIMaxSizeTop &&
-      d.left.pos <= windowSizeX &&
-      d.left.pos + d.sizeX.pos >= 0
+      d.y.pos <= scrollTop + windowSizeY + UIMaxSizeBottom &&
+      d.y.pos + d.sizeY.pos >= scrollTop - UIMaxSizeTop &&
+      d.x.pos <= windowSizeX &&
+      d.x.pos + d.sizeX.pos >= 0
     ) { // disregard shadow & scaling for now; UIMaxSizeBottom and UIMaxSizeTop are safe bigger values anyway
       node.style.width = `${d.sizeX.pos}px`
       node.style.height = `${d.sizeY.pos}px`
-      node.style.transform = `translate3d(${d.left.pos}px,${d.top.pos}px,0) scale(${d.scale.pos})` // safari now anti-aliases for hover, but then zoom in janks on big displays...
+      node.style.transform = `translate3d(${d.x.pos}px,${d.y.pos}px,0) scale(${d.scale.pos})` // safari now anti-aliases for hover, but then zoom in janks on big displays...
       // we can't afford fxFactor & blur for all pics; too expensive for Safari & Chrome. E.g. when zomming out of a photo, keep scrolling; Chrome stops render on Studio Display
       node.style.filter = newFocused != null && i === newFocused - 1 || i === newFocused || i === newFocused + 1
         ? `brightness(${d.fxFactor.pos * 100}%) blur(${Math.max(0, 6 - d.fxFactor.pos * 6)}px)` // blur these 3 only
