@@ -76,15 +76,19 @@ let rows = []; {
   }
 }
 
-document.body.addEventListener("mouseup", (e) => {
+window.addEventListener("mouseup", (e) => { // can't use pointerup, which isn't triggered when pointer panned
   draggingRow = null
   scheduleRender()
 })
-document.body.addEventListener("mousemove", (e) => {
+window.addEventListener("pointermove", (e) => {
   if (draggingRow) {
     draggingRow.mouseY = e.pageY
     draggingRow.mouseX = e.pageX
   }
+  scheduleRender()
+})
+// safari pointerdown isn't fired on the first left click after dismissing context menus... back to mousedown
+window.addEventListener('mousedown', (e) => {
   scheduleRender()
 })
 
