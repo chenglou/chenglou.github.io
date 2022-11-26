@@ -24,43 +24,46 @@
 <body>
 <script>
 'use strict'
+
 let rowWidth = 320;
 let topMargin = 50;
 
-function centerRow() {
-  return (window.innerWidth - rowWidth) / 2;
+function centerRow(windowSizeX) {
+  return (windowSizeX - rowWidth) / 2;
 }
-
+// === state
 let draggingRow = null;
 let nextZIndex = 1;
-let rows = [];
-for (let i = 0; i < 5; i++) {
-  let node = document.createElement("div");
+let rows = []; {
+  const windowSizeX = document.documentElement.clientWidth
+  for (let i = 0; i < 5; i++) {
+    let node = document.createElement("div");
 
-  let height = 30 + Math.random() * 150; // height [30, 180]
-  let row = { id: i, x: centerRow(), y: 0, node: node, height };
+    let height = 30 + Math.random() * 150; // height [30, 180]
+    let row = { id: i, x: centerRow(windowSizeX), y: 0, node: node, height };
 
-  node.className = "row";
-  node.innerHTML = "Drag Me " + i;
-  node.style.height = height;
-  node.style.width = rowWidth;
-  node.addEventListener("mousedown", (e) => {
-    draggingRow = {
-      id: i,
+    node.className = "row";
+    node.innerHTML = "Drag Me " + i;
+    node.style.height = height;
+    node.style.width = rowWidth;
+    node.addEventListener("mousedown", (e) => {
+      draggingRow = {
+        id: i,
 
-      mouseY: e.pageY,
-      initMouseY: e.pageY,
-      initY: row.y,
+        mouseY: e.pageY,
+        initMouseY: e.pageY,
+        initY: row.y,
 
-      mouseX: e.pageX,
-      initMouseX: e.pageX,
-      initX: row.x,
-    };
-    node.style.zIndex = nextZIndex++;
-  });
+        mouseX: e.pageX,
+        initMouseX: e.pageX,
+        initX: row.x,
+      };
+      node.style.zIndex = nextZIndex++;
+    });
 
-  rows.push(row);
-  document.body.appendChild(node);
+    rows.push(row);
+    document.body.appendChild(node);
+  }
 }
 
 document.body.addEventListener("mouseup", (e) => {
@@ -74,6 +77,10 @@ document.body.addEventListener("mousemove", (e) => {
 });
 
 function render() {
+  // batched DOM reads
+  // excludes scroll bar & invariant under safari pinch zoom
+  const windowSizeX = document.documentElement.clientWidth
+
   let previousTop = topMargin;
   for (let i = 0; i < rows.length; i++) {
     let row = rows[i];
@@ -104,7 +111,7 @@ function render() {
       style.transform = "scale(1)";
 
       row.y += (previousTop - row.y) / 10; // ease to the final y
-      row.x += (centerRow() - row.x) / 10; // ease to the final x
+      row.x += (centerRow(windowSizeX) - row.x) / 10; // ease to the final x
 
       if (
         draggingRow &&
