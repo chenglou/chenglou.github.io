@@ -179,8 +179,15 @@ function render(now) {
   let top = windowPaddingTop
   for (let i = 0; i < data.length; i++) {
     let d = data[i]
-    d.y.dest = top
-    d.scale.dest = i === newDragged ? 1.1 : 1
+    if (i === newDragged) {
+      d.x.pos = d.x.dest = pointer.x
+      d.y.pos = d.y.dest = pointer.y
+      d.scale.dest = 1.1
+    } else {
+      d.x.dest = centerRow(windowSizeX)
+      d.y.dest = top
+      d.scale.dest = 1
+    }
 
     const x = d.x.dest, y = d.y.dest, sizeY = d.sizeY
     if (x <= pointer.x && pointer.x <= x + rowSizeX && y <= pointer.y && pointer.y <= y + sizeY) { // hovering
@@ -270,6 +277,7 @@ function render(now) {
   // === prepare for next frame
   prevDragged = dragged
   dragged = newDragged
+  if (inputs.pointerState === 'firstDown') inputs.pointerState = 'down'
   console.log('render')
   if (stillAnimating) {
     lastAnimatedRenderTime = newLastAnimatedRenderTime + steps * simulationStep
