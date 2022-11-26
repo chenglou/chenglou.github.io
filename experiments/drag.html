@@ -162,10 +162,14 @@ function render(now) {
   if (inputs.pointerState === 'firstDown') {
     for (let i = 0; i < data.length; i++) {
       let d = data[i]
-      // hittest boxes should be static and not follow the current animated state most of the time. But we can do either
-      const x = d.x.dest, y = d.y.dest, sizeY = d.sizeY
+      // hittest boxes should be static and not follow the current animated state most of the time. But we can do either. Use the dynamic area here for once
+      const x = d.x.pos, y = d.y.pos, sizeY = d.sizeY
       if (x <= pointer.x && pointer.x < x + rowSizeX && y <= pointer.y && pointer.y < y + sizeY) { // pointer on this box
-        newDragged = i
+        newDragged = {
+          id: d.id,
+          deltaX: pointer.x - x,
+          deltaY: pointer.y - y,
+        }
       }
     }
   } else if (inputs.pointerState === 'up') {
@@ -179,9 +183,9 @@ function render(now) {
   let top = windowPaddingTop
   for (let i = 0; i < data.length; i++) {
     let d = data[i]
-    if (i === newDragged) {
-      d.x.pos = d.x.dest = pointer.x
-      d.y.pos = d.y.dest = pointer.y
+    if (newDragged && i === newDragged.id) {
+      d.x.pos = d.x.dest = pointer.x - newDragged.deltaX
+      d.y.pos = d.y.dest = pointer.y - newDragged.deltaY
       d.scale.dest = 1.1
     } else {
       d.x.dest = centerRow(windowSizeX)
@@ -189,7 +193,7 @@ function render(now) {
       d.scale.dest = 1
     }
 
-    const x = d.x.dest, y = d.y.dest, sizeY = d.sizeY
+    const x = d.x.pos, y = d.y.pos, sizeY = d.sizeY // dynamic hit area, mirroring the pointer handling earlier
     if (x <= pointer.x && pointer.x <= x + rowSizeX && y <= pointer.y && pointer.y <= y + sizeY) { // hovering
       cursor = inputs.pointerState === 'up' ? 'grab' : 'grabbing'
     }
@@ -217,7 +221,7 @@ function render(now) {
     let d = data[i]
     let style = d.node.style
     style.transform = `translate3d(${d.x.pos}px,${d.y.pos}px,0) scale(${d.scale.pos})`
-    if (i === newDragged) {
+    if (newDragged && i === newDragged.id) {
       style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 1px 2px 0px"
       style.opacity = 0.5
     } else {
