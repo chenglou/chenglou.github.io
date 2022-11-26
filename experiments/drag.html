@@ -27,9 +27,47 @@
 
 const rowWidth = 320
 const topMargin = 50
+// 4ms/step for the spring animation's step. Typically 4 steps for 60fps (16.6ms per frame) and 2 for 120fps (8.3ms per frame). Frame time delta varies, so not always true
+// could use 8ms instead but 120fps' 8.3ms per frame means the computation might not fit in 0.3ms, which means sometime the simulation step wouldn't even run once, giving the illusion of jank
+const simulationStep = 4
+
 function centerRow(windowSizeX) {
   return (windowSizeX - rowWidth) / 2
 }
+
+function spring(pos, v = 0) {
+  return {pos, v, dest: pos}
+}
+function springStep(config) {
+  // https://blog.maximeheckel.com/posts/the-physics-behind-spring-animations/
+  // lol this totally seems copied from https://github.com/chenglou/react-motion/blob/9e3ce95bacaa9a1b259f969870a21c727232cc68/src/stepper.js
+  const k = 225, b = 27, t = simulationStep / 1000
+  const {pos, v, dest} = config
+  // for animations, dest is actually spring at rest. Current position is the spring's stretched/compressed state
+  const Fspring = -k * (pos - dest) // Spring stiffness, in kg / s^2
+  const Fdamper = -b * v // Damping, in kg / s
+  const a = Fspring + Fdamper // a needs to be divided by mass, but we'll assume mass of 1. Adjust k and b to change spring curve instead
+  const newV = v + a * t
+  const newPos = pos + newV * t
+
+  config.pos = newPos; config.v = newV
+}
+function springRoundIfDone(config) {
+  if (Math.abs(config.v) < 0.01 && Math.abs(config.dest - config.pos) < 0.01) {
+    config.v = 0
+    config.pos = config.dest
+    return true
+  }
+  return false
+}
+
+// // === debug
+// const debug = false // only need to toggle this
+// let debugTimestamp = 0
+// const raf = debug ? function raf(f) {
+//   debugTimestamp += 1000 / 60
+//   f(debugTimestamp)
+// } : requestAnimationFrame
 
 let scheduledRender = false
 function scheduleRender(debugForceRender) {
@@ -42,34 +80,48 @@ function scheduleRender(debugForceRender) {
   })
 }
 // === state
-let draggingRow = null
+let lastAnimatedRenderTime = null
+let inputs = {
+  /** @type 'down' | 'up' | 'firstDown' */
+  pointerState: 'up',
+  pointer: {x: -Infinity, y: -Infinity}, // btw, on page load, there's no way to render a first cursor state =(
+}
+let dragged = null
+let prevDragged = null
+// let draggingRow = null
 let nextZIndex = 1
 let rows = []; {
+  // excludes scroll bar & invariant under safari pinch zoom
   const windowSizeX = document.documentElement.clientWidth
   for (let i = 0; i < 5; i++) {
     let node = document.createElement("div")
 
-    const height = 30 + Math.random() * 150 // height [30, 180]
-    let row = { id: i, x: centerRow(windowSizeX), y: 0, node: node, height }
+    let row = {
+      id: i,
+      sizeY: 30 + Math.random() * 150, // [30, 180)
+      x: spring(centerRow(windowSizeX)),
+      y: spring(0),
+      node: node,
+    }
 
     node.className = "row"
     node.innerHTML = "Drag Me " + i
-    node.style.height = height
-    node.style.width = rowWidth
-    node.addEventListener("mousedown", (e) => {
-      draggingRow = {
-        id: i,
+    // node.style.height = height
+    // node.style.width = rowWidth
+    // node.addEventListener("mousedown", (e) => {
+    //   draggingRow = {
+    //     id: i,
 
-        mouseY: e.pageY,
-        initMouseY: e.pageY,
-        initY: row.y,
+    //     mouseY: e.pageY,
+    //     initMouseY: e.pageY,
+    //     initY: row.y,
 
-        mouseX: e.pageX,
-        initMouseX: e.pageX,
-        initX: row.x,
-      }
-      node.style.zIndex = nextZIndex++
-    })
+    //     mouseX: e.pageX,
+    //     initMouseX: e.pageX,
+    //     initX: row.x,
+    //   }
+    //   node.style.zIndex = nextZIndex++
+    // })
 
     rows.push(row)
     document.body.appendChild(node)
@@ -77,74 +129,150 @@ let rows = []; {
 }
 
 window.addEventListener("mouseup", (e) => { // can't use pointerup, which isn't triggered when pointer panned
-  draggingRow = null
+  // draggingRow = null
+  inputs.pointerState = 'up'
   scheduleRender()
 })
 window.addEventListener("pointermove", (e) => {
-  if (draggingRow) {
-    draggingRow.mouseY = e.pageY
-    draggingRow.mouseX = e.pageX
-  }
+  // if (draggingRow) {
+  //   draggingRow.mouseY = e.pageY
+  //   draggingRow.mouseX = e.pageX
+  // }
+  // when scrolling (which updates `render`), a container's pointermove doesn't trigger, so the cursor position's be stale
+  // this means we can only use global coordinates
+  inputs.pointer.x = e.pageX; inputs.pointer.y = e.pageY
+  // btw, pointer can exceed document bounds, e.g. dragging reports back out-of-bound, legal negative values
   scheduleRender()
 })
 // safari pointerdown isn't fired on the first left click after dismissing context menus... back to mousedown
 window.addEventListener('mousedown', (e) => {
+  inputs.pointerState = 'firstDown'
+  // needed to update coords even when we already track pointermove. E.g. in Chrome, right click context menu, move elsewhere, then click to dismiss. BAM, pointermove triggers with stale/wrong (??) coordinates... Click again without moving, and now you're clicking on the wrong thing
+  inputs.pointer.x = e.pageX; inputs.pointer.y = e.pageY
   scheduleRender()
 })
 
 function render(now) {
-  // batched DOM reads
   // excludes scroll bar & invariant under safari pinch zoom
   const windowSizeX = document.documentElement.clientWidth
+  // === handle pointer move & click-related state change
+  let newDragged
+  if (inputs.pointerState === 'firstDown') {
+    const {pointer} = inputs
+    // let top = topMargin
+    for (let i = 0; i < rows.length; i++) {
+      let row = rows[i]
+      // hittest boxes should be static and not follow the current animated state most of the time. But we can do either
+      const x = row.x.dest, y = row.y.dest, sizeX = 999, sizeY = row.sizeY
+      if (x <= pointer.x && pointer.x < x + sizeX && y <= pointer.y && pointer.y < y + sizeY) { // pointer on this box
+        newDragged = i
+      }
+    }
+  } else if (inputs.pointerState === 'up') {
+    newDragged = null
+  } else {
+    newDragged = dragged
+  }
 
-  let previousTop = topMargin
+  // === calculate new layout & cursor
+  let top = topMargin
+  for (let i = 0; i < rows.length; i++) {
+    let row = rows[i]
+    row.y.dest = top
+    top += row.sizeY
+  }
+  // console.log(rows[0].y)
+
+  // === run animation
+  const newLastAnimatedRenderTime = lastAnimatedRenderTime == null ? now : lastAnimatedRenderTime
+  const steps = Math.floor((now - newLastAnimatedRenderTime) / simulationStep)
+  let stillAnimating = false
+  for (let i = 0; i < rows.length; i++) {
+    let row = rows[i]
+    for (let i = 0; i < steps; i++) {
+      springStep(row.y)
+      springStep(row.x)
+    }
+    if (!springRoundIfDone(row.x)) stillAnimating = true
+    if (!springRoundIfDone(row.y)) stillAnimating = true
+  }
+
+  // === finally, render
   for (let i = 0; i < rows.length; i++) {
     let row = rows[i]
     let style = row.node.style
-
-    if (draggingRow && draggingRow.id === row.id) {
-      style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 16px 32px 0px"
-      style.cursor = "grabbing"
+    style.left = `${row.x.pos}px`
+    style.top = `${row.y.pos}px`
+    style.height = `${row.sizeY}px`
+    if (i === newDragged) {
+      style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 1px 2px 0px"
+      // style.cursor = "grab"
       style.opacity = 0.5
       style.transform = "scale(1.1)"
-
-      const deltaY = draggingRow.mouseY - draggingRow.initMouseY
-      row.y = draggingRow.initY + deltaY
-
-      const deltaX = draggingRow.mouseX - draggingRow.initMouseX
-      row.x = draggingRow.initX + deltaX / 5 // restrict horizontal drag a bit
-
-      if (
-        i !== rows.length - 1 &&
-        row.y > previousTop + rows[i + 1].height / 2 // halfway through next row's height
-      ) {
-        [rows[i], rows[i + 1]] = [rows[i + 1], rows[i]] // swap
-      }
     } else {
       style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 1px 2px 0px"
-      style.cursor = "grab"
+      // style.cursor = "grab"
       style.opacity = 1.0
       style.transform = "scale(1)"
-
-      row.y += (previousTop - row.y) / 10 // ease to the final y
-      row.x += (centerRow(windowSizeX) - row.x) / 10 // ease to the final x
-
-      if (
-        draggingRow &&
-        i !== rows.length - 1 &&
-        draggingRow.id === rows[i + 1].id &&
-        previousTop + rows[i].height / 2 > rows[i + 1].y // next row halfway through our height
-      ) {
-        [rows[i], rows[i + 1]] = [rows[i + 1], rows[i]] // swap
-      }
     }
-
-    style.top = rows[i].y
-    style.left = rows[i].x
-    previousTop += rows[i].height
   }
 
-  return true
+  // let previousTop = topMargin
+  // for (let i = 0; i < rows.length; i++) {
+  //   let row = rows[i]
+  //   let style = row.node.style
+
+  //   if (draggingRow && draggingRow.id === row.id) {
+  //     style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 16px 32px 0px"
+  //     style.cursor = "grabbing"
+  //     style.opacity = 0.5
+  //     style.transform = "scale(1.1)"
+
+  //     const deltaY = draggingRow.mouseY - draggingRow.initMouseY
+  //     row.y = draggingRow.initY + deltaY
+
+  //     const deltaX = draggingRow.mouseX - draggingRow.initMouseX
+  //     row.x = draggingRow.initX + deltaX / 5 // restrict horizontal drag a bit
+
+  //     if (
+  //       i !== rows.length - 1 &&
+  //       row.y > previousTop + rows[i + 1].height / 2 // halfway through next row's height
+  //     ) {
+  //       [rows[i], rows[i + 1]] = [rows[i + 1], rows[i]] // swap
+  //     }
+  //   } else {
+  //     style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 1px 2px 0px"
+  //     style.cursor = "grab"
+  //     style.opacity = 1.0
+  //     style.transform = "scale(1)"
+
+  //     row.y += (previousTop - row.y) / 10 // ease to the final y
+  //     row.x += (centerRow(windowSizeX) - row.x) / 10 // ease to the final x
+
+  //     if (
+  //       draggingRow &&
+  //       i !== rows.length - 1 &&
+  //       draggingRow.id === rows[i + 1].id &&
+  //       previousTop + rows[i].height / 2 > rows[i + 1].y // next row halfway through our height
+  //     ) {
+  //       [rows[i], rows[i + 1]] = [rows[i + 1], rows[i]] // swap
+  //     }
+  //   }
+
+  //   style.top = rows[i].y
+  //   style.left = rows[i].x
+  //   previousTop += rows[i].height
+  // }
+
+  // === prepare for next frame
+  [prevDragged, dragged] = [dragged, newDragged]
+  console.log('render')
+  if (stillAnimating) {
+    lastAnimatedRenderTime = newLastAnimatedRenderTime + steps * simulationStep
+    return true
+  } else {
+    lastAnimatedRenderTime = null
+  }
 }
 
 scheduleRender()
