@@ -25,27 +25,27 @@
 <script>
 'use strict'
 
-let rowWidth = 320;
-let topMargin = 50;
+const rowWidth = 320
+const topMargin = 50
 
 function centerRow(windowSizeX) {
-  return (windowSizeX - rowWidth) / 2;
+  return (windowSizeX - rowWidth) / 2
 }
 // === state
-let draggingRow = null;
-let nextZIndex = 1;
+let draggingRow = null
+let nextZIndex = 1
 let rows = []; {
   const windowSizeX = document.documentElement.clientWidth
   for (let i = 0; i < 5; i++) {
-    let node = document.createElement("div");
+    let node = document.createElement("div")
 
-    let height = 30 + Math.random() * 150; // height [30, 180]
-    let row = { id: i, x: centerRow(windowSizeX), y: 0, node: node, height };
+    const height = 30 + Math.random() * 150 // height [30, 180]
+    let row = { id: i, x: centerRow(windowSizeX), y: 0, node: node, height }
 
-    node.className = "row";
-    node.innerHTML = "Drag Me " + i;
-    node.style.height = height;
-    node.style.width = rowWidth;
+    node.className = "row"
+    node.innerHTML = "Drag Me " + i
+    node.style.height = height
+    node.style.width = rowWidth
     node.addEventListener("mousedown", (e) => {
       draggingRow = {
         id: i,
@@ -57,61 +57,61 @@ let rows = []; {
         mouseX: e.pageX,
         initMouseX: e.pageX,
         initX: row.x,
-      };
-      node.style.zIndex = nextZIndex++;
-    });
+      }
+      node.style.zIndex = nextZIndex++
+    })
 
-    rows.push(row);
-    document.body.appendChild(node);
+    rows.push(row)
+    document.body.appendChild(node)
   }
 }
 
 document.body.addEventListener("mouseup", (e) => {
-  draggingRow = null;
-});
+  draggingRow = null
+})
 document.body.addEventListener("mousemove", (e) => {
   if (draggingRow) {
-    draggingRow.mouseY = e.pageY;
-    draggingRow.mouseX = e.pageX;
+    draggingRow.mouseY = e.pageY
+    draggingRow.mouseX = e.pageX
   }
-});
+})
 
 function render() {
   // batched DOM reads
   // excludes scroll bar & invariant under safari pinch zoom
   const windowSizeX = document.documentElement.clientWidth
 
-  let previousTop = topMargin;
+  let previousTop = topMargin
   for (let i = 0; i < rows.length; i++) {
-    let row = rows[i];
-    let style = row.node.style;
+    let row = rows[i]
+    let style = row.node.style
 
     if (draggingRow && draggingRow.id === row.id) {
-      style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 16px 32px 0px";
-      style.cursor = "grabbing";
-      style.opacity = 0.5;
-      style.transform = "scale(1.1)";
+      style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 16px 32px 0px"
+      style.cursor = "grabbing"
+      style.opacity = 0.5
+      style.transform = "scale(1.1)"
 
-      let deltaY = draggingRow.mouseY - draggingRow.initMouseY;
-      row.y = draggingRow.initY + deltaY;
+      const deltaY = draggingRow.mouseY - draggingRow.initMouseY
+      row.y = draggingRow.initY + deltaY
 
-      let deltaX = draggingRow.mouseX - draggingRow.initMouseX;
-      row.x = draggingRow.initX + deltaX / 5; // restrict horizontal drag a bit
+      const deltaX = draggingRow.mouseX - draggingRow.initMouseX
+      row.x = draggingRow.initX + deltaX / 5 // restrict horizontal drag a bit
 
       if (
         i !== rows.length - 1 &&
         row.y > previousTop + rows[i + 1].height / 2 // halfway through next row's height
       ) {
-        [rows[i], rows[i + 1]] = [rows[i + 1], rows[i]]; // swap
+        [rows[i], rows[i + 1]] = [rows[i + 1], rows[i]] // swap
       }
     } else {
-      style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 1px 2px 0px";
-      style.cursor = "grab";
-      style.opacity = 1.0;
-      style.transform = "scale(1)";
+      style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 1px 2px 0px"
+      style.cursor = "grab"
+      style.opacity = 1.0
+      style.transform = "scale(1)"
 
-      row.y += (previousTop - row.y) / 10; // ease to the final y
-      row.x += (centerRow(windowSizeX) - row.x) / 10; // ease to the final x
+      row.y += (previousTop - row.y) / 10 // ease to the final y
+      row.x += (centerRow(windowSizeX) - row.x) / 10 // ease to the final x
 
       if (
         draggingRow &&
@@ -119,17 +119,17 @@ function render() {
         draggingRow.id === rows[i + 1].id &&
         previousTop + rows[i].height / 2 > rows[i + 1].y // next row halfway through our height
       ) {
-        [rows[i], rows[i + 1]] = [rows[i + 1], rows[i]]; // swap
+        [rows[i], rows[i + 1]] = [rows[i + 1], rows[i]] // swap
       }
     }
 
-    style.top = rows[i].y;
-    style.left = rows[i].x;
-    previousTop += rows[i].height;
+    style.top = rows[i].y
+    style.left = rows[i].x
+    previousTop += rows[i].height
   }
 
-  requestAnimationFrame(render);
+  requestAnimationFrame(render)
 }
-render();
+render()
 </script>
 </body>
