@@ -25,14 +25,14 @@
 <script>
 'use strict'
 
-const rowWidth = 320
+const rowSizeX = 320
 const topMargin = 50
 // 4ms/step for the spring animation's step. Typically 4 steps for 60fps (16.6ms per frame) and 2 for 120fps (8.3ms per frame). Frame time delta varies, so not always true
 // could use 8ms instead but 120fps' 8.3ms per frame means the computation might not fit in 0.3ms, which means sometime the simulation step wouldn't even run once, giving the illusion of jank
 const simulationStep = 4
 
 function centerRow(windowSizeX) {
-  return (windowSizeX - rowWidth) / 2
+  return (windowSizeX - rowSizeX) / 2
 }
 
 function spring(pos, v = 0) {
@@ -96,9 +96,10 @@ let rows = []; {
   for (let i = 0; i < 5; i++) {
     let node = document.createElement("div")
 
+    const sizeY = 30 + Math.random() * 150 // [30, 180)
     let row = {
       id: i,
-      sizeY: 30 + Math.random() * 150, // [30, 180)
+      sizeY,
       x: spring(centerRow(windowSizeX)),
       y: spring(0),
       node: node,
@@ -106,8 +107,8 @@ let rows = []; {
 
     node.className = "row"
     node.innerHTML = "Drag Me " + i
-    // node.style.height = height
-    // node.style.width = rowWidth
+    node.style.width = rowSizeX
+    node.style.height = sizeY
     // node.addEventListener("mousedown", (e) => {
     //   draggingRow = {
     //     id: i,
@@ -155,16 +156,16 @@ window.addEventListener('mousedown', (e) => {
 function render(now) {
   // excludes scroll bar & invariant under safari pinch zoom
   const windowSizeX = document.documentElement.clientWidth
+  const {pointer} = inputs
   // === handle pointer move & click-related state change
   let newDragged
   if (inputs.pointerState === 'firstDown') {
-    const {pointer} = inputs
     // let top = topMargin
     for (let i = 0; i < rows.length; i++) {
       let row = rows[i]
       // hittest boxes should be static and not follow the current animated state most of the time. But we can do either
-      const x = row.x.dest, y = row.y.dest, sizeX = 999, sizeY = row.sizeY
-      if (x <= pointer.x && pointer.x < x + sizeX && y <= pointer.y && pointer.y < y + sizeY) { // pointer on this box
+      const x = row.x.dest, y = row.y.dest, sizeY = row.sizeY
+      if (x <= pointer.x && pointer.x < x + rowSizeX && y <= pointer.y && pointer.y < y + sizeY) { // pointer on this box
         newDragged = i
       }
     }
@@ -175,13 +176,17 @@ function render(now) {
   }
 
   // === calculate new layout & cursor
+  let cursor = 'auto'
   let top = topMargin
   for (let i = 0; i < rows.length; i++) {
     let row = rows[i]
     row.y.dest = top
     top += row.sizeY
+    const x = row.x.dest, y = row.y.dest, sizeY = row.sizeY
+    if (x <= pointer.x && pointer.x <= x + rowSizeX && y <= pointer.y && pointer.y <= y + sizeY) { // hovering
+      cursor = inputs.pointerState === 'up' ? 'grab' : 'grabbing'
+    }
   }
-  // console.log(rows[0].y)
 
   // === run animation
   const newLastAnimatedRenderTime = lastAnimatedRenderTime == null ? now : lastAnimatedRenderTime
@@ -203,19 +208,17 @@ function render(now) {
     let style = row.node.style
     style.left = `${row.x.pos}px`
     style.top = `${row.y.pos}px`
-    style.height = `${row.sizeY}px`
     if (i === newDragged) {
       style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 1px 2px 0px"
-      // style.cursor = "grab"
       style.opacity = 0.5
       style.transform = "scale(1.1)"
     } else {
       style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 1px 2px 0px"
-      // style.cursor = "grab"
       style.opacity = 1.0
       style.transform = "scale(1)"
     }
   }
+  document.body.style.cursor = cursor
 
   // let previousTop = topMargin
   // for (let i = 0; i < rows.length; i++) {
@@ -265,7 +268,8 @@ function render(now) {
   // }
 
   // === prepare for next frame
-  [prevDragged, dragged] = [dragged, newDragged]
+  prevDragged = dragged
+  dragged = newDragged
   console.log('render')
   if (stillAnimating) {
     lastAnimatedRenderTime = newLastAnimatedRenderTime + steps * simulationStep
