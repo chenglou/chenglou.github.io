@@ -1,0 +1,128 @@
+<meta charset="utf-8" />
+<head>
+<style>
+  body {
+    font: 16px system-ui;
+    user-select: none; /* no text selection needed */
+    -webkit-user-select: none; /* no text selection needed */
+    background-color: #eee;
+  }
+  .row {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    overflow: hidden; /* height might be small during animation */
+
+    outline: 1px solid lightgrey;
+    color: rgb(153, 153, 153);
+    background-color: rgb(255, 255, 255);
+    transition: box-shadow 0.25s ease-out, opacity 0.25s ease-out,
+      transform 0.25s ease-out;
+  }
+</style>
+</head>
+<body>
+<script>
+'use strict'
+let rowWidth = 320;
+let topMargin = 50;
+
+function centerRow() {
+  return (window.innerWidth - rowWidth) / 2;
+}
+
+let draggingRow = null;
+let nextZIndex = 1;
+let rows = [];
+for (let i = 0; i < 5; i++) {
+  let node = document.createElement("div");
+
+  let height = 30 + Math.random() * 150; // height [30, 180]
+  let row = { id: i, x: centerRow(), y: 0, node: node, height };
+
+  node.className = "row";
+  node.innerHTML = "Drag Me " + i;
+  node.style.height = height;
+  node.style.width = rowWidth;
+  node.addEventListener("mousedown", (e) => {
+    draggingRow = {
+      id: i,
+
+      mouseY: e.pageY,
+      initMouseY: e.pageY,
+      initY: row.y,
+
+      mouseX: e.pageX,
+      initMouseX: e.pageX,
+      initX: row.x,
+    };
+    node.style.zIndex = nextZIndex++;
+  });
+
+  rows.push(row);
+  document.body.appendChild(node);
+}
+
+document.body.addEventListener("mouseup", (e) => {
+  draggingRow = null;
+});
+document.body.addEventListener("mousemove", (e) => {
+  if (draggingRow) {
+    draggingRow.mouseY = e.pageY;
+    draggingRow.mouseX = e.pageX;
+  }
+});
+
+function render() {
+  let previousTop = topMargin;
+  for (let i = 0; i < rows.length; i++) {
+    let row = rows[i];
+    let style = row.node.style;
+
+    if (draggingRow && draggingRow.id === row.id) {
+      style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 16px 32px 0px";
+      style.cursor = "grabbing";
+      style.opacity = 0.5;
+      style.transform = "scale(1.1)";
+
+      let deltaY = draggingRow.mouseY - draggingRow.initMouseY;
+      row.y = draggingRow.initY + deltaY;
+
+      let deltaX = draggingRow.mouseX - draggingRow.initMouseX;
+      row.x = draggingRow.initX + deltaX / 5; // restrict horizontal drag a bit
+
+      if (
+        i !== rows.length - 1 &&
+        row.y > previousTop + rows[i + 1].height / 2 // halfway through next row's height
+      ) {
+        [rows[i], rows[i + 1]] = [rows[i + 1], rows[i]]; // swap
+      }
+    } else {
+      style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 1px 2px 0px";
+      style.cursor = "grab";
+      style.opacity = 1.0;
+      style.transform = "scale(1)";
+
+      row.y += (previousTop - row.y) / 10; // ease to the final y
+      row.x += (centerRow() - row.x) / 10; // ease to the final x
+
+      if (
+        draggingRow &&
+        i !== rows.length - 1 &&
+        draggingRow.id === rows[i + 1].id &&
+        previousTop + rows[i].height / 2 > rows[i + 1].y // next row halfway through our height
+      ) {
+        [rows[i], rows[i + 1]] = [rows[i + 1], rows[i]]; // swap
+      }
+    }
+
+    style.top = rows[i].y;
+    style.left = rows[i].x;
+    previousTop += rows[i].height;
+  }
+
+  requestAnimationFrame(render);
+}
+render();
+</script>
+</body>
