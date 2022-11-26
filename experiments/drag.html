@@ -16,8 +16,7 @@
     outline: 1px solid lightgrey;
     color: rgb(153, 153, 153);
     background-color: rgb(255, 255, 255);
-    transition: box-shadow 0.25s ease-out, opacity 0.25s ease-out,
-      transform 0.25s ease-out;
+    transition: box-shadow 0.25s ease-out, opacity 0.25s ease-out;
   }
 </style>
 </head>
@@ -41,7 +40,7 @@ function spring(pos, v = 0) {
 function springStep(config) {
   // https://blog.maximeheckel.com/posts/the-physics-behind-spring-animations/
   // lol this totally seems copied from https://github.com/chenglou/react-motion/blob/9e3ce95bacaa9a1b259f969870a21c727232cc68/src/stepper.js
-  const k = 225, b = 27, t = simulationStep / 1000
+  const k = 125, b = 27, t = simulationStep / 1000
   const {pos, v, dest} = config
   // for animations, dest is actually spring at rest. Current position is the spring's stretched/compressed state
   const Fspring = -k * (pos - dest) // Spring stiffness, in kg / s^2
@@ -102,6 +101,7 @@ let rows = []; {
       sizeY,
       x: spring(centerRow(windowSizeX)),
       y: spring(0),
+      scale: spring(1),
       node: node,
     }
 
@@ -181,11 +181,12 @@ function render(now) {
   for (let i = 0; i < rows.length; i++) {
     let row = rows[i]
     row.y.dest = top
-    top += row.sizeY
+    row.scale.dest = i === newDragged ? 1.1 : 1
     const x = row.x.dest, y = row.y.dest, sizeY = row.sizeY
     if (x <= pointer.x && pointer.x <= x + rowSizeX && y <= pointer.y && pointer.y <= y + sizeY) { // hovering
       cursor = inputs.pointerState === 'up' ? 'grab' : 'grabbing'
     }
+    top += row.sizeY
   }
 
   // === run animation
@@ -195,27 +196,26 @@ function render(now) {
   for (let i = 0; i < rows.length; i++) {
     let row = rows[i]
     for (let i = 0; i < steps; i++) {
-      springStep(row.y)
       springStep(row.x)
+      springStep(row.y)
+      springStep(row.scale)
     }
     if (!springRoundIfDone(row.x)) stillAnimating = true
     if (!springRoundIfDone(row.y)) stillAnimating = true
+    if (!springRoundIfDone(row.scale)) stillAnimating = true
   }
 
   // === finally, render
   for (let i = 0; i < rows.length; i++) {
     let row = rows[i]
     let style = row.node.style
-    style.left = `${row.x.pos}px`
-    style.top = `${row.y.pos}px`
+    style.transform = `translate3d(${row.x.pos}px,${row.y.pos}px,0) scale(${row.scale.pos})`
     if (i === newDragged) {
       style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 1px 2px 0px"
       style.opacity = 0.5
-      style.transform = "scale(1.1)"
     } else {
       style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 1px 2px 0px"
       style.opacity = 1.0
-      style.transform = "scale(1)"
     }
   }
   document.body.style.cursor = cursor
