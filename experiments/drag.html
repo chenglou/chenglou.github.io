@@ -25,7 +25,7 @@
 'use strict'
 
 const rowSizeX = 320
-const topMargin = 50
+const windowPaddingTop = 50
 // 4ms/step for the spring animation's step. Typically 4 steps for 60fps (16.6ms per frame) and 2 for 120fps (8.3ms per frame). Frame time delta varies, so not always true
 // could use 8ms instead but 120fps' 8.3ms per frame means the computation might not fit in 0.3ms, which means sometime the simulation step wouldn't even run once, giving the illusion of jank
 const simulationStep = 4
@@ -89,14 +89,14 @@ let dragged = null
 let prevDragged = null
 // let draggingRow = null
 let nextZIndex = 1
-let rows = []; {
+let data = []; {
   // excludes scroll bar & invariant under safari pinch zoom
   const windowSizeX = document.documentElement.clientWidth
   for (let i = 0; i < 5; i++) {
     let node = document.createElement("div")
 
     const sizeY = 30 + Math.random() * 150 // [30, 180)
-    let row = {
+    let d = {
       id: i,
       sizeY,
       x: spring(centerRow(windowSizeX)),
@@ -124,7 +124,7 @@ let rows = []; {
     //   node.style.zIndex = nextZIndex++
     // })
 
-    rows.push(row)
+    data.push(d)
     document.body.appendChild(node)
   }
 }
@@ -160,11 +160,10 @@ function render(now) {
   // === handle pointer move & click-related state change
   let newDragged
   if (inputs.pointerState === 'firstDown') {
-    // let top = topMargin
-    for (let i = 0; i < rows.length; i++) {
-      let row = rows[i]
+    for (let i = 0; i < data.length; i++) {
+      let d = data[i]
       // hittest boxes should be static and not follow the current animated state most of the time. But we can do either
-      const x = row.x.dest, y = row.y.dest, sizeY = row.sizeY
+      const x = d.x.dest, y = d.y.dest, sizeY = d.sizeY
       if (x <= pointer.x && pointer.x < x + rowSizeX && y <= pointer.y && pointer.y < y + sizeY) { // pointer on this box
         newDragged = i
       }
@@ -177,39 +176,40 @@ function render(now) {
 
   // === calculate new layout & cursor
   let cursor = 'auto'
-  let top = topMargin
-  for (let i = 0; i < rows.length; i++) {
-    let row = rows[i]
-    row.y.dest = top
-    row.scale.dest = i === newDragged ? 1.1 : 1
-    const x = row.x.dest, y = row.y.dest, sizeY = row.sizeY
+  let top = windowPaddingTop
+  for (let i = 0; i < data.length; i++) {
+    let d = data[i]
+    d.y.dest = top
+    d.scale.dest = i === newDragged ? 1.1 : 1
+
+    const x = d.x.dest, y = d.y.dest, sizeY = d.sizeY
     if (x <= pointer.x && pointer.x <= x + rowSizeX && y <= pointer.y && pointer.y <= y + sizeY) { // hovering
       cursor = inputs.pointerState === 'up' ? 'grab' : 'grabbing'
     }
-    top += row.sizeY
+    top += d.sizeY
   }
 
   // === run animation
   const newLastAnimatedRenderTime = lastAnimatedRenderTime == null ? now : lastAnimatedRenderTime
   const steps = Math.floor((now - newLastAnimatedRenderTime) / simulationStep)
   let stillAnimating = false
-  for (let i = 0; i < rows.length; i++) {
-    let row = rows[i]
+  for (let i = 0; i < data.length; i++) {
+    let d = data[i]
     for (let i = 0; i < steps; i++) {
-      springStep(row.x)
-      springStep(row.y)
-      springStep(row.scale)
+      springStep(d.x)
+      springStep(d.y)
+      springStep(d.scale)
     }
-    if (!springRoundIfDone(row.x)) stillAnimating = true
-    if (!springRoundIfDone(row.y)) stillAnimating = true
-    if (!springRoundIfDone(row.scale)) stillAnimating = true
+    if (!springRoundIfDone(d.x)) stillAnimating = true
+    if (!springRoundIfDone(d.y)) stillAnimating = true
+    if (!springRoundIfDone(d.scale)) stillAnimating = true
   }
 
   // === finally, render
-  for (let i = 0; i < rows.length; i++) {
-    let row = rows[i]
-    let style = row.node.style
-    style.transform = `translate3d(${row.x.pos}px,${row.y.pos}px,0) scale(${row.scale.pos})`
+  for (let i = 0; i < data.length; i++) {
+    let d = data[i]
+    let style = d.node.style
+    style.transform = `translate3d(${d.x.pos}px,${d.y.pos}px,0) scale(${d.scale.pos})`
     if (i === newDragged) {
       style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 1px 2px 0px"
       style.opacity = 0.5
@@ -220,9 +220,9 @@ function render(now) {
   }
   document.body.style.cursor = cursor
 
-  // let previousTop = topMargin
-  // for (let i = 0; i < rows.length; i++) {
-  //   let row = rows[i]
+  // let previousTop = windowPaddingTop
+  // for (let i = 0; i < data.length; i++) {
+  //   let row = data[i]
   //   let style = row.node.style
 
   //   if (draggingRow && draggingRow.id === row.id) {
@@ -238,10 +238,10 @@ function render(now) {
   //     row.x = draggingRow.initX + deltaX / 5 // restrict horizontal drag a bit
 
   //     if (
-  //       i !== rows.length - 1 &&
-  //       row.y > previousTop + rows[i + 1].height / 2 // halfway through next row's height
+  //       i !== data.length - 1 &&
+  //       row.y > previousTop + data[i + 1].height / 2 // halfway through next row's height
   //     ) {
-  //       [rows[i], rows[i + 1]] = [rows[i + 1], rows[i]] // swap
+  //       [data[i], data[i + 1]] = [data[i + 1], data[i]] // swap
   //     }
   //   } else {
   //     style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 1px 2px 0px"
@@ -254,17 +254,17 @@ function render(now) {
 
   //     if (
   //       draggingRow &&
-  //       i !== rows.length - 1 &&
-  //       draggingRow.id === rows[i + 1].id &&
-  //       previousTop + rows[i].height / 2 > rows[i + 1].y // next row halfway through our height
+  //       i !== data.length - 1 &&
+  //       draggingRow.id === data[i + 1].id &&
+  //       previousTop + data[i].height / 2 > data[i + 1].y // next row halfway through our height
   //     ) {
-  //       [rows[i], rows[i + 1]] = [rows[i + 1], rows[i]] // swap
+  //       [data[i], data[i + 1]] = [data[i + 1], data[i]] // swap
   //     }
   //   }
 
-  //   style.top = rows[i].y
-  //   style.left = rows[i].x
-  //   previousTop += rows[i].height
+  //   style.top = data[i].y
+  //   style.left = data[i].x
+  //   previousTop += data[i].height
   // }
 
   // === prepare for next frame
