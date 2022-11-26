@@ -27,9 +27,19 @@
 
 const rowWidth = 320
 const topMargin = 50
-
 function centerRow(windowSizeX) {
   return (windowSizeX - rowWidth) / 2
+}
+
+let scheduledRender = false
+function scheduleRender(debugForceRender) {
+  if (scheduledRender) return;
+  scheduledRender = true
+
+  requestAnimationFrame(function renderAndMaybeScheduleAnotherRender(now) { // eye-grabbing debug name in the inspector. No (anonymous) arrow function please
+    scheduledRender = false
+    if (render(now)) scheduleRender()
+  })
 }
 // === state
 let draggingRow = null
@@ -68,15 +78,17 @@ let rows = []; {
 
 document.body.addEventListener("mouseup", (e) => {
   draggingRow = null
+  scheduleRender()
 })
 document.body.addEventListener("mousemove", (e) => {
   if (draggingRow) {
     draggingRow.mouseY = e.pageY
     draggingRow.mouseX = e.pageX
   }
+  scheduleRender()
 })
 
-function render() {
+function render(now) {
   // batched DOM reads
   // excludes scroll bar & invariant under safari pinch zoom
   const windowSizeX = document.documentElement.clientWidth
@@ -128,8 +140,9 @@ function render() {
     previousTop += rows[i].height
   }
 
-  requestAnimationFrame(render)
+  return true
 }
-render()
+
+scheduleRender()
 </script>
 </body>
