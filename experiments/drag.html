@@ -122,19 +122,13 @@ window.addEventListener('mousedown', (e) => {
 function move(arr, at, to) {
   if (at < to) {
     for (let i = 0; i < arr.length; i++) {
-      if (at < arr[i].position && arr[i].position <= to) {
-        arr[i].position--
-      } else if (arr[i].position === at) {
-        arr[i].position = to
-      }
+      if (at < arr[i].position && arr[i].position <= to) arr[i].position--
+      else if (arr[i].position === at) arr[i].position = to
     }
   } else {
     for (let i = 0; i < arr.length; i++) {
-      if (to <= arr[i].position && arr[i].position < at) {
-        arr[i].position++
-      } else if (arr[i].position === at) {
-        arr[i].position = to
-      }
+      if (to <= arr[i].position && arr[i].position < at) arr[i].position++
+      else if (arr[i].position === at) arr[i].position = to
     }
   }
 }
@@ -241,10 +235,9 @@ function render(now) {
   document.body.style.cursor = cursor
 
   // === prepare for next frame
+  if (inputs.pointerState === 'firstDown') inputs.pointerState = 'down'
   if (dragged && newDragged == null) lastDragged = dragged
   dragged = newDragged
-  if (inputs.pointerState === 'firstDown') inputs.pointerState = 'down'
-  console.log('render')
   if (stillAnimating) {
     lastAnimatedRenderTime = newLastAnimatedRenderTime + steps * simulationStep
     return true
