@@ -60,14 +60,6 @@ function springRoundIfDone(config) {
   return false
 }
 
-// // === debug
-// const debug = false // only need to toggle this
-// let debugTimestamp = 0
-// const raf = debug ? function raf(f) {
-//   debugTimestamp += 1000 / 60
-//   f(debugTimestamp)
-// } : requestAnimationFrame
-
 let scheduledRender = false
 function scheduleRender(debugForceRender) {
   if (scheduledRender) return;
