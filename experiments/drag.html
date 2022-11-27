@@ -86,7 +86,7 @@ let inputs = {
   pointer: {x: -Infinity, y: -Infinity}, // btw, on page load, there's no way to render a first cursor state =(
 }
 let dragged = null
-let prevDragged = null
+let lastDragged = null
 // let draggingRow = null
 let nextZIndex = 1
 let data = []; {
@@ -263,11 +263,15 @@ function render(now) {
     style.transform = `translate3d(${d.x.pos}px,${d.y.pos}px,0) scale(${d.scale.pos})`
     if (newDragged && i === newDragged.i) {
       style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 16px 32px 0px"
-      style.opacity = 0.5
+      style.opacity = 0.7
     } else {
       style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 1px 2px 0px"
       style.opacity = 1.0
     }
+    style.zIndex =
+      newDragged && i === newDragged.i ? data.length + 2
+      : lastDragged && i === lastDragged.i ? data.length + 1
+      : i
     d.node.innerHTML = "Drag Me " + i + ' ' + d.position
   }
   document.body.style.cursor = cursor
@@ -320,7 +324,7 @@ function render(now) {
   // }
 
   // === prepare for next frame
-  prevDragged = dragged
+  if (dragged && newDragged == null) lastDragged = dragged
   dragged = newDragged
   if (inputs.pointerState === 'firstDown') inputs.pointerState = 'down'
   console.log('render')
