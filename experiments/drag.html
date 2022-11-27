@@ -87,58 +87,32 @@ let inputs = {
 }
 let dragged = null
 let lastDragged = null
-// let draggingRow = null
-let nextZIndex = 1
 let data = []; {
-  // excludes scroll bar & invariant under safari pinch zoom
-  const windowSizeX = document.documentElement.clientWidth
+  const windowSizeX = document.documentElement.clientWidth // excludes scroll bar & invariant under safari pinch zoom
   for (let i = 0; i < 5; i++) {
     let node = document.createElement("div")
-
     const sizeY = 30 + Math.random() * 150 // [30, 180)
-    let d = {
+    node.className = "row"
+    node.innerHTML = "Drag Me " + i
+    node.style.width = rowSizeX
+    node.style.height = sizeY
+    data.push({
       position: i, // gonna drag rows around
       sizeY,
       x: spring(centerRow(windowSizeX)),
       y: spring(0),
       scale: spring(1),
       node: node,
-    }
-
-    node.className = "row"
-    node.innerHTML = "Drag Me " + i
-    node.style.width = rowSizeX
-    node.style.height = sizeY
-    // node.addEventListener("mousedown", (e) => {
-    //   draggingRow = {
-    //     id: i,
-
-    //     mouseY: e.pageY,
-    //     initMouseY: e.pageY,
-    //     initY: row.y,
-
-    //     mouseX: e.pageX,
-    //     initMouseX: e.pageX,
-    //     initX: row.x,
-    //   }
-    //   node.style.zIndex = nextZIndex++
-    // })
-
-    data.push(d)
+    })
     document.body.appendChild(node)
   }
 }
 
 window.addEventListener("mouseup", (e) => { // can't use pointerup, which isn't triggered when pointer panned
-  // draggingRow = null
   inputs.pointerState = 'up'
   scheduleRender()
 })
 window.addEventListener("pointermove", (e) => {
-  // if (draggingRow) {
-  //   draggingRow.mouseY = e.pageY
-  //   draggingRow.mouseX = e.pageX
-  // }
   // when scrolling (which updates `render`), a container's pointermove doesn't trigger, so the cursor position's be stale
   // this means we can only use global coordinates
   inputs.pointer.x = e.pageX; inputs.pointer.y = e.pageY
@@ -174,8 +148,7 @@ function move(arr, at, to) {
 }
 
 function render(now) {
-  // excludes scroll bar & invariant under safari pinch zoom
-  const windowSizeX = document.documentElement.clientWidth
+  const windowSizeX = document.documentElement.clientWidth // excludes scroll bar & invariant under safari pinch zoom
   const {pointer} = inputs
   // === handle pointer move & click-related state change
   let newDragged
@@ -261,6 +234,10 @@ function render(now) {
     let d = data[i]
     let style = d.node.style
     style.transform = `translate3d(${d.x.pos}px,${d.y.pos}px,0) scale(${d.scale.pos})`
+    style.zIndex =
+      newDragged && i === newDragged.i ? data.length + 2
+      : lastDragged && i === lastDragged.i ? data.length + 1
+      : i
     if (newDragged && i === newDragged.i) {
       style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 16px 32px 0px"
       style.opacity = 0.7
@@ -268,60 +245,8 @@ function render(now) {
       style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 1px 2px 0px"
       style.opacity = 1.0
     }
-    style.zIndex =
-      newDragged && i === newDragged.i ? data.length + 2
-      : lastDragged && i === lastDragged.i ? data.length + 1
-      : i
-    d.node.innerHTML = "Drag Me " + i + ' ' + d.position
   }
   document.body.style.cursor = cursor
-
-  // let previousTop = windowPaddingTop
-  // for (let i = 0; i < data.length; i++) {
-  //   let row = data[i]
-  //   let style = row.node.style
-
-  //   if (draggingRow && draggingRow.id === row.id) {
-  //     style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 16px 32px 0px"
-  //     style.cursor = "grabbing"
-  //     style.opacity = 0.5
-  //     style.transform = "scale(1.1)"
-
-  //     const deltaY = draggingRow.mouseY - draggingRow.initMouseY
-  //     row.y = draggingRow.initY + deltaY
-
-  //     const deltaX = draggingRow.mouseX - draggingRow.initMouseX
-  //     row.x = draggingRow.initX + deltaX / 5 // restrict horizontal drag a bit
-
-  //     if (
-  //       i !== data.length - 1 &&
-  //       row.y > previousTop + data[i + 1].height / 2 // halfway through next row's height
-  //     ) {
-  //       [data[i], data[i + 1]] = [data[i + 1], data[i]] // swap
-  //     }
-  //   } else {
-  //     style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 1px 2px 0px"
-  //     style.cursor = "grab"
-  //     style.opacity = 1.0
-  //     style.transform = "scale(1)"
-
-  //     row.y += (previousTop - row.y) / 10 // ease to the final y
-  //     row.x += (centerRow(windowSizeX) - row.x) / 10 // ease to the final x
-
-  //     if (
-  //       draggingRow &&
-  //       i !== data.length - 1 &&
-  //       draggingRow.id === data[i + 1].id &&
-  //       previousTop + data[i].height / 2 > data[i + 1].y // next row halfway through our height
-  //     ) {
-  //       [data[i], data[i + 1]] = [data[i + 1], data[i]] // swap
-  //     }
-  //   }
-
-  //   style.top = data[i].y
-  //   style.left = data[i].x
-  //   previousTop += data[i].height
-  // }
 
   // === prepare for next frame
   if (dragged && newDragged == null) lastDragged = dragged
