@@ -179,7 +179,9 @@ function render(now) {
   const {pointer} = inputs
   // === handle pointer move & click-related state change
   let newDragged
-  if (inputs.pointerState === 'firstDown') {
+  if (inputs.pointerState === 'up') newDragged = null
+  else if (inputs.pointerState === 'down') newDragged = dragged
+  else {
     for (let i = 0; i < data.length; i++) {
       let d = data[i]
       // hittest boxes should be static and not follow the current animated state most of the time. But we can do either. Use the dynamic area here for once
@@ -192,15 +194,10 @@ function render(now) {
         }
       }
     }
-  } else if (inputs.pointerState === 'up') {
-    newDragged = null
-  } else {
-    newDragged = dragged
   }
 
   // === calculate new layout & cursor
-  let cursor = 'auto'
-  if (newDragged) {
+  if (newDragged) { // first, swap row based on cursor position if needed
     let d = data[newDragged.i]
     const x = pointer.x - newDragged.deltaX
     const y = pointer.y - newDragged.deltaY
@@ -217,7 +214,6 @@ function render(now) {
       }
     }
   }
-
   let visuallySortedData = data.map(a => a).sort((a, b) => a.position - b.position)
   let top = windowPaddingTop
   for (let i = 0; i < visuallySortedData.length; i++) {
@@ -229,14 +225,20 @@ function render(now) {
       d.y.dest = top
       d.scale.dest = 1
     }
-
-    const x = d.x.pos, y = d.y.pos, sizeY = d.sizeY // dynamic hit area, mirroring the pointer handling earlier
-    if (!newDragged && x <= pointer.x && pointer.x <= x + rowSizeX && y <= pointer.y && pointer.y <= y + sizeY) { // hovering
-      cursor = 'grab'
-    }
-    top += sizeY
+    top += d.sizeY
   }
+  // use the new layout to determine the new cursor
+  let cursor = 'auto'
   if (newDragged) cursor = 'grabbing'
+  else {
+    for (let i = 0; i < data.length; i++) {
+      let d = data[i]
+      const x = d.x.pos, y = d.y.pos // dynamic hit area, mirroring the pointer handling earlier
+      if (x <= pointer.x && pointer.x <= x + rowSizeX && y <= pointer.y && pointer.y <= y + d.sizeY) { // hovering
+        cursor = 'grab'
+      }
+    }
+  }
 
   // === run animation
   const newLastAnimatedRenderTime = lastAnimatedRenderTime == null ? now : lastAnimatedRenderTime
