@@ -204,11 +204,11 @@ function render(now) {
     let d = data[newDragged.i]
     const x = pointer.x - newDragged.deltaX
     const y = pointer.y - newDragged.deltaY
-    d.x.pos = d.x.dest = x
+    d.x.pos = d.x.dest = x + (centerRow(windowSizeX) - x) / 1.5 // restrict horizontal drag a bit
     d.y.pos = d.y.dest = y
     d.scale.dest = 1.1
-
     for (let i = 0; i < data.length; i++) {
+      if (i === newDragged.i) continue
       let d_ = data[i]
       if (d_.y.dest < pointer.y && pointer.y < d_.y.dest + d_.sizeY / 2) {
         // halfway through next row's height. Shift the dragged row
@@ -218,10 +218,10 @@ function render(now) {
     }
   }
 
-  let newData = data.map(a => a).sort((a, b) => a.position - b.position)
+  let visuallySortedData = data.map(a => a).sort((a, b) => a.position - b.position)
   let top = windowPaddingTop
-  for (let i = 0; i < newData.length; i++) {
-    let d = newData[i]
+  for (let i = 0; i < visuallySortedData.length; i++) {
+    let d = visuallySortedData[i]
     if (newDragged && d.position === data[newDragged.i].position) {
       // already modified above
     } else {
@@ -231,11 +231,12 @@ function render(now) {
     }
 
     const x = d.x.pos, y = d.y.pos, sizeY = d.sizeY // dynamic hit area, mirroring the pointer handling earlier
-    if (x <= pointer.x && pointer.x <= x + rowSizeX && y <= pointer.y && pointer.y <= y + sizeY) { // hovering
-      cursor = inputs.pointerState === 'up' ? 'grab' : 'grabbing'
+    if (!newDragged && x <= pointer.x && pointer.x <= x + rowSizeX && y <= pointer.y && pointer.y <= y + sizeY) { // hovering
+      cursor = 'grab'
     }
     top += sizeY
   }
+  if (newDragged) cursor = 'grabbing'
 
   // === run animation
   const newLastAnimatedRenderTime = lastAnimatedRenderTime == null ? now : lastAnimatedRenderTime
