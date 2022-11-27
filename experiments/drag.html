@@ -164,12 +164,10 @@ function render(now) {
     d.y.pos = d.y.dest = y
     d.scale.dest = 1.1
     for (let i = 0; i < data.length; i++) {
-      if (i === newDragged.i) continue
       let d_ = data[i]
-      if (d_.y.dest < pointer.y && pointer.y < d_.y.dest + d_.sizeY / 2) {
+      if (d_.y.dest <= pointer.y && pointer.y < d_.y.dest + d_.sizeY / 2) {
         // halfway through next row's height. Shift the dragged row
         move(data, d.position, d_.position)
-        break
       }
     }
   }
