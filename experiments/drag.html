@@ -97,7 +97,7 @@ let data = []; {
 
     const sizeY = 30 + Math.random() * 150 // [30, 180)
     let d = {
-      id: i,
+      position: i, // gonna drag rows around
       sizeY,
       x: spring(centerRow(windowSizeX)),
       y: spring(0),
@@ -153,6 +153,26 @@ window.addEventListener('mousedown', (e) => {
   scheduleRender()
 })
 
+function move(arr, at, to) {
+  if (at < to) {
+    for (let i = 0; i < arr.length; i++) {
+      if (at < arr[i].position && arr[i].position <= to) {
+        arr[i].position--
+      } else if (arr[i].position === at) {
+        arr[i].position = to
+      }
+    }
+  } else {
+    for (let i = 0; i < arr.length; i++) {
+      if (to <= arr[i].position && arr[i].position < at) {
+        arr[i].position++
+      } else if (arr[i].position === at) {
+        arr[i].position = to
+      }
+    }
+  }
+}
+
 function render(now) {
   // excludes scroll bar & invariant under safari pinch zoom
   const windowSizeX = document.documentElement.clientWidth
@@ -166,7 +186,7 @@ function render(now) {
       const x = d.x.pos, y = d.y.pos, sizeY = d.sizeY
       if (x <= pointer.x && pointer.x < x + rowSizeX && y <= pointer.y && pointer.y < y + sizeY) { // pointer on this box
         newDragged = {
-          id: d.id,
+          i: i,
           deltaX: pointer.x - x,
           deltaY: pointer.y - y,
         }
@@ -180,13 +200,30 @@ function render(now) {
 
   // === calculate new layout & cursor
   let cursor = 'auto'
+  if (newDragged) {
+    let d = data[newDragged.i]
+    const x = pointer.x - newDragged.deltaX
+    const y = pointer.y - newDragged.deltaY
+    d.x.pos = d.x.dest = x
+    d.y.pos = d.y.dest = y
+    d.scale.dest = 1.1
+
+    for (let i = 0; i < data.length; i++) {
+      let d_ = data[i]
+      if (d_.y.dest < pointer.y && pointer.y < d_.y.dest + d_.sizeY / 2) {
+        // halfway through next row's height. Shift the dragged row
+        move(data, d.position, d_.position)
+        break
+      }
+    }
+  }
+
+  let newData = data.map(a => a).sort((a, b) => a.position - b.position)
   let top = windowPaddingTop
-  for (let i = 0; i < data.length; i++) {
-    let d = data[i]
-    if (newDragged && i === newDragged.id) {
-      d.x.pos = d.x.dest = pointer.x - newDragged.deltaX
-      d.y.pos = d.y.dest = pointer.y - newDragged.deltaY
-      d.scale.dest = 1.1
+  for (let i = 0; i < newData.length; i++) {
+    let d = newData[i]
+    if (newDragged && d.position === data[newDragged.i].position) {
+      // already modified above
     } else {
       d.x.dest = centerRow(windowSizeX)
       d.y.dest = top
@@ -197,7 +234,7 @@ function render(now) {
     if (x <= pointer.x && pointer.x <= x + rowSizeX && y <= pointer.y && pointer.y <= y + sizeY) { // hovering
       cursor = inputs.pointerState === 'up' ? 'grab' : 'grabbing'
     }
-    top += d.sizeY
+    top += sizeY
   }
 
   // === run animation
@@ -221,13 +258,14 @@ function render(now) {
     let d = data[i]
     let style = d.node.style
     style.transform = `translate3d(${d.x.pos}px,${d.y.pos}px,0) scale(${d.scale.pos})`
-    if (newDragged && i === newDragged.id) {
-      style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 1px 2px 0px"
+    if (newDragged && i === newDragged.i) {
+      style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 16px 32px 0px"
       style.opacity = 0.5
     } else {
       style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 1px 2px 0px"
       style.opacity = 1.0
     }
+    d.node.innerHTML = "Drag Me " + i + ' ' + d.position
   }
   document.body.style.cursor = cursor
 
