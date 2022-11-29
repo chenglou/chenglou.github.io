@@ -89,7 +89,7 @@ let data = []; {
     node.style.width = rowSizeX
     node.style.height = sizeY
     data.push({
-      position: i, // gonna drag rows around
+      id: i + '', // gonna drag rows around so we can't refer to a row by index. Assign a stable id
       sizeY,
       x: spring(centerRow(windowSizeX)),
       y: spring(0),
@@ -119,22 +119,6 @@ window.addEventListener('mousedown', (e) => {
   scheduleRender()
 })
 
-// changePosition([{val: a, position: 0}, {val: b, position: 1}, {val: c, position: 2}], 1, 0) -> [{val: a, position: 1}, {val: b, position: 0}, {val: c, position: 2}]
-// this doesn't move the array item itself! Just changes the item's position field
-function changePosition(arr, at, to) {
-  if (at < to) {
-    for (let i = 0; i < arr.length; i++) {
-      if (at < arr[i].position && arr[i].position <= to) arr[i].position--
-      else if (arr[i].position === at) arr[i].position = to
-    }
-  } else {
-    for (let i = 0; i < arr.length; i++) {
-      if (to <= arr[i].position && arr[i].position < at) arr[i].position++
-      else if (arr[i].position === at) arr[i].position = to
-    }
-  }
-}
-
 function render(now) {
   const windowSizeX = document.documentElement.clientWidth // excludes scroll bar & invariant under safari pinch zoom
   const {pointer} = inputs
@@ -149,7 +133,7 @@ function render(now) {
       const x = d.x.pos, y = d.y.pos, sizeY = d.sizeY
       if (x <= pointer.x && pointer.x < x + rowSizeX && y <= pointer.y && pointer.y < y + sizeY) { // pointer on this box
         newDragged = {
-          i: i,
+          id: d.id,
           deltaX: pointer.x - x,
           deltaY: pointer.y - y,
         }
@@ -159,25 +143,29 @@ function render(now) {
 
   // === calculate new layout & cursor
   if (newDragged) { // first, swap row based on cursor position if needed
-    let d = data[newDragged.i]
+    let dragIdx = data.findIndex(d => d.id === newDragged.id)
+    let d = data[dragIdx]
     const x = pointer.x - newDragged.deltaX
     const y = pointer.y - newDragged.deltaY
     d.x.pos = d.x.dest = x + (centerRow(windowSizeX) - x) / 1.5 // restrict horizontal drag a bit
     d.y.pos = d.y.dest = y
     d.scale.dest = 1.1
-    for (let i = 0; i < data.length; i++) {
-      let d_ = data[i]
-      if (d_.y.dest <= pointer.y && pointer.y < d_.y.dest + d_.sizeY / 2) {
-        // halfway through next row's height. Shift the dragged row
-        changePosition(data, d.position, d_.position)
-      }
+    // dragging row upward? Swap it with previous row if cursor is above the first half previous row
+    while (dragIdx > 0 && pointer.y < data[dragIdx - 1].y.dest + data[dragIdx - 1].sizeY / 2) {
+      [data[dragIdx], data[dragIdx - 1]] = [data[dragIdx - 1], data[dragIdx]] // swap
+      dragIdx--
+    }
+    // dragging row downward? Swap it with next row if cursor is below the first half next row
+    while (dragIdx < data.length - 1 && pointer.y > data[dragIdx + 1].y.dest + data[dragIdx + 1].sizeY / 2) {
+      [data[dragIdx], data[dragIdx + 1]] = [data[dragIdx + 1], data[dragIdx]] // swap
+      dragIdx++
     }
   }
-  let visuallySortedData = data.map(a => a).sort((a, b) => a.position - b.position)
+
   let top = windowPaddingTop
-  for (let i = 0; i < visuallySortedData.length; i++) {
-    let d = visuallySortedData[i]
-    if (newDragged && d.position === data[newDragged.i].position) {
+  for (let i = 0; i < data.length; i++) {
+    let d = data[i]
+    if (newDragged && d.id === newDragged.id) {
       // already modified above
     } else {
       d.x.dest = centerRow(windowSizeX)
@@ -221,10 +209,10 @@ function render(now) {
     let style = d.node.style
     style.transform = `translate3d(${d.x.pos}px,${d.y.pos}px,0) scale(${d.scale.pos})`
     style.zIndex =
-      newDragged && i === newDragged.i ? data.length + 2
-      : lastDragged && i === lastDragged.i ? data.length + 1
+      newDragged && d.id === newDragged.id ? data.length + 2
+      : lastDragged && d.id === lastDragged.id ? data.length + 1
       : i
-    if (newDragged && i === newDragged.i) {
+    if (newDragged && d.id === newDragged.id) {
       style.boxShadow = "rgba(0, 0, 0, 0.2) 0px 16px 32px 0px"
       style.opacity = 0.7
     } else {
