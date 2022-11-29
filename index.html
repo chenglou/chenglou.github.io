@@ -355,8 +355,8 @@ window.addEventListener('click', (e) => {
   scheduleRender()
 })
 window.addEventListener('pointermove', (e) => {
-  // when scrolling (which updates `render`), a container's pointermove doesn't trigger, so the cursor position's be stale
-  // this means we can only use global coordinates (thus the subtraction of scroll)
+  // when scrolling (which might schedule a render), a container's pointermove doesn't trigger, so the pointer's local coordinates are stale
+  // this means we should only use pointer's global coordinates, which is always right (thus the subtraction of scroll)
   inputs.pointer.x = e.pageX - window.scrollX; inputs.pointer.y = e.pageY - window.scrollY
   // btw, pointer can exceed document bounds, e.g. dragging reports back out-of-bound, legal negative values
   scheduleRender()
