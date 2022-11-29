@@ -119,7 +119,9 @@ window.addEventListener('mousedown', (e) => {
   scheduleRender()
 })
 
-function move(arr, at, to) {
+// changePosition([{val: a, position: 0}, {val: b, position: 1}, {val: c, position: 2}], 1, 0) -> [{val: a, position: 1}, {val: b, position: 0}, {val: c, position: 2}]
+// this doesn't move the array item itself! Just changes the item's position field
+function changePosition(arr, at, to) {
   if (at < to) {
     for (let i = 0; i < arr.length; i++) {
       if (at < arr[i].position && arr[i].position <= to) arr[i].position--
@@ -167,7 +169,7 @@ function render(now) {
       let d_ = data[i]
       if (d_.y.dest <= pointer.y && pointer.y < d_.y.dest + d_.sizeY / 2) {
         // halfway through next row's height. Shift the dragged row
-        move(data, d.position, d_.position)
+        changePosition(data, d.position, d_.position)
       }
     }
   }
