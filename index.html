@@ -88,7 +88,7 @@ function spring(pos, v = 0) {
 function springStep(config) {
   // https://blog.maximeheckel.com/posts/the-physics-behind-spring-animations/
   // lol this totally seems copied from https://github.com/chenglou/react-motion/blob/9e3ce95bacaa9a1b259f969870a21c727232cc68/src/stepper.js
-  const k = 225, b = 27, t = simulationStep / 1000
+  const k = 290, b = 30, t = simulationStep / 1000 // try https://chenglou.me/react-motion/demos/demo5-spring-parameters-chooser/
   const {pos, v, dest} = config
   // for animations, dest is actually spring at rest. Current position is the spring's stretched/compressed state
   const Fspring = -k * (pos - dest) // Spring stiffness, in kg / s^2
