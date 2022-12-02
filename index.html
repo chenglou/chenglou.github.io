@@ -99,6 +99,10 @@ function springStep(config) {
 
   config.pos = newPos; config.v = newV
 }
+function springGoToEnd(config) {
+  config.pos = config.dest
+  config.v = 0
+}
 function springRoundIfDone(config) {
   if (Math.abs(config.v) < 0.01 && Math.abs(config.dest - config.pos) < 0.01) {
     config.v = 0
@@ -348,6 +352,12 @@ let data; {
     }
   })
 }
+function springForEach(f) {
+  for (let i = 0; i < data.length; i++) {
+    let d = data[i]
+    f(d.sizeX); f(d.sizeY); f(d.x); f(d.y); f(d.scale); f(d.fxFactor) // no different than [a, b, c].forEach(f)
+  }
+}
 
 // === debug
 const debug = false // only need to toggle this
@@ -568,34 +578,13 @@ function render(now) {
   const newLastAnimatedRenderTime = lastAnimatedRenderTime == null ? now : lastAnimatedRenderTime
   const steps = Math.floor((now - newLastAnimatedRenderTime) / simulationStep)
   let stillAnimating = false
-  if (animationDisabled) {
-    for (let i = 0; i < data.length; i++) {
-      let d = data[i]
-      d.sizeX.pos = d.sizeX.dest; d.sizeX.v = 0
-      d.sizeY.pos = d.sizeY.dest; d.sizeY.v = 0
-      d.x.pos = d.x.dest; d.x.v = 0
-      d.y.pos = d.y.dest; d.y.v = 0
-      d.scale.pos = d.scale.dest; d.scale.v = 0
-      d.fxFactor.pos = d.fxFactor.dest; d.fxFactor.v = 0
-    }
-  } else {
-    for (let i = 0; i < data.length; i++) {
-      let d = data[i]
-      for (let j = 0; j < steps; j++) {
-        springStep(d.sizeX)
-        springStep(d.sizeY)
-        springStep(d.x)
-        springStep(d.y)
-        springStep(d.scale)
-        springStep(d.fxFactor)
-      }
-      if (!springRoundIfDone(d.sizeX)) stillAnimating = true
-      if (!springRoundIfDone(d.sizeY)) stillAnimating = true
-      if (!springRoundIfDone(d.x)) stillAnimating = true
-      if (!springRoundIfDone(d.y)) stillAnimating = true
-      if (!springRoundIfDone(d.scale)) stillAnimating = true
-      if (!springRoundIfDone(d.fxFactor)) stillAnimating = true
-    }
+  if (animationDisabled) springForEach(springGoToEnd)
+  else {
+    springForEach(s => {
+      for (let i = 0; i < steps; i++) springStep(s)
+      if (Math.abs(s.v) < 0.01 && Math.abs(s.dest - s.pos) < 0.01) springGoToEnd(s) // close enough, done
+      else stillAnimating = true
+    })
   }
 
   // === finally, render
