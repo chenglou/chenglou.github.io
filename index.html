@@ -77,19 +77,19 @@ const simulationStep = 4
 
 function colsBoxMaxSizeXF(containerSizeX) {
   const boxMinSizeX = 220 // Make sure that on mobile, this min width is big enough not to show 2 images per row. Also, this won't be respected if view's tiny
-  const cols = clamp(1, Math.floor((containerSizeX - boxesGapX) / (boxMinSizeX + boxesGapX)), 7) // boxesGapX for body's left and right too
+  const cols = clamp(1, Math.floor((containerSizeX - boxesGapX) / (boxMinSizeX + boxesGapX)), 7) // half of boxesGapX for container's left and right gap
   const boxMaxSizeX = (containerSizeX - boxesGapX - cols * boxesGapX) / cols
   return {cols, boxMaxSizeX}
 }
 
-function spring(pos, v = 0) {
-  return {pos, v, dest: pos}
+function spring(pos, v = 0, k = 290, b = 30) {
+  return {pos, dest: pos, v, k, b} // k = stiffness, b = damping. Try https://chenglou.me/react-motion/demos/demo5-spring-parameters-chooser/
 }
 function springStep(config) {
   // https://blog.maximeheckel.com/posts/the-physics-behind-spring-animations/
   // lol this totally seems copied from https://github.com/chenglou/react-motion/blob/9e3ce95bacaa9a1b259f969870a21c727232cc68/src/stepper.js
-  const k = 290, b = 30, t = simulationStep / 1000 // try https://chenglou.me/react-motion/demos/demo5-spring-parameters-chooser/
-  const {pos, v, dest} = config
+  const t = simulationStep / 1000
+  const {pos, dest, v, k, b} = config
   // for animations, dest is actually spring at rest. Current position is the spring's stretched/compressed state
   const Fspring = -k * (pos - dest) // Spring stiffness, in kg / s^2
   const Fdamper = -b * v // Damping, in kg / s
@@ -102,14 +102,6 @@ function springStep(config) {
 function springGoToEnd(config) {
   config.pos = config.dest
   config.v = 0
-}
-function springRoundIfDone(config) {
-  if (Math.abs(config.v) < 0.01 && Math.abs(config.dest - config.pos) < 0.01) {
-    config.v = 0
-    config.pos = config.dest
-    return true
-  }
-  return false
 }
 
 let data; {
@@ -356,7 +348,7 @@ function springForEach(f) {
 }
 
 // === debug
-const debug = false // only need to toggle this
+const debug = false // toggle this for manually stepping through animation frames (press key A)
 let debugTimestamp = 0
 const raf = debug ? function raf(f) {
   debugTimestamp += 1000 / 60
@@ -388,11 +380,10 @@ window.addEventListener('resize', () => scheduleRender())
 window.addEventListener('scroll', () => scheduleRender())
 window.addEventListener('popstate', () => scheduleRender())
 window.addEventListener('keydown', (e) => {
-  if (e.code === 'Escape' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+  if (e.code === 'KeyA') scheduleRender(true) // debug
+  else if (e.code === 'Escape' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
     inputs.key = e.code
     scheduleRender()
-  } else if (e.code === 'KeyA') {
-    scheduleRender(true) // debug
   }
 })
 window.addEventListener('click', (e) => {
