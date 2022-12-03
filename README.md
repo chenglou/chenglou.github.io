@@ -22,7 +22,7 @@ Features:
 - Progressive image loading. Though this could be done better.
 - Smoothness & performance. Works on 120fps displays, including ProMotion.
 - Battery-friendly. Fewer DOM nodes & no excessive tangential computations. You'll never get the Safari tab energy consumption warning.
-- Routing.
+- [Routing](https://user-images.githubusercontent.com/1909539/205443837-f55896f5-6766-4890-9e26-44465150dbf5.mp4).
 - SEO-friendly.
 - Cool images =)
 
