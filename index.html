@@ -331,7 +331,7 @@ let data; {
       naturalSizeX: d.w,
       ar, // aspect ratio
       sizeX: spring(sizeX),
-      sizeY: spring(sizeY),
+      sizeY: spring(sizeY), // including image, prompt, paddings
       x: spring(Math.floor(i / cols) * -windowSizeX - windowSizeX),
       y: spring(windowSizeY + Math.floor(i / cols) * imgMaxSizeY),
       scale: spring(1),
