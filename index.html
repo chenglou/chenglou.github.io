@@ -440,10 +440,6 @@ function render(now) {
 
   // === step 2: handle inputs-related state change
   // keys
-  const edgeRubberBandVelocityX =
-    inputs.key === 'ArrowLeft' && focused === 0 ? 2000
-    : inputs.key === 'ArrowRight' && focused === data.length - 1 ? -2000
-    : 0
   let newFocused =
     inputs.key === 'Escape' ? null
     : inputs.key != null && focused == null ? 0
@@ -534,6 +530,10 @@ function render(now) {
       currentLeft -= imgSizeX + boxes1DGapX
     }
 
+    const edgeRubberBandVelocityX =
+      inputs.key === 'ArrowLeft' && focused === 0 ? 2000
+      : inputs.key === 'ArrowRight' && focused === data.length - 1 ? -2000
+      : 0
     for (let i = 0; i < data.length; i++) {
       let d = data[i]
       const imgSizeX = Math.min(d.naturalSizeX, box1DMaxSizeX, img1DSizeY * d.ar) * (i === newFocused ? 1 : 0.7)
