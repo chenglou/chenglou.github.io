@@ -39,7 +39,6 @@
       width: 100%;
       box-sizing: border-box;
       padding: 8px 12px 0px 12px;
-      overflow: hidden;
       font-family: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; /* same as midjourney's */
       color: rgb(192, 198, 205);
       font-size: 16px;
@@ -321,7 +320,7 @@ let data; {
         // node.tabIndex = i + 1 // uncomment when dismiss focus isn't this ugly blue hue anymore
         node.style.backgroundImage = `url(https://mj-gallery.com/${d.id}/grid_0_384_N.webp)` // 128 is the next smallest. Too small for retina screens
     let img = document.createElement('img')
-        // img.decoding = 'async'
+        // img.decoding = 'async' // this sucks. It's slower _and_ still janks the UI. No point
     let promptNode = document.createElement('figcaption')
         promptNode.className = 'prompt'
         promptNode.textContent = d.prompt
@@ -331,8 +330,8 @@ let data; {
       naturalSizeX: d.w,
       ar, // aspect ratio
       sizeX: spring(sizeX),
-      sizeY: spring(sizeY), // including image, prompt, paddings
-      x: spring(Math.floor(i / cols) * -windowSizeX - windowSizeX),
+      sizeY: spring(sizeY), // image + prompt
+      x: spring(Math.floor(i / cols) * -windowSizeX - windowSizeX), // unfold from lower left. More visible on long screens
       y: spring(windowSizeY + Math.floor(i / cols) * imgMaxSizeY),
       scale: spring(1),
       fxFactor: spring(20), // for brightness and blur
@@ -341,8 +340,7 @@ let data; {
   })
 }
 function springForEach(f) {
-  for (let i = 0; i < data.length; i++) {
-    let d = data[i]
+  for (let d of data) {
     f(d.sizeX); f(d.sizeY); f(d.x); f(d.y); f(d.scale); f(d.fxFactor) // no different than [a, b, c].forEach(f)
   }
 }
@@ -456,9 +454,9 @@ function render(now) {
         }
       }
     } else if (focused > 0 && pointerArea1D === 'left') { // 1D mode
-      newFocused = Math.max(focused - 1, 0) // allow spamming clicks without accidentally clicking on an empty region on left/right side (and dismiss 1D mode) during transition
+      newFocused = Math.max(0, focused - 1) // allow spamming clicks without accidentally clicking on an empty region on left/right side (and dismiss 1D mode) during transition
     } else if (focused < data.length - 1 && pointerArea1D === 'right') {
-      newFocused = Math.min(focused + 1, data.length - 1)
+      newFocused = Math.min(data.length - 1, focused + 1)
     } else {
       newFocused = null
     }
@@ -479,8 +477,8 @@ function render(now) {
       boxesSizeX.push(sizeX)
       boxesSizeY.push(sizeY)
       rowMaxSizeY = Math.max(rowMaxSizeY, sizeY)
-      if (i % cols === cols - 1 || i === data.length - 1) {
-        rowsTop.push(rowsTop[Math.floor(i / cols)] + rowMaxSizeY + boxesGapY)
+      if (i % cols === cols - 1 || i === data.length - 1) { // last box of the row or last box ever
+        rowsTop.push(rowsTop.at(-1) + rowMaxSizeY + boxesGapY)
         rowMaxSizeY = 0
       }
     }
@@ -496,7 +494,7 @@ function render(now) {
         newScrollTop = focusedTop - boxesGapY - 44 // Peek a little higher to show the previous row
         const delta = newScrollTop - scrollTop
         scrollTop = newScrollTop
-        for (let i = 0; i < data.length; i++) data[i].y.pos += delta // magically & seamlessly zoom out from 1D mode's focused focused box without vertical jitter
+        for (let {y} of data) y.pos += delta // magically & seamlessly zoom out from 1D mode's focused focused box without vertical jitter
       }
     }
 
@@ -574,7 +572,7 @@ function render(now) {
     })
   }
 
-  // === finally, render
+  // === finally, render. Batch DOM writes
   for (let i = 0; i < data.length; i++) {
     let d = data[i]
     let {node} = d
@@ -618,7 +616,7 @@ function render(now) {
 
   document.body.style.cursor = cursor
   document.body.style.overflowY = newFocused === null ? 'auto' : 'hidden'
-  dummyPlaceholder.style.height = `${rowsTop[rowsTop.length - 1]}px`
+  dummyPlaceholder.style.height = `${rowsTop.at(-1)}px`
   if (newScrollTop != null) window.scrollTo({top: newScrollTop}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting. Btw this will trigger scroll and another render
   if (newFocused !== focused) {
     window.history.pushState(null, null, `${window.location.pathname}${window.location.search}${newFocused == null ? '' : '#' + data[newFocused].id}`)
