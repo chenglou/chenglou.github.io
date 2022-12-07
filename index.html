@@ -60,28 +60,35 @@
 <script>
 'use strict'
 
+// === generic scheduler & its debugger
+const debug = false // toggle this for manually stepping through animation frames (press key A)
+let debugTimestamp = 0
+const raf = debug ? function raf(f) {
+  debugTimestamp += 1000 / 60
+  f(debugTimestamp)
+} : requestAnimationFrame
+
+let scheduledRender = false
+function scheduleRender(debugForceRender) {
+  if (debug && !debugForceRender) return
+  if (scheduledRender) return;
+  scheduledRender = true
+
+  raf(function renderAndMaybeScheduleAnotherRender(now) { // eye-grabbing debug name in the inspector. No (anonymous) arrow function please
+    scheduledRender = false
+    if (render(now)) scheduleRender()
+  })
+}
+
+// === generic helpers
 function clamp(min, v, max) {
   return v > max ? max : v < min ? min : v
 }
 
-const promptPaddingBottom = 8
-const promptSizeY = 47 + promptPaddingBottom // 47 is a magic number. Doesn't show the 3rd line nor cuts the 2nd line on safari, mobile safari and chrome
-const prompt1DSizeY = 64 + promptPaddingBottom // size in 1d mode
-const boxesGapX = 24, boxesGapY = 24
-const boxes1DGapX = 52, boxes1DGapY = 28
-const windowPaddingTop = 40
-const hitArea1DSizeX = 100 // left and right click region in 1D mode
-// 4ms/step for the spring animation's step. Typically 4 steps for 60fps (16.6ms per frame) and 2 for 120fps (8.3ms per frame). Frame time delta varies, so not always true
-// could use 8ms instead but 120fps' 8.3ms per frame means the computation might not fit in 0.3ms, which means sometime the simulation step wouldn't even run once, giving the illusion of jank
+// === generic spring physics
+// 4ms/step for the spring animation's step. Typically 4 steps for 60fps (16.6ms/frame) and 2 for 120fps (8.3ms/frame). Frame time delta varies, so not always true
+// could use 8ms instead, but 120fps' 8.3ms/frame means the computation might not fit in the remaining 0.3ms, which means sometime the simulation step wouldn't even run once, giving the illusion of jank
 const simulationStep = 4
-
-function colsBoxMaxSizeXF(containerSizeX) {
-  const boxMinSizeX = 220 // Make sure that on mobile, this min width is big enough not to show 2 images per row. Also, this won't be respected if view's tiny
-  const cols = clamp(1, Math.floor((containerSizeX - boxesGapX) / (boxMinSizeX + boxesGapX)), 7) // half of boxesGapX for container's left and right gap
-  const boxMaxSizeX = (containerSizeX - boxesGapX - cols * boxesGapX) / cols
-  return {cols, boxMaxSizeX}
-}
-
 function spring(pos, v = 0, k = 290, b = 30) {
   return {pos, dest: pos, v, k, b} // k = stiffness, b = damping. Try https://chenglou.me/react-motion/demos/demo5-spring-parameters-chooser/
 }
@@ -102,6 +109,22 @@ function springStep(config) {
 function springGoToEnd(config) {
   config.pos = config.dest
   config.v = 0
+}
+
+// === constant layout metrics. The rest is dynamic
+const promptPaddingBottom = 8
+const promptSizeY = 47 + promptPaddingBottom // 47 is a magic number. Doesn't show the 3rd line nor cuts the 2nd line on safari, mobile safari and chrome
+const prompt1DSizeY = 64 + promptPaddingBottom // size in 1d mode
+const boxesGapX = 24, boxesGapY = 24
+const boxes1DGapX = 52, boxes1DGapY = 28
+const windowPaddingTop = 40
+const hitArea1DSizeX = 100 // left and right click region in 1D mode
+
+function colsBoxMaxSizeXF(containerSizeX) {
+  const boxMinSizeX = 220 // Make sure that on mobile, this min width is big enough not to show 2 images per row. Also, this won't be respected if view's tiny
+  const cols = clamp(1, Math.floor((containerSizeX - boxesGapX) / (boxMinSizeX + boxesGapX)), 7) // half of boxesGapX for container's left and right gap
+  const boxMaxSizeX = (containerSizeX - boxesGapX - cols * boxesGapX) / cols
+  return {cols, boxMaxSizeX}
 }
 
 let data; {
@@ -346,26 +369,6 @@ function springForEach(f) {
   }
 }
 
-// === debug
-const debug = false // toggle this for manually stepping through animation frames (press key A)
-let debugTimestamp = 0
-const raf = debug ? function raf(f) {
-  debugTimestamp += 1000 / 60
-  f(debugTimestamp)
-} : requestAnimationFrame
-
-let scheduledRender = false
-function scheduleRender(debugForceRender) {
-  if (debug && !debugForceRender) return
-  if (scheduledRender) return;
-  scheduledRender = true
-
-  raf(function renderAndMaybeScheduleAnotherRender(now) { // eye-grabbing debug name in the inspector. No (anonymous) arrow function please
-    scheduledRender = false
-    if (render(now)) scheduleRender()
-  })
-}
-
 // === state. Plus one in the URL's hash
 let lastAnimatedRenderTime = null
 let reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -375,6 +378,7 @@ let inputs = {
   clickedTarget: null,
 }
 
+// === events. These (and only these) kick off the render
 window.addEventListener('resize', () => scheduleRender())
 window.addEventListener('scroll', () => scheduleRender())
 window.addEventListener('popstate', () => scheduleRender())
@@ -399,11 +403,12 @@ window.addEventListener('mousemove', (e) => {
   scheduleRender()
 })
 
+// === static DOM initialization. Just one in this app. The more you have here the more your app looks like a PDF document. Minimize
 let dummyPlaceholder = document.createElement('div')
 dummyPlaceholder.style.width = '1px' // make it tiny just in case it affects compositing... sigh
 document.body.append(dummyPlaceholder)
 
-// hit testing. They should be static and not follow the current animated state usuallly (but we can do either)
+// === hit testing logic. Boxes' hit area should be static and not follow their current animated state usually (but we can do either)
 function hit2DMode(data, pointerX, pointerY) {
   for (let i = 0; i < data.length; i++) {
     let {x, y, sizeX, sizeY} = data[i]
@@ -419,23 +424,22 @@ function hit1DMode(data, focused, windowSizeX, pointerX) {
 }
 
 function render(now) {
-  // batched DOM reads
+  // === step 1: batched DOM reads (to avoid accidental DOM read & write interleaving)
   // excludes scroll bar & invariant under safari pinch zoom
   const windowSizeX = document.documentElement.clientWidth
   // invariant under safari pinch zoom (this way, when zoomed in, we don't occlude away rows outside of the zoomed-in view; if we did, when we zoom out again we wouldn't see those occluded rows until we release our fingers. During safari pinch, no event is triggered so we couldn't have updated the occlusion in real time)
   const windowSizeY = document.documentElement.clientHeight
   const animationDisabled = reducedMotion.matches
   const scrollTop = window.scrollY, scrollLeft = window.scrollX
+  const hashImgId = window.location.hash.slice(1)
+
+  let focused = null; for (let i = 0; i < data.length; i++) if (data[i].id === hashImgId) focused = i
   // don't forget top & bottom safari UI chrome sizes when vertically occluding, since they're transluscent so we can't over-occlude by ignoring them
   const UIMaxSizeTop = 100, UIMaxSizeBottom = 150 // random conservative numbers
-
-  const {cols, boxMaxSizeX} = colsBoxMaxSizeXF(windowSizeX)
   const pointerXLocal = inputs.pointer.x + scrollLeft, pointerYLocal = inputs.pointer.y + scrollTop // "local" to document.body (global would be unaffected by scrollX/Y, aka global is relative to the screen)
 
-  const hashImgId = window.location.hash.slice(1)
-  let focused = null; for (let i = 0; i < data.length; i++) if (data[i].id === hashImgId) focused = i
-
-  // === handle key-related state change
+  // === step 2: handle inputs-related state change
+  // keys
   const edgeRubberBandVelocityX =
     inputs.key === 'ArrowLeft' && focused === 0 ? 2000
     : inputs.key === 'ArrowRight' && focused === data.length - 1 ? -2000
@@ -446,8 +450,7 @@ function render(now) {
     : inputs.key === 'ArrowLeft' ? Math.max(0, focused - 1)
     : inputs.key === 'ArrowRight' ? Math.min(data.length - 1, focused + 1)
     : focused
-
-  // === handle pointer move & click-related state change
+  // pointer
   if (inputs.clickedTarget != null) { // clicked
     if (inputs.clickedTarget.tagName === 'FIGCAPTION') { // select the whole prompt
       let selection = window.getSelection()
@@ -463,7 +466,8 @@ function render(now) {
     }
   }
 
-  // === calculate new layout & cursor
+  // === step 3: calculate new layout & cursor
+  const {cols, boxMaxSizeX} = colsBoxMaxSizeXF(windowSizeX)
   let boxesSizeX = [], boxesSizeY = [], rowsTop = [windowPaddingTop] // length: number of rows + 1
   {
     let rowMaxSizeY = 0
@@ -533,8 +537,7 @@ function render(now) {
     for (let i = 0; i < data.length; i++) {
       let d = data[i]
       const imgSizeX = Math.min(d.naturalSizeX, box1DMaxSizeX, img1DSizeY * d.ar) * (i === newFocused ? 1 : 0.7)
-      const imgSizeY = imgSizeX / d.ar
-      const boxSizeY = imgSizeY + prompt1DSizeY
+      const boxSizeY = imgSizeX / d.ar + prompt1DSizeY
       d.sizeX.dest = imgSizeX
       d.sizeY.dest = boxSizeY
       d.y.dest = scrollTop + Math.max(windowPaddingTop, (windowSizeY - boxSizeY) / 2)
@@ -559,7 +562,7 @@ function render(now) {
     }
   }
 
-  // === run animation
+  // === step 4: run animation
   const newLastAnimatedRenderTime = lastAnimatedRenderTime == null ? now : lastAnimatedRenderTime
   const steps = Math.floor((now - newLastAnimatedRenderTime) / simulationStep)
   let stillAnimating = false
@@ -572,7 +575,7 @@ function render(now) {
     })
   }
 
-  // === finally, render. Batch DOM writes
+  // === step 5: render. Batch DOM writes
   for (let i = 0; i < data.length; i++) {
     let d = data[i]
     let {node} = d
@@ -622,7 +625,7 @@ function render(now) {
     window.history.pushState(null, null, `${window.location.pathname}${window.location.search}${newFocused == null ? '' : '#' + data[newFocused].id}`)
   }
 
-  // === prepare for next frame
+  // === step 6: update state & prepare for next frame
   inputs.key = null
   inputs.clickedTarget = null
   if (stillAnimating) {
