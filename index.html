@@ -80,22 +80,17 @@ function scheduleRender(debugForceRender) {
   })
 }
 
-// === generic helpers
-function clamp(min, v, max) {
-  return v > max ? max : v < min ? min : v
-}
-
 // === generic spring physics
 // 4ms/step for the spring animation's step. Typically 4 steps for 60fps (16.6ms/frame) and 2 for 120fps (8.3ms/frame). Frame time delta varies, so not always true
 // could use 8ms instead, but 120fps' 8.3ms/frame means the computation might not fit in the remaining 0.3ms, which means sometime the simulation step wouldn't even run once, giving the illusion of jank
-const simulationStep = 4
+const msPerAnimationStep = 4
 function spring(pos, v = 0, k = 290, b = 30) {
   return {pos, dest: pos, v, k, b} // k = stiffness, b = damping. Try https://chenglou.me/react-motion/demos/demo5-spring-parameters-chooser/
 }
 function springStep(config) {
   // https://blog.maximeheckel.com/posts/the-physics-behind-spring-animations/
   // lol this totally seems copied from https://github.com/chenglou/react-motion/blob/9e3ce95bacaa9a1b259f969870a21c727232cc68/src/stepper.js
-  const t = simulationStep / 1000
+  const t = msPerAnimationStep / 1000 // convert to seconds for the physics equation
   const {pos, dest, v, k, b} = config
   // for animations, dest is actually spring at rest. Current position is the spring's stretched/compressed state
   const Fspring = -k * (pos - dest) // Spring stiffness, in kg / s^2
@@ -109,6 +104,11 @@ function springStep(config) {
 function springGoToEnd(config) {
   config.pos = config.dest
   config.v = 0
+}
+
+// === generic helpers
+function clamp(min, v, max) {
+  return v > max ? max : v < min ? min : v
 }
 
 // === constant layout metrics. The rest is dynamic
@@ -370,7 +370,7 @@ function springForEach(f) {
 }
 
 // === state. Plus one in the URL's hash
-let lastAnimatedRenderTime = null
+let animatedUntilTime = null
 let reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
 let inputs = {
   pointer: {x: -Infinity, y: -Infinity}, // btw, on page load, there's no way to render a first cursor state =(
@@ -563,8 +563,9 @@ function render(now) {
   }
 
   // === step 4: run animation
-  const newLastAnimatedRenderTime = lastAnimatedRenderTime == null ? now : lastAnimatedRenderTime
-  const steps = Math.floor((now - newLastAnimatedRenderTime) / simulationStep)
+  let newAnimatedUntilTime = animatedUntilTime == null ? now : animatedUntilTime
+  const steps = Math.floor((now - newAnimatedUntilTime) / msPerAnimationStep)
+  newAnimatedUntilTime += steps * msPerAnimationStep
   let stillAnimating = false
   if (animationDisabled) springForEach(springGoToEnd)
   else {
@@ -578,8 +579,8 @@ function render(now) {
   // === step 5: render. Batch DOM writes
   for (let i = 0; i < data.length; i++) {
     let d = data[i]
-    let {node} = d
-    // only draw what's visible on screen
+    let {node} = d, img = node.children[0], prompt = node.children[1]
+    // occlusion culling, aka only draw what's visible on screen (aka "virtualization")
     if (
       d.y.pos <= newScrollTop + windowSizeY + UIMaxSizeBottom &&
       d.y.pos + d.sizeY.pos >= newScrollTop - UIMaxSizeTop &&
@@ -593,10 +594,7 @@ function render(now) {
       node.style.filter = newFocused != null && i === newFocused - 1 || i === newFocused || i === newFocused + 1
         ? `brightness(${d.fxFactor.pos * 100}%) blur(${Math.max(0, 6 - d.fxFactor.pos * 6)}px)` // blur these 3 only
         : `brightness(${d.fxFactor.pos * 100}%)` // blur of unrelated pics is too fast during transition from/to 1D mode to be seen anyway
-
-      let img = node.children[0], prompt = node.children[1]
-      const imgSizeY = d.sizeX.pos / d.ar
-      prompt.style.top = `${imgSizeY}px`
+      prompt.style.top = `${d.sizeX.pos / d.ar}px` // right below img's sizeY
 
       if (i === newFocused) {
         node.style.zIndex = data.length + 999 // guaranteed above everything
@@ -620,20 +618,17 @@ function render(now) {
   document.body.style.cursor = cursor
   document.body.style.overflowY = newFocused == null ? 'auto' : 'hidden'
   dummyPlaceholder.style.height = `${rowsTop.at(-1)}px`
-  if (newScrollTop !== scrollTop) window.scrollTo({top: newScrollTop}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting. Btw this will trigger scroll and another render
+
+  // === step 6: update state & prepare for next frame
+  if (newScrollTop !== scrollTop) window.scrollTo({top: newScrollTop}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting. Btw this will trigger scroll and next frame's render
   if (newFocused !== focused) {
     window.history.pushState(null, null, `${window.location.pathname}${window.location.search}${newFocused == null ? '' : '#' + data[newFocused].id}`)
   }
-
-  // === step 6: update state & prepare for next frame
   inputs.key = null
   inputs.clickedTarget = null
-  if (stillAnimating) {
-    lastAnimatedRenderTime = newLastAnimatedRenderTime + steps * simulationStep
-    return true
-  } else {
-    lastAnimatedRenderTime = null
-  }
+  animatedUntilTime = stillAnimating ? newAnimatedUntilTime : null
+
+  return stillAnimating
 }
 
 scheduleRender()
