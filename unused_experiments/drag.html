@@ -24,42 +24,7 @@
 <script>
 'use strict'
 
-const rowSizeX = 320
-const windowPaddingTop = 50
-// 4ms/step for the spring animation's step. Typically 4 steps for 60fps (16.6ms per frame) and 2 for 120fps (8.3ms per frame). Frame time delta varies, so not always true
-// could use 8ms instead but 120fps' 8.3ms per frame means the computation might not fit in 0.3ms, which means sometime the simulation step wouldn't even run once, giving the illusion of jank
-const simulationStep = 4
-
-function centerRow(windowSizeX) {
-  return (windowSizeX - rowSizeX) / 2
-}
-
-function spring(pos, v = 0, k = 125, b = 27) {
-  return {pos, dest: pos, v, k, b}
-}
-function springStep(config) {
-  // https://blog.maximeheckel.com/posts/the-physics-behind-spring-animations/
-  // lol this totally seems copied from https://github.com/chenglou/react-motion/blob/9e3ce95bacaa9a1b259f969870a21c727232cc68/src/stepper.js
-  const t = simulationStep / 1000
-  const {pos, dest, v, k, b} = config
-  // for animations, dest is actually spring at rest. Current position is the spring's stretched/compressed state
-  const Fspring = -k * (pos - dest) // Spring stiffness, in kg / s^2
-  const Fdamper = -b * v // Damping, in kg / s
-  const a = Fspring + Fdamper // a needs to be divided by mass, but we'll assume mass of 1. Adjust k and b to change spring curve instead
-  const newV = v + a * t
-  const newPos = pos + newV * t
-
-  config.pos = newPos; config.v = newV
-}
-function springRoundIfDone(config) {
-  if (Math.abs(config.v) < 0.01 && Math.abs(config.dest - config.pos) < 0.01) {
-    config.v = 0
-    config.pos = config.dest
-    return true
-  }
-  return false
-}
-
+// === generic scheduler & its debugger
 let scheduledRender = false
 function scheduleRender(debugForceRender) {
   if (scheduledRender) return;
@@ -70,8 +35,43 @@ function scheduleRender(debugForceRender) {
     if (render(now)) scheduleRender()
   })
 }
+
+// === generic spring physics
+// 4ms/step for the spring animation's step. Typically 4 steps for 60fps (16.6ms/frame) and 2 for 120fps (8.3ms/frame). Frame time delta varies, so not always true
+// could use 8ms instead, but 120fps' 8.3ms/frame means the computation might not fit in the remaining 0.3ms, which means sometime the simulation step wouldn't even run once, giving the illusion of jank
+const msPerAnimationStep = 4
+function spring(pos, v = 0, k = 290, b = 24) {
+  return {pos, dest: pos, v, k, b} // k = stiffness, b = damping. Try https://chenglou.me/react-motion/demos/demo5-spring-parameters-chooser/
+}
+function springStep(config) {
+  // https://blog.maximeheckel.com/posts/the-physics-behind-spring-animations/
+  // lol this totally seems copied from https://github.com/chenglou/react-motion/blob/9e3ce95bacaa9a1b259f969870a21c727232cc68/src/stepper.js
+  const t = msPerAnimationStep / 1000 // convert to seconds for the physics equation
+  const {pos, dest, v, k, b} = config
+  // for animations, dest is actually spring at rest. Current position is the spring's stretched/compressed state
+  const Fspring = -k * (pos - dest) // Spring stiffness, in kg / s^2
+  const Fdamper = -b * v // Damping, in kg / s
+  const a = Fspring + Fdamper // a needs to be divided by mass, but we'll assume mass of 1. Adjust k and b to change spring curve instead
+  const newV = v + a * t
+  const newPos = pos + newV * t
+
+  config.pos = newPos; config.v = newV
+}
+function springGoToEnd(config) {
+  config.pos = config.dest
+  config.v = 0
+}
+
+// === constant layout metrics. The rest is dynamic
+const rowSizeX = 320
+const windowPaddingTop = 50
+
+function centerRow(windowSizeX) {
+  return (windowSizeX - rowSizeX) / 2
+}
+
 // === state
-let lastAnimatedRenderTime = null
+let animatedUntilTime = null
 let inputs = {
   /** @type 'down' | 'up' | 'firstDown' */
   pointerState: 'up',
@@ -99,7 +99,14 @@ let data = []; {
     document.body.appendChild(node)
   }
 }
+function springForEach(f) {
+  for (let d of data) {
+    f(d.x); f(d.y); f(d.scale) // no different than [a, b, c].forEach(f)
+  }
+}
 
+// === events. These (and only these) kick off the render
+window.addEventListener('resize', () => scheduleRender())
 window.addEventListener("mouseup", (e) => { // can't use pointerup, which isn't triggered when pointer panned
   inputs.pointerState = 'up'
   scheduleRender()
@@ -119,29 +126,29 @@ window.addEventListener('mousedown', (e) => {
   scheduleRender()
 })
 
+// === hit testing logic. Boxes' hit area should be static and not follow their current animated state usually (but we can do either). Use the dynamic area here for once
+function hitTest(data, pointer) {
+  for (let d of data) {
+    let {x, y, sizeY} = d
+    if (x.pos <= pointer.x && pointer.x < x.pos + rowSizeX && y.pos <= pointer.y && pointer.y < y.pos + sizeY) return d // pointer on this box
+  }
+}
+
 function render(now) {
+  // === step 1: batched DOM reads (to avoid accidental DOM read & write interleaving)
   const windowSizeX = document.documentElement.clientWidth // excludes scroll bar & invariant under safari pinch zoom
   const {pointer} = inputs
-  // === handle pointer move & click-related state change
+
+  // === step 2: handle inputs-related state change
   let newDragged
   if (inputs.pointerState === 'up') newDragged = null
   else if (inputs.pointerState === 'down') newDragged = dragged
   else {
-    for (let i = 0; i < data.length; i++) {
-      let d = data[i]
-      // hittest boxes should be static and not follow the current animated state most of the time. But we can do either. Use the dynamic area here for once
-      const x = d.x.pos, y = d.y.pos, sizeY = d.sizeY
-      if (x <= pointer.x && pointer.x < x + rowSizeX && y <= pointer.y && pointer.y < y + sizeY) { // pointer on this box
-        newDragged = {
-          id: d.id,
-          deltaX: pointer.x - x,
-          deltaY: pointer.y - y,
-        }
-      }
-    }
+    const hit = hitTest(data, pointer)
+    if (hit) newDragged = {id: hit.id, deltaX: pointer.x - hit.x.pos, deltaY: pointer.y - hit.y.pos}
   }
 
-  // === calculate new layout & cursor
+  // === step 3: calculate new layout & cursor
   if (newDragged) { // first, swap row based on cursor position if needed
     let dragIdx = data.findIndex(d => d.id === newDragged.id)
     let d = data[dragIdx]
@@ -161,10 +168,8 @@ function render(now) {
       dragIdx++
     }
   }
-
   let top = windowPaddingTop
-  for (let i = 0; i < data.length; i++) {
-    let d = data[i]
+  for (let d of data) {
     if (newDragged && d.id === newDragged.id) {
       // already modified above
     } else {
@@ -174,39 +179,25 @@ function render(now) {
     }
     top += d.sizeY
   }
-  // use the new layout to determine the new cursor
-  let cursor = 'auto'
-  if (newDragged) cursor = 'grabbing'
-  else {
-    for (let i = 0; i < data.length; i++) {
-      let d = data[i]
-      const x = d.x.pos, y = d.y.pos // dynamic hit area, mirroring the pointer handling earlier
-      if (x <= pointer.x && pointer.x <= x + rowSizeX && y <= pointer.y && pointer.y <= y + d.sizeY) { // hovering
-        cursor = 'grab'
-      }
-    }
-  }
+  const cursor =
+    newDragged ? 'grabbing'
+    : hitTest(data, pointer) ? 'grab'
+    : 'auto'
 
-  // === run animation
-  const newLastAnimatedRenderTime = lastAnimatedRenderTime == null ? now : lastAnimatedRenderTime
-  const steps = Math.floor((now - newLastAnimatedRenderTime) / simulationStep)
+  // === step 4: run animation
+  let newAnimatedUntilTime = animatedUntilTime == null ? now : animatedUntilTime
+  const steps = Math.floor((now - newAnimatedUntilTime) / msPerAnimationStep)
+  newAnimatedUntilTime += steps * msPerAnimationStep
   let stillAnimating = false
-  for (let i = 0; i < data.length; i++) {
-    let d = data[i]
-    for (let i = 0; i < steps; i++) {
-      springStep(d.x)
-      springStep(d.y)
-      springStep(d.scale)
-    }
-    if (!springRoundIfDone(d.x)) stillAnimating = true
-    if (!springRoundIfDone(d.y)) stillAnimating = true
-    if (!springRoundIfDone(d.scale)) stillAnimating = true
-  }
+  springForEach(s => {
+    for (let i = 0; i < steps; i++) springStep(s)
+    if (Math.abs(s.v) < 0.01 && Math.abs(s.dest - s.pos) < 0.01) springGoToEnd(s) // close enough, done
+    else stillAnimating = true
+  })
 
-  // === finally, render
+  // === step 5: render. Batch DOM writes
   for (let i = 0; i < data.length; i++) {
-    let d = data[i]
-    let style = d.node.style
+    let d = data[i], style = d.node.style
     style.transform = `translate3d(${d.x.pos}px,${d.y.pos}px,0) scale(${d.scale.pos})`
     style.zIndex =
       newDragged && d.id === newDragged.id ? data.length + 2
@@ -222,16 +213,13 @@ function render(now) {
   }
   document.body.style.cursor = cursor
 
-  // === prepare for next frame
+  // === step 6: update state & prepare for next frame
   if (inputs.pointerState === 'firstDown') inputs.pointerState = 'down'
   if (dragged && newDragged == null) lastDragged = dragged
   dragged = newDragged
-  if (stillAnimating) {
-    lastAnimatedRenderTime = newLastAnimatedRenderTime + steps * simulationStep
-    return true
-  } else {
-    lastAnimatedRenderTime = null
-  }
+  animatedUntilTime = stillAnimating ? newAnimatedUntilTime : null
+
+  return stillAnimating
 }
 
 scheduleRender()
