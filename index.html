@@ -418,7 +418,7 @@ function hit2DMode(data, pointerX, pointerY) {
 }
 function hit1DMode(data, focused, windowSizeX, pointerX) {
   // allow spamming clicks without accidentally clicking on an empty region on left/right side or newly focused image during transition (and dismiss 1D mode)
-  return focused > 0 && pointerX <= hitArea1DSizeX ? Math.max(0, focused - 1) // left
+  return focused > 0 && 0 <= pointerX /* might be -Infinity */ && pointerX <= hitArea1DSizeX ? Math.max(0, focused - 1) // left
     : focused < data.length - 1 && pointerX >= windowSizeX - hitArea1DSizeX ? Math.min(data.length - 1, focused + 1) // right
     : null
 }
