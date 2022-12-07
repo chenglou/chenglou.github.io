@@ -425,12 +425,12 @@ function render(now) {
   // invariant under safari pinch zoom (this way, when zoomed in, we don't occlude away rows outside of the zoomed-in view; if we did, when we zoom out again we wouldn't see those occluded rows until we release our fingers. During safari pinch, no event is triggered so we couldn't have updated the occlusion in real time)
   const windowSizeY = document.documentElement.clientHeight
   const animationDisabled = reducedMotion.matches
-  let scrollTop = window.scrollY
+  const scrollTop = window.scrollY, scrollLeft = window.scrollX
   // don't forget top & bottom safari UI chrome sizes when vertically occluding, since they're transluscent so we can't over-occlude by ignoring them
   const UIMaxSizeTop = 100, UIMaxSizeBottom = 150 // random conservative numbers
 
   const {cols, boxMaxSizeX} = colsBoxMaxSizeXF(windowSizeX)
-  const pointerXLocal = inputs.pointer.x + window.scrollX, pointerYLocal = inputs.pointer.y + scrollTop // "local" to document.body (global would be unaffected by scrollX/Y, aka global is relative to the screen)
+  const pointerXLocal = inputs.pointer.x + scrollLeft, pointerYLocal = inputs.pointer.y + scrollTop // "local" to document.body (global would be unaffected by scrollX/Y, aka global is relative to the screen)
 
   const hashImgId = window.location.hash.slice(1)
   let focused = null; for (let i = 0; i < data.length; i++) if (data[i].id === hashImgId) focused = i
@@ -485,17 +485,15 @@ function render(now) {
     }
   }
   let cursor
-  let newScrollTop = null // can't be initialized to scrollTop; scrollTop upon read is rounded off, so scrollTop !== scrollTop potentially...
+  let newScrollTop = scrollTop
   const hoverMagnetFactor = 40
   if (newFocused == null) { // 2D mode
     if (newFocused == null && focused != null) { // just dismissed 1D mode
       const focusedTop = rowsTop[Math.floor(focused / cols)]
-      // if the dismissed box isn't fully shown, scroll there
+      // if the dismissed box isn't fully shown, scroll to it (later after the render code block)
       if (focusedTop <= scrollTop || focusedTop + boxesSizeY[focused] >= scrollTop + windowSizeY) {
         newScrollTop = focusedTop - boxesGapY - 44 // Peek a little higher to show the previous row
-        const delta = newScrollTop - scrollTop
-        scrollTop = newScrollTop
-        for (let {y} of data) y.pos += delta // magically & seamlessly zoom out from 1D mode's focused focused box without vertical jitter
+        for (let {y} of data) y.pos += newScrollTop - scrollTop // scrolling to the box would jitter the dismiss animation. Compensate by the scroll delta to make it seamless
       }
     }
 
@@ -580,8 +578,8 @@ function render(now) {
     let {node} = d
     // only draw what's visible on screen
     if (
-      d.y.pos <= scrollTop + windowSizeY + UIMaxSizeBottom &&
-      d.y.pos + d.sizeY.pos >= scrollTop - UIMaxSizeTop &&
+      d.y.pos <= newScrollTop + windowSizeY + UIMaxSizeBottom &&
+      d.y.pos + d.sizeY.pos >= newScrollTop - UIMaxSizeTop &&
       d.x.pos <= windowSizeX &&
       d.x.pos + d.sizeX.pos >= 0
     ) { // disregard shadow & scaling for now; UIMaxSizeBottom and UIMaxSizeTop are safe bigger values anyway
@@ -619,7 +617,7 @@ function render(now) {
   document.body.style.cursor = cursor
   document.body.style.overflowY = newFocused == null ? 'auto' : 'hidden'
   dummyPlaceholder.style.height = `${rowsTop.at(-1)}px`
-  if (newScrollTop != null) window.scrollTo({top: newScrollTop}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting. Btw this will trigger scroll and another render
+  if (newScrollTop !== scrollTop) window.scrollTo({top: newScrollTop}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting. Btw this will trigger scroll and another render
   if (newFocused !== focused) {
     window.history.pushState(null, null, `${window.location.pathname}${window.location.search}${newFocused == null ? '' : '#' + data[newFocused].id}`)
   }
