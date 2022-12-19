@@ -372,16 +372,21 @@ function springForEach(f) {
 // === state. Plus one in the URL's hash
 let animatedUntilTime = null
 let reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+let anchor = {i: 0, offset: 0}
 let inputs = {
   pointer: {x: -Infinity, y: -Infinity}, // btw, on page load, there's no way to render a first cursor state =(
   key: null,
   clickedTarget: null,
+  resized: false,
 }
 
 // === events. These (and only these) kick off the render
-window.addEventListener('resize', () => scheduleRender())
 window.addEventListener('scroll', () => scheduleRender())
 window.addEventListener('popstate', () => scheduleRender())
+window.addEventListener('resize', () => {
+  inputs.resized = true
+  scheduleRender()
+})
 window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyA') scheduleRender(true) // debug
   else if (e.code === 'Escape' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
@@ -430,7 +435,7 @@ function render(now) {
   // invariant under safari pinch zoom (this way, when zoomed in, we don't occlude away rows outside of the zoomed-in view; if we did, when we zoom out again we wouldn't see those occluded rows until we release our fingers. During safari pinch, no event is triggered so we couldn't have updated the occlusion in real time)
   const windowSizeY = document.documentElement.clientHeight
   const animationDisabled = reducedMotion.matches
-  const scrollTop = window.scrollY, scrollLeft = window.scrollX
+  const scrollTop = window.scrollY, scrollLeft = window.scrollLeft
   const hashImgId = window.location.hash.slice(1)
 
   let focused = null; for (let i = 0; i < data.length; i++) if (data[i].id === hashImgId) focused = i
@@ -484,8 +489,28 @@ function render(now) {
       }
     }
   }
-  let cursor
+
+  // is resize + check that prev scroll value is same as current scroll value enough to detect scroll is caused by resize
+
+  let newAnchor = anchor
   let newScrollTop = scrollTop
+  if (inputs.resized) {
+    // let firstVisible = 0; while (firstVisible < data.length && data[firstVisible].y.dest < newScrollTop) firstVisible++
+    // const firstVisibleRow = Math.floor(firstVisible / cols), anchorRow = Math.floor(anchor.i / cols)
+    if (data[anchor.i].y.dest - anchor.offset < scrollTop - 10
+      || data[anchor.i].y.dest + data[anchor.i].sizeY.dest > scrollTop + windowSizeY
+     // || anchorRow !== firstVisibleRow
+     ) {
+      for (let i = 0; i < data.length; i++) {
+        if (data[i].y.dest >= scrollTop) { // but it might be somewhre in the middle/bottom. We should re-anchor when it's not top most row
+          newAnchor = {i: i, offset: data[i].y.dest - scrollTop}
+          break
+        }
+      }
+    }
+  }
+
+  let cursor
   const hoverMagnetFactor = 40
   if (newFocused == null) { // 2D mode
     if (newFocused == null && focused != null) { // just dismissed 1D mode
@@ -519,6 +544,11 @@ function render(now) {
       y.dest += (pointerYLocal - (y.dest + sizeY.dest / 2)) / hoverMagnetFactor
       scale.dest = 1.02
     }
+
+    if (inputs.resized) {
+      newScrollTop = data[newAnchor.i].y.dest - newAnchor.offset
+      for (let {y} of data) y.pos += newScrollTop - scrollTop // TODO: rename to programmaticScrollTop
+    }
   } else { // 1D mode
     const img1DSizeY = windowSizeY - windowPaddingTop - prompt1DSizeY - boxes1DGapY
     const box1DMaxSizeX = windowSizeX - boxes1DGapX * 2 - hitArea1DSizeX * 2
@@ -540,7 +570,7 @@ function render(now) {
       const boxSizeY = imgSizeX / d.ar + prompt1DSizeY
       d.sizeX.dest = imgSizeX
       d.sizeY.dest = boxSizeY
-      d.y.dest = scrollTop + Math.max(windowPaddingTop, (windowSizeY - boxSizeY) / 2)
+      d.y.dest = newScrollTop + Math.max(windowPaddingTop, (windowSizeY - boxSizeY) / 2)
       d.x.dest = i === newFocused ? (windowSizeX - imgSizeX) / 2 : currentLeft
       d.x.v += edgeRubberBandVelocityX / (i === newFocused ? 1 : 4)
       d.scale.dest = 1
@@ -596,6 +626,8 @@ function render(now) {
         : `brightness(${d.fxFactor.pos * 100}%)` // blur of unrelated pics is too fast during transition from/to 1D mode to be seen anyway
       prompt.style.top = `${d.sizeX.pos / d.ar}px` // right below img's sizeY
 
+      node.style.outline = i === newAnchor.i ? '4px solid yellow' : 'none'
+
       if (i === newFocused) {
         node.style.zIndex = data.length + 999 // guaranteed above everything
         prompt.style.overflowY = 'auto'
@@ -626,7 +658,9 @@ function render(now) {
   }
   inputs.key = null
   inputs.clickedTarget = null
+  inputs.resized = false
   animatedUntilTime = stillAnimating ? newAnimatedUntilTime : null
+  anchor = newAnchor
 
   return stillAnimating
 }
