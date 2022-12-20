@@ -518,7 +518,6 @@ function render(now) {
       // if the dismissed box isn't fully shown, scroll to it (later after the render code block)
       if (focusedTop <= scrollTop || focusedTop + boxesSizeY[focused] >= scrollTop + windowSizeY) {
         newScrollTop = focusedTop - boxesGapY - 44 // Peek a little higher to show the previous row
-        for (let {y} of data) y.pos += newScrollTop - scrollTop // scrolling to the box would jitter the dismiss animation. Compensate by the scroll delta to make it seamless
       }
     }
 
@@ -545,9 +544,10 @@ function render(now) {
       scale.dest = 1.02
     }
 
-    if (inputs.resized) {
-      newScrollTop = data[newAnchor.i].y.dest - newAnchor.offset
-      for (let {y} of data) y.pos += newScrollTop - scrollTop // TODO: rename to programmaticScrollTop
+    if (inputs.resized) newScrollTop = data[newAnchor.i].y.dest - newAnchor.offset
+
+    if (newScrollTop !== scrollTop) {
+      for (let {y} of data) y.pos += newScrollTop - scrollTop // programatically scrolling to the box would jitter the dismiss animation. Compensate by the scroll delta to make it seamless
     }
   } else { // 1D mode
     const img1DSizeY = windowSizeY - windowPaddingTop - prompt1DSizeY - boxes1DGapY
