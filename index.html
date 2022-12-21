@@ -397,7 +397,7 @@ window.addEventListener('click', (e) => {
 window.addEventListener('mousemove', (e) => {
   // when scrolling (which might schedule a render), a container's mousemove doesn't trigger, so the pointer's local coordinates are stale
   // this means we should only use pointer's global coordinates, which is always right (thus the subtraction of scroll)
-  inputs.pointer.x = e.pageX - window.scrollX; inputs.pointer.y = e.pageY - window.scrollY
+  inputs.pointer.x = e.pageX -/*toGlobal*/window.scrollX; inputs.pointer.y = e.pageY -/*toGlobal*/window.scrollY
   // btw, pointer can exceed document bounds, e.g. dragging reports back out-of-bound, legal negative values
   scheduleRender()
 })
@@ -435,7 +435,7 @@ function render(now) {
   let focused = null; for (let i = 0; i < data.length; i++) if (data[i].id === hashImgId) focused = i
   // don't forget top & bottom safari UI chrome sizes when vertically occluding, since they're transluscent so we can't over-occlude by ignoring them
   const UIMaxSizeTop = 100, UIMaxSizeBottom = 150 // random conservative numbers
-  const pointerXLocal = inputs.pointer.x + window.scrollX, pointerYLocal = inputs.pointer.y + currentScrollTop // "local" to document.body (global would be unaffected by scrollX/Y, aka global is relative to the screen)
+  const pointerXLocal = inputs.pointer.x +/*toLocal*/window.scrollX, pointerYLocal = inputs.pointer.y +/*toLocal*/currentScrollTop
 
   // === step 2: handle inputs-related state change
   // keys
@@ -539,7 +539,7 @@ function render(now) {
       const boxSizeY = imgSizeX / d.ar + prompt1DSizeY
       d.sizeX.dest = imgSizeX
       d.sizeY.dest = boxSizeY
-      d.y.dest = adjustedScrollTop + Math.max(windowPaddingTop, (windowSizeY - boxSizeY) / 2)
+      d.y.dest = Math.max(windowPaddingTop, (windowSizeY - boxSizeY) / 2) +/*toLocal*/adjustedScrollTop
       d.x.dest = i === newFocused ? (windowSizeX - imgSizeX) / 2 : currentLeft
       d.x.v += edgeRubberBandVelocityX / (i === newFocused ? 1 : 4)
       d.scale.dest = 1
@@ -580,8 +580,8 @@ function render(now) {
     let d = data[i]
     let {node} = d, img = node.children[0], prompt = node.children[1]
     if ( // occlusion culling, aka only draw what's visible on screen (aka "virtualization")
-      d.y.pos <= adjustedScrollTop + windowSizeY + UIMaxSizeBottom &&
-      d.y.pos + d.sizeY.pos >= adjustedScrollTop - UIMaxSizeTop &&
+      d.y.pos -/*toGlobal*/adjustedScrollTop <= windowSizeY + UIMaxSizeBottom &&
+      d.y.pos + d.sizeY.pos -/*toGlobal*/adjustedScrollTop >= -UIMaxSizeTop &&
       d.x.pos <= windowSizeX &&
       d.x.pos + d.sizeX.pos >= 0
     ) { // disregard shadow & scaling for now; UIMaxSizeBottom and UIMaxSizeTop are safe bigger values anyway
