@@ -127,6 +127,14 @@ function colsBoxMaxSizeXF(containerSizeX) {
   return {cols, boxMaxSizeX}
 }
 
+// === state. Plus one in the URL's hash
+let animatedUntilTime = null
+let reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+let inputs = {
+  pointer: {x: -Infinity, y: -Infinity}, // btw, on page load, there's no way to render a first cursor state =(
+  key: null,
+  clickedTarget: null,
+}
 let data; {
   const windowSizeX = document.documentElement.clientWidth
   const windowSizeY = document.documentElement.clientHeight
@@ -367,15 +375,6 @@ function springForEach(f) {
   for (let d of data) {
     f(d.sizeX); f(d.sizeY); f(d.x); f(d.y); f(d.scale); f(d.fxFactor) // no different than [a, b, c].forEach(f)
   }
-}
-
-// === state. Plus one in the URL's hash
-let animatedUntilTime = null
-let reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
-let inputs = {
-  pointer: {x: -Infinity, y: -Infinity}, // btw, on page load, there's no way to render a first cursor state =(
-  key: null,
-  clickedTarget: null,
 }
 
 // === events. These (and only these) kick off the render
