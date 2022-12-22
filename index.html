@@ -13,7 +13,7 @@
       background-color: rgb(1 5 19);
     }
     body {
-      overflow-x: hidden;
+      overflow-x: hidden; /* 1D mode lines up images and exceeds viewport width */
     }
     .box {
       position: absolute;
@@ -424,6 +424,7 @@ function render(now) {
   // === step 1: batched DOM reads (to avoid accidental DOM read & write interleaving)
   // excludes scroll bar & invariant under safari pinch zoom
   const newWindowSizeX = document.documentElement.clientWidth
+  const windowInnerWidthSafariPlz = window.innerWidth
   // invariant under safari pinch zoom (this way, when zoomed in, we don't occlude away rows outside of the zoomed-in view; if we did, when we zoom out again we wouldn't see those occluded rows until we release our fingers. During safari pinch, no event is triggered so we couldn't have updated the occlusion in real time)
   const windowSizeY = document.documentElement.clientHeight
   const animationDisabled = reducedMotion.matches
@@ -628,6 +629,8 @@ function render(now) {
 
   document.body.style.cursor = cursor
   document.body.style.overflowY = newFocused == null ? 'auto' : 'hidden'
+  // innerWidth is different than clientWidth mainly because former takes into account zooming from Safari. This is relevant when rotating on iOS, where e.g. rotating from landscape to portrait zooms out the screen momentarily & scrolls viewport. A static body width would cause Safari to jank and misposition the scroll; comment this out and rotate the device on iOS to see scroll anchoring occasionally fail
+  document.body.style.width = `${windowInnerWidthSafariPlz}px`
   dummyPlaceholder.style.height = `${rowsTop.at(-1)}px`
 
   // === step 6: update state & prepare for next frame
