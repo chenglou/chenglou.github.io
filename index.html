@@ -62,20 +62,16 @@
 // === generic scheduler & its debugger
 const debug = false // toggle this for manually stepping through animation frames (press key A)
 let debugTimestamp = 0
-const raf = debug ? function raf(f) {
-  debugTimestamp += 1000 / 60
-  f(debugTimestamp)
-} : requestAnimationFrame
-
 let scheduledRender = false
 function scheduleRender(debugForceRender) {
   if (debug && !debugForceRender) return
   if (scheduledRender) return;
   scheduledRender = true
 
-  raf(function renderAndMaybeScheduleAnotherRender(now) { // eye-grabbing debug name in the inspector. No (anonymous) arrow function please
+  requestAnimationFrame(function renderAndMaybeScheduleAnotherRender(now) { // eye-grabbing name. No "(anonymous)" function in the debugger & profiler
     scheduledRender = false
-    if (render(now)) scheduleRender()
+    debugTimestamp += 1000 / 60
+    if (render(debug ? debugTimestamp : now)) scheduleRender()
   })
 }
 
