@@ -113,6 +113,7 @@ const prompt1DSizeY = 64 + promptPaddingBottom // size in 1d mode
 const boxesGapX = 24, boxesGapY = 24
 const boxes1DGapX = 52, boxes1DGapY = 28
 const windowPaddingTop = 40
+const gapTopPeek = 40 // used when programmatically scrolling and wanting to show some gap at the top of a row
 const hitArea1DSizeX = 100 // left and right click region in 1D mode
 
 function colsBoxMaxSizeXF(containerSizeX) {
@@ -125,7 +126,7 @@ function colsBoxMaxSizeXF(containerSizeX) {
 // === state. Plus one in the URL's hash
 let animatedUntilTime = null
 let reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
-let anchor = {i: 0, gapTopFactor: 0} // see usage of gapTopFactor
+let anchor = 0 // keep a box stable during resize layout shifts
 let windowSizeX = document.documentElement.clientWidth
 let scrollTop = window.scrollY
 let inputs = {
@@ -424,7 +425,6 @@ function render(now) {
   // === step 1: batched DOM reads (to avoid accidental DOM read & write interleaving)
   // excludes scroll bar & invariant under safari pinch zoom
   const newWindowSizeX = document.documentElement.clientWidth
-  const windowInnerWidthSafariPlz = window.innerWidth
   // invariant under safari pinch zoom (this way, when zoomed in, we don't occlude away rows outside of the zoomed-in view; if we did, when we zoom out again we wouldn't see those occluded rows until we release our fingers. During safari pinch, no event is triggered so we couldn't have updated the occlusion in real time)
   const windowSizeY = document.documentElement.clientHeight
   const animationDisabled = reducedMotion.matches
@@ -491,7 +491,7 @@ function render(now) {
       const focusedTop = rowsTop[Math.floor(focused / cols)]
       // if the dismissed box isn't fully shown, scroll to it (later after the render code block)
       if (focusedTop <= currentScrollTop || focusedTop + boxesSizeY[focused] >= currentScrollTop + windowSizeY) {
-        adjustedScrollTop = focusedTop - boxesGapY - 44 // Peek a little higher to show the previous row
+        adjustedScrollTop = focusedTop - boxesGapY - gapTopPeek // Peek a little higher to show the previous row
       }
     }
 
@@ -517,16 +517,14 @@ function render(now) {
       y.dest += (pointerYLocal - (y.dest + sizeY.dest / 2)) / hoverMagnetFactor
       scale.dest = 1.02
     }
-    // if layout changed, keep the boxes near the same place to prevent annoying layout jumps in view
-    const anchorY = data[anchor.i].y.dest - data[anchor.i].sizeY.dest * anchor.gapTopFactor // top gap changes proportionally to image height
+    // if layout shifted, keep the boxes near the same place to prevent annoying layout jumps while viewing
+    const anchorY = data[anchor].y.dest - gapTopPeek
     if (newWindowSizeX !== windowSizeX) adjustedScrollTop = Math.max(0, anchorY) // resized; maintain position!
-    if (adjustedScrollTop !== scrollTop && Math.abs(anchorY -/*toLocal*/adjustedScrollTop) > windowSizeY / 20) { // find new anchor if the current one moved too much
-      for (let i = 0; i < data.length; i += cols) { // new anchor is picked from leftmost column. Btw old anchor might not be from leftmost col due to resize layout changes
-        let d = data[i]
-        if (d.y.dest + d.sizeY.dest -/*toLocal*/adjustedScrollTop > windowSizeY / 5) { // find 1st box whose bottom exceeds 20% of window height
-          newAnchor = {i, gapTopFactor: (d.y.dest -/*toLocal*/adjustedScrollTop) / d.sizeY.dest}
-          break
-        }
+    if (adjustedScrollTop !== scrollTop && Math.abs(anchorY -/*toLocal*/adjustedScrollTop) > windowSizeY / 10) { // find new anchor if the current one moved too much
+      for (newAnchor = 0; newAnchor < data.length; newAnchor += cols) { // new anchor is picked from leftmost column. Btw old anchor might not be from leftmost col due to resize layout shifts
+        let d = data[newAnchor]
+        // find 1st box whose bottom exceeds 20% of window height
+        if (d.y.dest + d.sizeY.dest -/*toLocal*/adjustedScrollTop > windowSizeY / 5) break
       }
     }
   } else { // 1D mode
@@ -605,7 +603,7 @@ function render(now) {
       node.style.filter = newFocused != null && i === newFocused - 1 || i === newFocused || i === newFocused + 1
         ? `brightness(${d.fxFactor.pos * 100}%) blur(${Math.max(0, 6 - d.fxFactor.pos * 6)}px)` // blur these 3 only
         : `brightness(${d.fxFactor.pos * 100}%)` // blur of unrelated pics is too fast during transition from/to 1D mode to be seen anyway
-      if (debug) node.style.outline = i === newAnchor.i ? '2px solid rgba(255, 255, 0, 0.8)' : 'none'
+      if (debug) node.style.outline = i === newAnchor ? '2px solid rgba(255, 255, 0, 0.8)' : 'none'
       prompt.style.top = `${d.sizeX.pos / d.ar}px` // right below img's sizeY
 
       if (i === newFocused) {
@@ -629,8 +627,6 @@ function render(now) {
 
   document.body.style.cursor = cursor
   document.body.style.overflowY = newFocused == null ? 'auto' : 'hidden'
-  // innerWidth is different than clientWidth mainly because former takes into account zooming from Safari. This is relevant when rotating on iOS, where e.g. rotating from landscape to portrait zooms out the screen momentarily & scrolls viewport. A static body width would cause Safari to jank and misposition the scroll; comment this out and rotate the device on iOS to see scroll anchoring occasionally fail
-  document.body.style.width = `${windowInnerWidthSafariPlz}px`
   dummyPlaceholder.style.height = `${rowsTop.at(-1)}px`
 
   // === step 6: update state & prepare for next frame
