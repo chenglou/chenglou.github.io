@@ -8,12 +8,12 @@
   <meta property="og:description" content="Gallery of art generated through Midjourney AI" />
   <style>
     html {
-      /* inline background noise. No network request/failure possible */
+      /* inline background noise. No network request & failure & white flash at page load */
       background-image: url(data:image/png;base64,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);
       background-color: rgb(1 5 19);
     }
     body {
-      overflow-x: hidden; /* 1D mode lines up images and exceeds viewport width */
+      overflow-x: hidden; /* 1D mode places images horizontally and exceeds viewport width */
     }
     .box {
       position: absolute;
@@ -23,9 +23,9 @@
       background-color: rgb(34, 36, 53);
       border-radius: 16px;
       box-shadow:
-        0 0px 2px 0 rgba(255, 255, 255, 0.2),
-        0 4px 28px 0 rgba(0, 0, 0, 0.4);
-      background-size: 100%; /* low-res image added as background-image in JS later */
+        0 0px 2px 0 rgba(255, 255, 255, 0.2), /* shadow acting as border. Won't affect layout inside or outside */
+        0 4px 28px 0 rgba(0, 0, 0, 0.4); /* actual shadow */
+      background-size: 100%; /* low-res image added as background-image in JS later. Saves 1 DOM node */
       background-repeat: no-repeat; /* just in case of floating point whatever */
     }
     .box img {
@@ -42,7 +42,7 @@
       color: rgb(192, 198, 205);
       font-size: 16px;
       cursor: text; /* overrides document's cursor when needed (see JS code below) */
-      /* for line clamping programmatically */
+      /* for programmatic multiline clamping */
       display: -webkit-box;
       -webkit-box-orient: vertical;
     }
@@ -84,7 +84,7 @@ function spring(pos, v = 0, k = 290, b = 30) {
 }
 function springStep(config) {
   // https://blog.maximeheckel.com/posts/the-physics-behind-spring-animations/
-  // lol this totally seems copied from https://github.com/chenglou/react-motion/blob/9e3ce95bacaa9a1b259f969870a21c727232cc68/src/stepper.js
+  // this seems inspired by https://github.com/chenglou/react-motion/blob/9e3ce95bacaa9a1b259f969870a21c727232cc68/src/stepper.js
   const t = msPerAnimationStep / 1000 // convert to seconds for the physics equation
   const {pos, dest, v, k, b} = config
   // for animations, dest is actually spring at rest. Current position is the spring's stretched/compressed state
@@ -400,9 +400,9 @@ window.addEventListener('mousemove', (e) => {
   scheduleRender()
 })
 
-// === static DOM initialization. Just one in this app. The more you have here the more your app looks like a PDF document. Minimize
+// === static DOM initialization. Just 1 in this app. The more you have here the more your app looks like a PDF document. Minimize
 let dummyPlaceholder = document.createElement('div')
-dummyPlaceholder.style.width = '1px' // make it tiny just in case it affects compositing... sigh
+dummyPlaceholder.style.width = '1px' // make it tiny in case it affects compositing... sigh lamport.azurewebsites.net/pubs/future-of-computing.pdf
 document.body.append(dummyPlaceholder)
 if (debug) document.documentElement.style.background = 'repeating-linear-gradient(#e66465 0px, #9198e5 300px)'
 
@@ -423,17 +423,15 @@ function hit1DMode(data, focused, windowSizeX, pointerX) {
 
 function render(now) {
   // === step 1: batched DOM reads (to avoid accidental DOM read & write interleaving)
-  // excludes scroll bar & invariant under safari pinch zoom
-  const newWindowSizeX = document.documentElement.clientWidth
-  // invariant under safari pinch zoom (this way, when zoomed in, we don't occlude away rows outside of the zoomed-in view; if we did, when we zoom out again we wouldn't see those occluded rows until we release our fingers. During safari pinch, no event is triggered so we couldn't have updated the occlusion in real time)
-  const windowSizeY = document.documentElement.clientHeight
+  const newWindowSizeX = document.documentElement.clientWidth // excludes scroll bar & invariant under safari pinch zoom
+  const windowSizeY = document.documentElement.clientHeight // same
+  // this way, when pinch zooming in, we don't occlude away rows outside of the view; if we did, when we zoom out again we wouldn't see those occluded rows until we release our fingers. During safari pinch, no event is triggered so we couldn't have updated the occlusion in real time
   const animationDisabled = reducedMotion.matches
   const currentScrollTop = window.scrollY
   const hashImgId = window.location.hash.slice(1)
 
   let focused = null; for (let i = 0; i < data.length; i++) if (data[i].id === hashImgId) focused = i
   // don't forget top & bottom safari UI chrome sizes when vertically occluding, since they're transluscent so we can't over-occlude by ignoring them
-  const UIMaxSizeTop = 100, UIMaxSizeBottom = 150 // random conservative numbers
   const pointerXLocal = inputs.pointer.x +/*toLocal*/window.scrollX, pointerYLocal = inputs.pointer.y +/*toLocal*/currentScrollTop
 
   // === step 2: handle inputs-related state change
@@ -531,14 +529,14 @@ function render(now) {
     const img1DSizeY = windowSizeY - windowPaddingTop - prompt1DSizeY - boxes1DGapY
     const box1DMaxSizeX = newWindowSizeX - boxes1DGapX * 2 - hitArea1DSizeX * 2
 
-    let currentLeft = hitArea1DSizeX + boxes1DGapX
-    for (let i = newFocused - 1; i >= 0; i--) {
+    let currentLeft = hitArea1DSizeX + boxes1DGapX // start from the right edge of the left box and...
+    for (let i = newFocused - 1; i >= 0; i--) { // ...iterate til we get the left edge of the very first box
       let d = data[i]
       const imgSizeX = Math.min(d.naturalSizeX, box1DMaxSizeX, img1DSizeY * d.ar) * 0.7
       currentLeft -= imgSizeX + boxes1DGapX
     }
 
-    const edgeRubberBandVelocityX =
+    const edgeRubberBandVelocityX = // feedback when you hit first/last image and keep pressing left/right key
       inputs.key === 'ArrowLeft' && focused === 0 ? 2000
       : inputs.key === 'ArrowRight' && focused === data.length - 1 ? -2000
       : 0
@@ -587,15 +585,16 @@ function render(now) {
   }
 
   // === step 5: render. Batch DOM writes
+  const browserUIMaxSizeTop = 100, browserUIMaxSizeBottom = 150 // random conservative numbers
   for (let i = 0; i < data.length; i++) {
     let d = data[i]
     let {node} = d, img = node.children[0], prompt = node.children[1]
     if ( // occlusion culling, aka only draw what's visible on screen (aka "virtualization")
-      d.y.pos -/*toGlobal*/adjustedScrollTop <= windowSizeY + UIMaxSizeBottom &&
-      d.y.pos + d.sizeY.pos -/*toGlobal*/adjustedScrollTop >= -UIMaxSizeTop &&
+      d.y.pos -/*toGlobal*/adjustedScrollTop <= windowSizeY + browserUIMaxSizeBottom &&
+      d.y.pos + d.sizeY.pos -/*toGlobal*/adjustedScrollTop >= -browserUIMaxSizeTop &&
       d.x.pos <= newWindowSizeX &&
       d.x.pos + d.sizeX.pos >= 0
-    ) { // disregard shadow & scaling for now; UIMaxSizeBottom and UIMaxSizeTop are safe bigger values anyway
+    ) { // disregard shadow & scaling for now; browserUIMaxSizeBottom and browserUIMaxSizeTop are safe bigger values anyway
       node.style.width = `${d.sizeX.pos}px`
       node.style.height = `${d.sizeY.pos}px`
       node.style.transform = `translate3d(${d.x.pos}px,${d.y.pos}px,0) scale(${d.scale.pos})` // safari now anti-aliases for hover, but then zoom in janks on big displays...
