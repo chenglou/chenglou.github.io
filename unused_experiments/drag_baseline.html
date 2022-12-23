@@ -1,67 +1,71 @@
-<meta charset="utf-8" />
 <head>
-<style>
-  body {
-    font: 16px system-ui;
-    user-select: none; /* no text selection needed */
-    -webkit-user-select: none; /* no text selection needed */
-    background-color: #eee;
-  }
-  .row {
-    position: absolute;
-    display: grid;
-    place-items: center;
-    overflow: hidden; /* height might be small during animation */
+  <meta charset="utf-8" />
+  <style>
+    body {
+      font: 16px system-ui;
+      user-select: none; /* no text selection needed */
+      -webkit-user-select: none; /* no text selection needed */
+      background-color: #eee;
+    }
+    .row {
+      position: absolute;
+      display: grid;
+      place-items: center;
+      overflow: hidden; /* height might be small during animation */
 
-    outline: 1px solid lightgrey;
-    color: rgb(153, 153, 153);
-    background-color: rgb(255, 255, 255);
-    transition: box-shadow 0.25s ease-out, opacity 0.25s ease-out,
-      transform 0.25s ease-out;
-  }
-</style>
+      outline: 1px solid lightgrey;
+      color: rgb(153, 153, 153);
+      background-color: rgb(255, 255, 255);
+      transition: box-shadow 0.25s ease-out, opacity 0.25s ease-out,
+        transform 0.25s ease-out;
+    }
+  </style>
 </head>
 <body>
 <script>
 'use strict'
 
+// === constant layout metrics. The rest is dynamic
 const rowSizeX = 320
 const windowPaddingTop = 50
 
-function centerRow() {
-  return (document.documentElement.clientWidth - rowSizeX) / 2
+function centerRow(windowSizeX) {
+  return (windowSizeX - rowSizeX) / 2
 }
 
+// === state
 let draggingRow = null
 let nextZIndex = 1
-let data = []
-for (let i = 0; i < 5; i++) {
-  let node = document.createElement("div")
+let data = []; {
+  const windowSizeX = document.documentElement.clientWidth
+  for (let i = 0; i < 5; i++) {
+    let node = document.createElement("div")
 
-  const sizeY = 30 + Math.random() * 150 // [30, 180)
-  let d = { id: i, x: centerRow(), y: 0, node: node, sizeY }
+    const sizeY = 30 + Math.random() * 150 // [30, 180)
+    let d = { id: i, x: centerRow(windowSizeX), y: 0, node: node, sizeY }
 
-  node.className = "row"
-  node.innerHTML = "Drag Me " + i
-  node.style.width = rowSizeX
-  node.style.height = sizeY
-  node.addEventListener("mousedown", (e) => {
-    draggingRow = {
-      id: i,
+    node.className = "row"
+    node.innerHTML = "Drag Me " + i
+    node.style.width = rowSizeX
+    node.style.height = sizeY
+    node.addEventListener("mousedown", (e) => {
+      draggingRow = {
+        id: i,
 
-      mouseY: e.pageY,
-      initMouseY: e.pageY,
-      initY: d.y,
+        mouseY: e.pageY,
+        initMouseY: e.pageY,
+        initY: d.y,
 
-      mouseX: e.pageX,
-      initMouseX: e.pageX,
-      initX: d.x,
-    }
-    node.style.zIndex = nextZIndex++
-  })
+        mouseX: e.pageX,
+        initMouseX: e.pageX,
+        initX: d.x,
+      }
+      node.style.zIndex = nextZIndex++
+    })
 
-  data.push(d)
-  document.body.appendChild(node)
+    data.push(d)
+    document.body.appendChild(node)
+  }
 }
 
 document.body.addEventListener("mouseup", (e) => {
@@ -75,6 +79,7 @@ document.body.addEventListener("mousemove", (e) => {
 })
 
 function render() {
+  const windowSizeX = document.documentElement.clientWidth // excludes scroll bar & invariant under safari pinch zoom
   let previousTop = windowPaddingTop
   for (let i = 0; i < data.length; i++) {
     let d = data[i]
@@ -105,7 +110,7 @@ function render() {
       style.transform = "scale(1)"
 
       d.y += (previousTop - d.y) / 10 // ease to the final y
-      d.x += (centerRow() - d.x) / 10 // ease to the final x
+      d.x += (centerRow(windowSizeX) - d.x) / 10 // ease to the final x
 
       if (
         draggingRow &&

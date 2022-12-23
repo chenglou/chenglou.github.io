@@ -1,24 +1,24 @@
-<meta charset="utf-8" />
 <head>
-<style>
-  body {
-    font: 16px system-ui;
-    user-select: none; /* no text selection needed */
-    -webkit-user-select: none; /* no text selection needed */
-    background-color: #eee;
-  }
-  .row {
-    position: absolute;
-    display: grid;
-    place-items: center;
-    overflow: hidden; /* height might be small during animation */
+  <meta charset="utf-8" />
+  <style>
+    body {
+      font: 16px system-ui;
+      user-select: none; /* no text selection needed */
+      -webkit-user-select: none; /* no text selection needed */
+      background-color: #eee;
+    }
+    .row {
+      position: absolute;
+      display: grid;
+      place-items: center;
+      overflow: hidden; /* height might be small during animation */
 
-    outline: 1px solid lightgrey;
-    color: rgb(153, 153, 153);
-    background-color: rgb(255, 255, 255);
-    transition: box-shadow 0.25s ease-out, opacity 0.25s ease-out;
-  }
-</style>
+      outline: 1px solid lightgrey;
+      color: rgb(153, 153, 153);
+      background-color: rgb(255, 255, 255);
+      transition: box-shadow 0.25s ease-out, opacity 0.25s ease-out;
+    }
+  </style>
 </head>
 <body>
 <script>
@@ -30,7 +30,7 @@ function scheduleRender(debugForceRender) {
   if (scheduledRender) return;
   scheduledRender = true
 
-  requestAnimationFrame(function renderAndMaybeScheduleAnotherRender(now) { // eye-grabbing debug name in the inspector. No (anonymous) arrow function please
+  requestAnimationFrame(function renderAndMaybeScheduleAnotherRender(now) { // eye-grabbing name. No "(anonymous)" function in the debugger & profiler
     scheduledRender = false
     if (render(now)) scheduleRender()
   })
@@ -45,7 +45,7 @@ function spring(pos, v = 0, k = 290, b = 24) {
 }
 function springStep(config) {
   // https://blog.maximeheckel.com/posts/the-physics-behind-spring-animations/
-  // lol this totally seems copied from https://github.com/chenglou/react-motion/blob/9e3ce95bacaa9a1b259f969870a21c727232cc68/src/stepper.js
+  // this seems inspired by https://github.com/chenglou/react-motion/blob/9e3ce95bacaa9a1b259f969870a21c727232cc68/src/stepper.js
   const t = msPerAnimationStep / 1000 // convert to seconds for the physics equation
   const {pos, dest, v, k, b} = config
   // for animations, dest is actually spring at rest. Current position is the spring's stretched/compressed state
@@ -72,13 +72,13 @@ function centerRow(windowSizeX) {
 
 // === state
 let animatedUntilTime = null
+let dragged = null
+let lastDragged = null
 let inputs = {
   /** @type 'down' | 'up' | 'firstDown' */
   pointerState: 'up',
   pointer: {x: -Infinity, y: -Infinity}, // btw, on page load, there's no way to render a first cursor state =(
 }
-let dragged = null
-let lastDragged = null
 let data = []; {
   const windowSizeX = document.documentElement.clientWidth // excludes scroll bar & invariant under safari pinch zoom
   for (let i = 0; i < 5; i++) {
@@ -170,8 +170,7 @@ function render(now) {
   }
   let top = windowPaddingTop
   for (let d of data) {
-    if (newDragged && d.id === newDragged.id) {
-      // already modified above
+    if (newDragged && d.id === newDragged.id) { // already modified above
     } else {
       d.x.dest = centerRow(windowSizeX)
       d.y.dest = top
