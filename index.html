@@ -54,7 +54,6 @@
 </head>
 
 <body>
-
 <script>
 'use strict'
 
@@ -368,7 +367,7 @@ let data; {
     }
   })
 }
-function springForEach(f) {
+function springForEach(f) { // no spring ownership struggle between the spring library above vs consumer; un-inversion of control!
   for (let d of data) {
     f(d.sizeX); f(d.sizeY); f(d.x); f(d.y); f(d.scale); f(d.fxFactor) // no different than [a, b, c].forEach(f)
   }
@@ -492,7 +491,7 @@ function render(now) {
       }
     }
 
-    for (let i = 0; i < data.length; i++) {
+    for (let i = 0; i < data.length; i++) { // calculate boxes positions
       let d = data[i]
       const sizeX = boxesSizeX[i], sizeY = boxesSizeY[i]
       const currentRow = Math.floor(i / cols)
@@ -507,7 +506,7 @@ function render(now) {
 
     const hit = hit2DMode(data, pointerXLocal, pointerYLocal)
     if (hit == null) cursor = 'auto'
-    else { // hovering over a box. Make some adjustments
+    else { // hovering over a box. Adjust position
       cursor = 'zoom-in'
       let {x, y, sizeX, sizeY, scale} = data[hit]
       x.dest += (pointerXLocal - (x.dest + sizeX.dest / 2)) / hoverMagnetFactor
@@ -539,7 +538,7 @@ function render(now) {
       inputs.key === 'ArrowLeft' && focused === 0 ? 2000
       : inputs.key === 'ArrowRight' && focused === data.length - 1 ? -2000
       : 0
-    for (let i = 0; i < data.length; i++) {
+    for (let i = 0; i < data.length; i++) { // calculate boxes positions
       let d = data[i]
       const imgSizeX = Math.min(d.naturalSizeX, box1DMaxSizeX, img1DSizeY * d.ar) * (i === newFocused ? 1 : 0.7)
       const boxSizeY = imgSizeX / d.ar + prompt1DSizeY
@@ -549,11 +548,10 @@ function render(now) {
       d.x.dest = i === newFocused ? (newWindowSizeX - imgSizeX) / 2 : currentLeft
       d.x.v += edgeRubberBandVelocityX / (i === newFocused ? 1 : 4)
       d.scale.dest = 1
-      d.fxFactor.dest = 0.2
+      d.fxFactor.dest = i === newFocused ? 1 : 0.2 // center image has no brightness & blur effect
 
       currentLeft = i === newFocused ? newWindowSizeX - hitArea1DSizeX : currentLeft + imgSizeX + boxes1DGapX
     }
-    data[newFocused].fxFactor.dest = 1 // center image has no brightness & blur effect
 
     const hit = hit1DMode(data, newFocused, newWindowSizeX, pointerXLocal)
     if (hit == null) cursor = 'zoom-out'
@@ -571,7 +569,7 @@ function render(now) {
 
   // === step 4: run animation
   let newAnimatedUntilTime = animatedUntilTime == null ? now : animatedUntilTime
-  const steps = Math.floor((now - newAnimatedUntilTime) / msPerAnimationStep)
+  const steps = Math.floor((now - newAnimatedUntilTime) / msPerAnimationStep) // run x spring steps. Decouple physics simulation from framerate!
   newAnimatedUntilTime += steps * msPerAnimationStep
   let stillAnimating = false
   if (animationDisabled) springForEach(springGoToEnd)
@@ -584,7 +582,7 @@ function render(now) {
   }
 
   // === step 5: render. Batch DOM writes
-  const browserUIMaxSizeTop = 100, browserUIMaxSizeBottom = 150 // random conservative numbers
+  const browserUIMaxSizeTop = 100, browserUIMaxSizeBottom = 150 // browsers UI like Safari are transluscent. Random conservative numbers
   for (let i = 0; i < data.length; i++) {
     let d = data[i]
     let {node} = d, img = node.children[0], prompt = node.children[1]
@@ -625,10 +623,10 @@ function render(now) {
 
   document.body.style.cursor = cursor
   document.body.style.overflowY = newFocused == null ? 'auto' : 'hidden'
-  dummyPlaceholder.style.height = `${rowsTop.at(-1)}px`
+  dummyPlaceholder.style.height = `${rowsTop.at(-1)}px` // Chrome has race conditon if scrollTo is called before setting a longer dummy height
 
   // === step 6: update state & prepare for next frame
-  if (adjustedScrollTop !== currentScrollTop) window.scrollTo({top: adjustedScrollTop}) // Chrome has race conditon when expanding the last row of images if scrollTo is called before dummy height setting. Btw this will trigger scroll and next frame's render
+  if (adjustedScrollTop !== currentScrollTop) window.scrollTo({top: adjustedScrollTop}) // will trigger scrolling, thus next frame's render
   if (newFocused !== focused) {
     window.history.pushState(null, null, `${window.location.pathname}${window.location.search}${newFocused == null ? '' : '#' + data[newFocused].id}`)
   }
@@ -644,7 +642,6 @@ function render(now) {
 
 scheduleRender()
 </script>
-
 </body>
 
 </html>
