@@ -458,8 +458,8 @@ function render(now) {
 
   // === step 3: calculate new layout & cursor
   const {cols, boxMaxSizeX} = colsBoxMaxSizeXF(newWindowSizeX)
-  let boxesSizeX = [], boxesSizeY = [], rowsTop = [windowPaddingTop] // length: number of rows + 1
-  {
+  let boxes2DSizeX = [], boxes2DSizeY = [], rowsTop = [windowPaddingTop] // length: number of rows + 1
+  { // first pass over data to set final 2D dimensions and row height (for vertical centering in 2D & total scrollbar height)
     let rowMaxSizeY = 0
     for (let i = 0; i < data.length; i++) {
       let d = data[i]
@@ -469,8 +469,8 @@ function render(now) {
         : boxMaxSizeX
       const sizeX = Math.min(d.naturalSizeX, boxMaxSizeX, imgMaxSizeY * d.ar)
       const sizeY = sizeX / d.ar + promptSizeY
-      boxesSizeX.push(sizeX)
-      boxesSizeY.push(sizeY)
+      boxes2DSizeX.push(sizeX)
+      boxes2DSizeY.push(sizeY)
       rowMaxSizeY = Math.max(rowMaxSizeY, sizeY)
       if (i % cols === cols - 1 || i === data.length - 1) { // last box of the row or last box ever
         rowsTop.push(rowsTop.at(-1) + rowMaxSizeY + boxesGapY)
@@ -486,14 +486,14 @@ function render(now) {
     if (newFocused == null && focused != null) { // just dismissed 1D mode
       const focusedTop = rowsTop[Math.floor(focused / cols)]
       // if the dismissed box isn't fully shown, scroll to it (later after the render code block)
-      if (focusedTop <= currentScrollTop || focusedTop + boxesSizeY[focused] >= currentScrollTop + windowSizeY) {
+      if (focusedTop <= currentScrollTop || focusedTop + boxes2DSizeY[focused] >= currentScrollTop + windowSizeY) {
         adjustedScrollTop = focusedTop - boxesGapY - gapTopPeek // Peek a little higher to show the previous row
       }
     }
 
     for (let i = 0; i < data.length; i++) { // calculate boxes positions
       let d = data[i]
-      const sizeX = boxesSizeX[i], sizeY = boxesSizeY[i]
+      const sizeX = boxes2DSizeX[i], sizeY = boxes2DSizeY[i]
       const currentRow = Math.floor(i / cols)
       const rowMaxSizeY = rowsTop[currentRow + 1] - boxesGapY - rowsTop[currentRow] // this is restoring the rowMaxSizeY info above, kinda weird
       d.sizeX.dest = sizeX
