@@ -2,7 +2,7 @@ My [MidJourney AI art gallery](https://chenglou.me), made to show shiny UI/UX de
 
 [![Demo](https://user-images.githubusercontent.com/1909539/205446527-862d2324-a729-4de9-90d7-5fc9c1b63c9f.png)](https://youtu.be/OwzPOJnj2Vw)
 
-Features:
+## Features
 - **Non-disruptive, interruptible transitions**. Animations don't block your ability to interact with the UI.
 - **Optionally reduced motion for accessibility**.
 - **[Layout-aware decoupled hit areas](https://youtu.be/MBSdQqZkXyc)**. In the gallery's line mode, the left & right cursor hit areas vertically extend to the window's edges, so that horizontally thin images don't have smaller hit areas than others. Hit areas also don't move with their image during transition, so you don't have to snipe click images. Consequently, rapidly clicking the left or right image doesn't accidentally dismiss the gallery (caused by clicking on a gap between image, or re-clicking on the newly centering image itself while it's still moving).
@@ -32,3 +32,27 @@ For developers:
 - **Fun debug mode with manual frame stepping**.
 - **Guaranteed minimum render count**. Renders are batched per frame. Also no multi-frames cascading rerenders from wrongly ordered state changes.
 - **Minimal DOM nodes**. A clean, wrapper-divs-free inspector experience.
+
+## Architecture
+
+```mermaid
+flowchart TB
+  subgraph Initialization
+    ISstate["State declaration"]
+    IDOM["Static DOM chunks"]
+    IEvents["Events Registration (all static)"]
+  end
+  IEvents -- triggers --> Render
+  subgraph Render["Render (1 frame)"]
+    direction TB
+    A("DOM reads (batched)") --> State
+    subgraph State["State changes"]
+      direction TB
+      B("Handle inputs") --> C("New layout & cursor")
+      C --> D("Animation tick")
+      D --> E("Occlusion & render DOM writes (batched)")
+    end
+    State --> F("Commit state changes")
+  end
+  Render -- "\nProgrammatic scroll/more animation?" --> Render
+```
