@@ -536,8 +536,8 @@ function render(now) {
     }
 
     const edgeRubberBandVelocityX = // feedback when you hit first/last image and keep pressing left/right key
-      inputs.key === 'ArrowLeft' && focused === 0 ? 2000
-      : inputs.key === 'ArrowRight' && focused === data.length - 1 ? -2000
+      inputs.key === 'ArrowLeft' && focused === 0 ? 2 * 1000 // 2 pixels per second
+      : inputs.key === 'ArrowRight' && focused === data.length - 1 ? -2 * 1000
       : 0
     for (let i = 0; i < data.length; i++) { // calculate boxes positions
       let d = data[i]
