@@ -156,12 +156,12 @@ function render(now) {
     if (dragged != null) {
       let dragIdx = data.findIndex(d => d.id === dragged.id)
       let vx = 0, vy = 0, totalTime = 0
-      for (let i = pointer.length - 1; i >= 1 && totalTime < 100; i--) {
+      for (let i = pointer.length - 1; i >= 1 && totalTime < 100; i--) { // get last ~100ms of movements vectors/directions
         vx += (pointer[i].x - pointer[i - 1].x)
         vy += (pointer[i].y - pointer[i - 1].y)
         totalTime += (pointer[i].time - pointer[i - 1].time)
       }
-      vx = vx / totalTime * 1000 // convert from ms to second
+      vx = vx / totalTime * 1000 // average vector per time. Convert from ms to second
       vy = vy / totalTime * 1000
       data[dragIdx].x.v += vx; data[dragIdx].y.v += vy
     }
@@ -173,7 +173,7 @@ function render(now) {
 
   // === step 3: calculate new layout & cursor
   if (newDragged) { // first, swap row based on cursor position if needed
-    let dragIdx = data.findIndex(d => d.id === newDragged.id)
+    let dragIdx = data.findIndex(d => d.id === newDragged.id) // guaranteed non-null
     let d = data[dragIdx]
     const x = pointerLast.x - newDragged.deltaX
     const y = pointerLast.y - newDragged.deltaY
@@ -202,13 +202,13 @@ function render(now) {
     top += d.sizeY
   }
   const cursor =
-    newDragged ? 'grabbing'
+    newDragged ? 'grabbing' // will be "grabbing" even if cursor isn't on the card! Try dragging to left/right extremes
     : hitTest(data, pointerLast) ? 'grab'
     : 'auto'
 
   // === step 4: run animation
   let newAnimatedUntilTime = animatedUntilTime == null ? now : animatedUntilTime
-  const steps = Math.floor((now - newAnimatedUntilTime) / msPerAnimationStep)
+  const steps = Math.floor((now - newAnimatedUntilTime) / msPerAnimationStep) // run x spring steps. Decouple physics simulation from framerate!
   newAnimatedUntilTime += steps * msPerAnimationStep
   let stillAnimating = false
   springForEach(s => {
