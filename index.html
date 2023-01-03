@@ -14,11 +14,10 @@
     }
     body {
       overflow-x: hidden; /* 1D mode places images horizontally and exceeds viewport width */
+      margin: 0;
     }
     .box {
       position: absolute;
-      top: 0;
-      left: 0;
       overflow: hidden;
       background-color: rgb(34, 36, 53);
       border-radius: 16px;
@@ -402,6 +401,7 @@ window.addEventListener('mousemove', (e) => {
 
 // === static DOM initialization. Just 1 in this app. The more you have here the more your app looks like a PDF document. Minimize
 let dummyPlaceholder = document.createElement('div')
+dummyPlaceholder.style.position = 'absolute'
 dummyPlaceholder.style.width = '1px' // make it tiny in case it affects compositing... sigh lamport.azurewebsites.net/pubs/future-of-computing.pdf
 document.body.append(dummyPlaceholder)
 if (debug) document.documentElement.style.background = 'repeating-linear-gradient(#e66465 0px, #9198e5 300px)'
