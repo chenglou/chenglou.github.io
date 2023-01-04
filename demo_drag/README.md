@@ -1,4 +1,4 @@
-[Draggable cards demo](https://chenglou.me/demo_drag/), showing shiny UI/UX details using the same architecture as the main image gallery.
+[Draggable cards demo](https://chenglou.me/demo_drag/), showing shiny UI/UX details using the same architecture as the main image gallery. As seen in the [tweet](https://twitter.com/_chenglou/status/1609862082882863104)
 
 [![Demo](https://user-images.githubusercontent.com/1909539/210219177-6b9147d6-1bac-4579-a109-6281c685cec8.jpg)](https://youtu.be/iycK9nq1jf0)
 
