@@ -1,0 +1,59 @@
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      margin: 3px auto;
+    }
+    .block {
+      box-sizing: border-box;
+      display: inline-block;
+      box-shadow:
+        0 0 0 0.25px black inset,
+        0 0 0 0.25px black;
+    }
+  </style>
+</head>
+<body>
+<script>
+'use strict'
+
+let blockSize = 11
+let life = 75 * 365.25
+let current = 30 * 365.25
+let today = new Date().getDay()
+let todayOffset = 4 + today
+
+let data = []; {
+  for (let i = 10 - today; i < life; i++) {
+    let block = document.createElement('div')
+    block.className = 'block'
+    document.body.appendChild(block)
+    data.push(block)
+  }
+}
+
+window.addEventListener('resize', () => render())
+
+function render() {
+  let windowSizeX = document.documentElement.clientWidth - 24
+  for (let i = 0; i < data.length; i++) {
+    let block = data[i]
+
+    let aaa = i + 10 - today
+    block.style.backgroundColor = aaa < current ? 'lightgreen' : 'white'
+    block.style.width = block.style.height = `${blockSize}px`
+
+    let weekEdge = (aaa + todayOffset) % 7
+    block.style.borderRadius =
+      weekEdge === 0 ? '99px 0 0 99px'
+      : weekEdge === 6 ? '0 99px 99px 0'
+      : '0'
+  }
+  let weekSize = 7 * blockSize
+  document.body.style.width = `${Math.floor(windowSizeX / weekSize) * weekSize}px`
+}
+
+render()
+</script>
+</body>
