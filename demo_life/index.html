@@ -9,8 +9,8 @@
       box-sizing: border-box;
       display: inline-block;
       box-shadow:
-        0 0 0 0.25px black inset,
-        0 0 0 0.25px black;
+        0 0 0 0.25px hsl(120, 73%, 30%) inset,
+        0 0 0 0.25px hsl(120, 73%, 30%);
     }
   </style>
 </head>
@@ -18,8 +18,8 @@
 <script>
 'use strict'
 
-let life = 75 * 365.25
-let current = 30 * 365.25
+let life = Math.floor(75 * 365.25)
+let current = Math.floor(30 * 365.25)
 let today = new Date().getDay()
 
 let data = []; {
@@ -41,7 +41,10 @@ function render() {
     let block = data[i]
 
     const todayOffset = i + 10 - today
-    block.style.backgroundColor = todayOffset < current ? 'lightgreen' : 'white'
+    block.style.backgroundColor =
+      todayOffset < current ? 'hsl(120, 73%, 75%)'
+      : todayOffset === current ? 'hsl(120, 73%, 40%)'
+      : 'white'
     block.style.width = block.style.height = `${blockSize}px`
 
     block.style.borderRadius =
