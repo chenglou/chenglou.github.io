@@ -52,6 +52,7 @@ function render() {
     block.style.backgroundColor =
       todayOffset < current ? 'hsl(120, 73%, 75%)'
       : todayOffset === current ? 'hsl(120, 73%, 40%)'
+      : i === data.length - 1 ? 'red'
       : 'white'
     block.style.width = block.style.height = `${blockSize2}px`
 
