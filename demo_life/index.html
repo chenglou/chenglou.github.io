@@ -94,7 +94,7 @@ function render() {
 
   ctx.strokeStyle = 'hsl(120, 73%, 30%)'
   ctx.lineWidth = 0.5
-  for (let i = 0; i < life; i++) {
+  for (let i = 0; i < life - 1; i++) {
     ctx.fillStyle =
       i === hover || i === newCustomDot ? 'orange'
       : i < age ? 'hsl(120, 73%, 75%)'
@@ -105,6 +105,41 @@ function render() {
     const x = i % countX * blockSize
     const y = Math.floor(i / countX) * blockSize
 
+    const pillI = Math.floor(i / 7)
+    const ageI = Math.floor(age / 7)
+    if (pillI < ageI) {
+      ctx.fillStyle = 'hsl(120, 73%, 75%)'
+      ctx.beginPath()
+      ctx.roundRect(x, y, blockSize * 7, blockSize, pillRadius)
+      ctx.fill()
+      ctx.stroke()
+      i += 6
+      continue
+    } else if (pillI > ageI && pillI !== Math.floor(life / 7)) {
+      ctx.fillStyle = 'white'
+      ctx.beginPath()
+      ctx.roundRect(x, y, blockSize * 7, blockSize, pillRadius)
+      ctx.fill()
+      ctx.stroke()
+      i += 6
+      continue
+    } else {
+      const radius =
+        i % 7 === 0 ? leftBlockRadius
+        : i % 7 === 6 ? rightBlockRadius
+        : 0
+      ctx.beginPath()
+      ctx.roundRect(x, y, blockSize, blockSize, radius)
+      ctx.fill()
+      ctx.stroke()
+    }
+  }
+
+  if (hover != null) {
+    ctx.fillStyle = 'orange'
+    let i = hover
+    const x = i % countX * blockSize
+    const y = Math.floor(i / countX) * blockSize
     const radius =
       i % 7 === 0 ? leftBlockRadius
       : i % 7 === 6 ? rightBlockRadius
@@ -114,6 +149,44 @@ function render() {
     ctx.fill()
     ctx.stroke()
   }
+  if (newCustomDot != null) {
+    ctx.fillStyle = 'orange'
+    let i = newCustomDot
+    const x = i % countX * blockSize
+    const y = Math.floor(i / countX) * blockSize
+    const radius =
+      i % 7 === 0 ? leftBlockRadius
+      : i % 7 === 6 ? rightBlockRadius
+      : 0
+    ctx.beginPath()
+    ctx.roundRect(x, y, blockSize, blockSize, radius)
+    ctx.fill()
+    ctx.stroke()
+  }
+  {
+    let i = life - 1
+    ctx.fillStyle = 'red'
+    const x = i % countX * blockSize
+    const y = Math.floor(i / countX) * blockSize
+    const radius =
+      i % 7 === 0 ? leftBlockRadius
+      : i % 7 === 6 ? rightBlockRadius
+      : 0
+    ctx.beginPath()
+    ctx.roundRect(x, y, blockSize, blockSize, radius)
+    ctx.fill()
+    ctx.stroke()
+  }
+
+  ctx.strokeStyle = 'hsl(120, 73%, 40%)'
+  for (let i = 1; i < countX; i++) {
+    if (i % 7 === 0) continue
+    ctx.moveTo(blockSize * i, 0)
+    const height = i < Math.floor((life - (countY - 1) * countX) / 7) * 7 ? countY * blockSize : (countY - 1) * blockSize
+    ctx.lineTo(blockSize * i, height)
+    ctx.stroke()
+  }
+
   document.body.style.cursor = cursor
 
   // === step 6: update state & prepare for next frame
