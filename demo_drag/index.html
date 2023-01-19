@@ -147,7 +147,7 @@ function hitTest(data, pointer) {
 function render(now) {
   // === step 1: batched DOM reads (to avoid accidental DOM read & write interleaving)
   const windowSizeX = document.documentElement.clientWidth // excludes scroll bar & invariant under safari pinch zoom
-  const {pointer} = inputs
+  let {pointer} = inputs
   const pointerLast = pointer.at(-1) // guaranteed non-null since pointer.length >= 1
 
   // === step 2: handle inputs-related state change
