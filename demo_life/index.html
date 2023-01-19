@@ -79,6 +79,7 @@ function render() {
     inputs.clicked && hover === customDot ? null
     : inputs.clicked ? hover
     : customDot
+  const cursor = hover == null ? 'auto' : 'pointer'
 
   // === step 5: render. Batch DOM writes
   // no blurry canvas: coderwall.com/p/vmkk6a/how-to-make-the-canvas-not-look-like-crap-on-retina
@@ -114,6 +115,7 @@ function render() {
     ctx.fill()
     ctx.stroke()
   }
+  document.body.style.cursor = cursor
 
   // === step 6: update state & prepare for next frame
   inputs.clicked = false
