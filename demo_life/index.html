@@ -12,62 +12,93 @@
 <script>
 'use strict'
 
-let life = Math.floor(75 * 365.25)
-let current = Math.floor(30 * 365.25)
-let today = new Date().getDay()
+const life = Math.floor(75 * 365.25)
+const age = Math.floor(30 * 365.25)
+const today = new Date().getDay()
 
+// === constant layout metrics. The rest is dynamic
+const leftBlockRadius = [99, 0, 0, 99], rightBlockRadius = [0, 99, 99, 0]
+const gridGap = 8
+
+// === state
+let inputs = {
+  pointer: {x: -Infinity, y: -Infinity}, // btw, on page load, there's no way to render a first cursor state =(
+}
 let canvas = document.createElement('canvas')
 let ctx = canvas.getContext('2d')
 document.body.appendChild(canvas)
 
+// === events
 window.addEventListener('resize', () => render())
+window.addEventListener('mousemove', (e) => {
+  // when scrolling (which might schedule a render), a container's mousemove doesn't trigger, so the pointer's local coordinates are stale
+  // this means we should only use pointer's global coordinates, which is always right (thus the subtraction of scroll)
+  inputs.pointer.x = e.pageX -/*toGlobal*/window.scrollX; inputs.pointer.y = e.pageY -/*toGlobal*/window.scrollY
+  // btw, pointer can exceed document bounds, e.g. dragging reports back out-of-bound, legal negative values
+  render()
+})
 
-const leftBlockRadius = [99, 0, 0, 99], rightBlockRadius = [0, 99, 99, 0]
+
+// === hit testing logic. Boxes' hit area should be static and not follow their current animated state usually (but we can do either). Use the dynamic area here for once
+function hitTest(blockSize, countX, countY, gridLeft, gridTop, gridFinalSizeX, gridFinalSizeY, pointer) {
+  const px = pointer.x-/*toLocal*/gridLeft
+  const py = pointer.y-/*toLocal*/gridTop
+  if (px < 0 || px > gridFinalSizeX || py < 0 || py > gridFinalSizeY) return null
+  return Math.floor(py / blockSize) * countX + Math.floor(px / blockSize)
+}
 
 function render() {
+  // === step 1: batched DOM reads (to avoid accidental DOM read & write interleaving)
+  const devicePixelRatio = window.devicePixelRatio
   const windowSizeX = document.documentElement.clientWidth
   const windowSizeY = window.innerHeight
-  const contentSizeX = windowSizeX - 8
-  const contentSizeY = windowSizeY - 8
+  const gridSizeX = windowSizeX - gridGap
+  const gridSizeY = windowSizeY - gridGap
+  let {pointer} = inputs
 
-  let blockSize = (life * Math.sqrt((4*life*contentSizeX*contentSizeY + (7*contentSizeY)**2) / (life**2)) + 7 * contentSizeY) / 2 / life
-  let countX = Math.floor((contentSizeX / blockSize) / 7) * 7
-  let countY = Math.ceil(life / countX)
-  let blockSize2 = contentSizeY / countY
-  let contentSizeFinalX = countX * blockSize2
-  let contentSizeFinalY = countY * blockSize2
+  const blockSize_ = (life * Math.sqrt((4*life*gridSizeX*gridSizeY + (7*gridSizeY)**2) / (life**2)) + 7 * gridSizeY) / 2 / life
+  const countX = Math.floor((gridSizeX / blockSize_) / 7) * 7
+  const countY = Math.ceil(life / countX)
+  const blockSize = gridSizeY / countY
+  const gridFinalSizeX = countX * blockSize
+  const gridFinalSizeY = countY * blockSize
+  const gridLeft = (windowSizeX - gridFinalSizeX) / 2 // center
+  const gridTop = (windowSizeY - gridFinalSizeY) / 2 // center
 
-  let devicePixelRatio = window.devicePixelRatio
+  // === step 2: handle inputs-related state change
+  const hover = hitTest(blockSize, countX, countY, gridLeft, gridTop, gridFinalSizeX, gridFinalSizeY, pointer)
+
+  // === step 5: render. Batch DOM writes
   // no blurry canvas: coderwall.com/p/vmkk6a/how-to-make-the-canvas-not-look-like-crap-on-retina
-  canvas.width = contentSizeFinalX * devicePixelRatio // different than canvas.style.width. Btw this clears the canvas as well
-  canvas.height = contentSizeFinalY * devicePixelRatio
-  canvas.style.width = contentSizeFinalX
-  canvas.style.height = contentSizeFinalY
-  canvas.style.top = (windowSizeY - contentSizeFinalY) / 2 // center
-  canvas.style.left = (windowSizeX - contentSizeFinalX) / 2 // center
+  canvas.width = gridFinalSizeX * devicePixelRatio // different than canvas.style.width. Btw this clears the canvas as well
+  canvas.height = gridFinalSizeY * devicePixelRatio
+  canvas.style.width = gridFinalSizeX
+  canvas.style.height = gridFinalSizeY
+  canvas.style.left = gridLeft
+  canvas.style.top = gridTop
   ctx.scale(devicePixelRatio, devicePixelRatio)
-  ctx.clearRect(0, 0, contentSizeFinalX, contentSizeFinalY)
+  ctx.clearRect(0, 0, gridFinalSizeX, gridFinalSizeY)
 
   ctx.strokeStyle = 'hsl(120, 73%, 30%)'
   ctx.lineWidth = 0.5
-
   for (let i = 0; i < life; i++) {
     const todayOffset = i + 10 - today
-    if (todayOffset === current) ctx.fillStyle = 'hsl(120, 73%, 40%)' // expensive magic setter. Only touch it when needed...
-    else if (todayOffset === current + 1) ctx.fillStyle = 'white'
-    else if (i === life - 1) ctx.fillStyle = 'red'
-    else if (i === 0) ctx.fillStyle = 'hsl(120, 73%, 75%)'
+    ctx.fillStyle =
+      i === hover ? 'orange'
+      : todayOffset < age ? 'hsl(120, 73%, 75%)'
+      : todayOffset === age ? 'hsl(120, 73%, 40%)'
+      : i === life - 1 ? 'red'
+      : 'white'
 
-
-    const x = i % countX * blockSize2
-    const y = Math.floor(i / countX) * blockSize2
+    const x = i % countX * blockSize
+    const y = Math.floor(i / countX) * blockSize
 
     const radius =
       i % 7 === 0 ? leftBlockRadius
       : i % 7 === 6 ? rightBlockRadius
       : 0
     ctx.beginPath()
-    ctx.roundRect(x, y, blockSize2, blockSize2, radius)
+    ctx.roundRect(x, y, blockSize, blockSize, radius)
     ctx.fill()
     ctx.stroke()
   }
