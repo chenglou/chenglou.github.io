@@ -21,8 +21,10 @@ const leftBlockRadius = [99, 0, 0, 99], rightBlockRadius = [0, 99, 99, 0]
 const gridGap = 8
 
 // === state
+let customDot = null
 let inputs = {
   pointer: {x: -Infinity, y: -Infinity}, // btw, on page load, there's no way to render a first cursor state =(
+  clicked: false,
 }
 let canvas = document.createElement('canvas')
 let ctx = canvas.getContext('2d')
@@ -37,7 +39,12 @@ window.addEventListener('mousemove', (e) => {
   // btw, pointer can exceed document bounds, e.g. dragging reports back out-of-bound, legal negative values
   render()
 })
-
+window.addEventListener('click', (e) => {
+  inputs.clicked = true
+  // needed to update coords even when we already track mousemove. E.g. in Chrome, right click context menu, move elsewhere, then click to dismiss. BAM, mousemove triggers with stale/wrong (??) coordinates... Click again without moving, and now you're clicking on the wrong thing
+  inputs.pointer.x = e.pageX - window.scrollX; inputs.pointer.y = e.pageY - window.scrollY
+  render()
+})
 
 // === hit testing logic. Boxes' hit area should be static and not follow their current animated state usually (but we can do either). Use the dynamic area here for once
 function hitTest(blockSize, countX, countY, gridLeft, gridTop, gridFinalSizeX, gridFinalSizeY, pointer) {
@@ -67,6 +74,10 @@ function render() {
 
   // === step 2: handle inputs-related state change
   const hover = hitTest(blockSize, countX, countY, gridLeft, gridTop, gridFinalSizeX, gridFinalSizeY, pointer)
+  const newCustomDot =
+    inputs.clicked && hover === customDot ? null
+    : inputs.clicked ? hover
+    : customDot
 
   // === step 5: render. Batch DOM writes
   // no blurry canvas: coderwall.com/p/vmkk6a/how-to-make-the-canvas-not-look-like-crap-on-retina
@@ -84,7 +95,7 @@ function render() {
   for (let i = 0; i < life; i++) {
     const todayOffset = i + 10 - today
     ctx.fillStyle =
-      i === hover ? 'orange'
+      i === hover || i === newCustomDot ? 'orange'
       : todayOffset < age ? 'hsl(120, 73%, 75%)'
       : todayOffset === age ? 'hsl(120, 73%, 40%)'
       : i === life - 1 ? 'red'
@@ -102,12 +113,12 @@ function render() {
     ctx.fill()
     ctx.stroke()
   }
+
+  // === step 6: update state & prepare for next frame
+  inputs.clicked = false
+  customDot = newCustomDot
 }
 
 render()
-/*
-TODO:
-- custom points
-*/
 </script>
 </body>
