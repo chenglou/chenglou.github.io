@@ -4,7 +4,7 @@
   <title>Story of Your Life</title>
   <style>
     body {
-      margin: 3px auto;
+      margin: 4px auto;
     }
     .block {
       box-sizing: border-box;
@@ -12,6 +12,9 @@
       box-shadow:
         0 0 0 0.25px hsl(120, 73%, 30%) inset,
         0 0 0 0.25px hsl(120, 73%, 30%);
+    }
+    canvas {
+      position: absolute;
     }
   </style>
 </head>
@@ -23,47 +26,65 @@ let life = Math.floor(75 * 365.25)
 let current = Math.floor(30 * 365.25)
 let today = new Date().getDay()
 
-let data = []; {
-  for (let i = 0; i < life; i++) {
-    let block = document.createElement('div')
-    block.className = 'block'
-    document.body.appendChild(block)
-    data.push(block)
-  }
-}
+let canvas = document.createElement('canvas')
+let ctx = canvas.getContext('2d')
+document.body.appendChild(canvas)
 
 window.addEventListener('resize', () => render())
+
+const leftBlockRadius = [99, 0, 0, 99], rightBlockRadius = [0, 99, 99, 0]
 
 function render() {
   const windowSizeX = document.documentElement.clientWidth
   const windowSizeY = window.innerHeight
-  const contentSizeX = windowSizeX - 6
-  const contentSizeY = windowSizeY - 6
+  const contentSizeX = windowSizeX - 8
+  const contentSizeY = windowSizeY - 8
 
   let blockSize = (life * Math.sqrt((4*life*contentSizeX*contentSizeY + (7*contentSizeY)**2) / (life**2)) + 7 * contentSizeY) / 2 / life
   let countX = Math.floor((contentSizeX / blockSize + 7) / 7) * 7
   let countY = Math.ceil(life / countX)
   let blockSize2 = contentSizeY / countY
+  let contentSizeFinalX = countX * blockSize2
+  let contentSizeFinalY = countY * blockSize2
 
-  for (let i = 0; i < data.length; i++) {
-    let block = data[i]
+  let devicePixelRatio = window.devicePixelRatio
+  // no blurry canvas: coderwall.com/p/vmkk6a/how-to-make-the-canvas-not-look-like-crap-on-retina
+  canvas.width = contentSizeFinalX * devicePixelRatio // different than canvas.style.width. Btw this clears the canvas as well
+  canvas.height = contentSizeFinalY * devicePixelRatio
+  canvas.style.width = contentSizeFinalX
+  canvas.style.height = contentSizeFinalY
+  ctx.scale(devicePixelRatio, devicePixelRatio)
+  ctx.clearRect(0, 0, contentSizeFinalX, contentSizeFinalY)
 
+  ctx.strokeStyle = 'hsl(120, 73%, 30%)'
+  ctx.lineWidth = 0.5
+
+  for (let i = 0; i < life; i++) {
     const todayOffset = i + 10 - today
-    block.style.backgroundColor =
-      todayOffset < current ? 'hsl(120, 73%, 75%)'
-      : todayOffset === current ? 'hsl(120, 73%, 40%)'
-      : i === data.length - 1 ? 'red'
-      : 'white'
-    block.style.width = block.style.height = `${blockSize2}px`
+    if (todayOffset === current) ctx.fillStyle = 'hsl(120, 73%, 40%)' // expensive magic setter. Only touch it when needed...
+    else if (todayOffset === current + 1) ctx.fillStyle = 'white'
+    else if (i === life - 1) ctx.fillStyle = 'red'
+    else if (i === 0) ctx.fillStyle = 'hsl(120, 73%, 75%)'
 
-    block.style.borderRadius =
-      i % 7 === 0 ? '99px 0 0 99px'
-      : i % 7 === 6 ? '0 99px 99px 0'
-      : '0'
+    const x = i % countX * blockSize2
+    const y = Math.floor(i / countX) * blockSize2
+
+    const radius =
+      i % 7 === 0 ? leftBlockRadius
+      : i % 7 === 6 ? rightBlockRadius
+      : 0
+    ctx.beginPath()
+    ctx.roundRect(x, y, blockSize2, blockSize2, radius)
+    ctx.fill()
+    ctx.stroke()
   }
   document.body.style.width = `${countX * blockSize2}px`
 }
 
 render()
+/*
+TODO:
+- custom points
+*/
 </script>
 </body>
