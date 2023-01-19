@@ -35,8 +35,15 @@ let data = []; {
 window.addEventListener('resize', () => render())
 
 function render() {
-  const windowSizeX = document.documentElement.clientWidth - 24
-  const blockSize = 11
+  const windowSizeX = document.documentElement.clientWidth
+  const windowSizeY = window.innerHeight
+  const contentSizeX = windowSizeX - 6
+  const contentSizeY = windowSizeY - 6
+
+  let blockSize = (life * Math.sqrt((4*life*contentSizeX*contentSizeY + (7*contentSizeY)**2) / (life**2)) + 7 * contentSizeY) / 2 / life
+  let countX = Math.floor((contentSizeX / blockSize + 7) / 7) * 7
+  let countY = Math.ceil(life / countX)
+  let blockSize2 = contentSizeY / countY
 
   for (let i = 0; i < data.length; i++) {
     let block = data[i]
@@ -46,15 +53,14 @@ function render() {
       todayOffset < current ? 'hsl(120, 73%, 75%)'
       : todayOffset === current ? 'hsl(120, 73%, 40%)'
       : 'white'
-    block.style.width = block.style.height = `${blockSize}px`
+    block.style.width = block.style.height = `${blockSize2}px`
 
     block.style.borderRadius =
       i % 7 === 0 ? '99px 0 0 99px'
       : i % 7 === 6 ? '0 99px 99px 0'
       : '0'
   }
-  const weekSize = 7 * blockSize
-  document.body.style.width = `${Math.floor(windowSizeX / weekSize) * weekSize}px`
+  document.body.style.width = `${countX * blockSize2}px`
 }
 
 render()
