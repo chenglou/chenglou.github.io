@@ -3,16 +3,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Story of Your Life</title>
   <style>
-    body {
-      margin: 4px auto;
-    }
-    .block {
-      box-sizing: border-box;
-      display: inline-block;
-      box-shadow:
-        0 0 0 0.25px hsl(120, 73%, 30%) inset,
-        0 0 0 0.25px hsl(120, 73%, 30%);
-    }
     canvas {
       position: absolute;
     }
@@ -41,7 +31,7 @@ function render() {
   const contentSizeY = windowSizeY - 8
 
   let blockSize = (life * Math.sqrt((4*life*contentSizeX*contentSizeY + (7*contentSizeY)**2) / (life**2)) + 7 * contentSizeY) / 2 / life
-  let countX = Math.floor((contentSizeX / blockSize + 7) / 7) * 7
+  let countX = Math.floor((contentSizeX / blockSize) / 7) * 7
   let countY = Math.ceil(life / countX)
   let blockSize2 = contentSizeY / countY
   let contentSizeFinalX = countX * blockSize2
@@ -53,6 +43,8 @@ function render() {
   canvas.height = contentSizeFinalY * devicePixelRatio
   canvas.style.width = contentSizeFinalX
   canvas.style.height = contentSizeFinalY
+  canvas.style.top = (windowSizeY - contentSizeFinalY) / 2 // center
+  canvas.style.left = (windowSizeX - contentSizeFinalX) / 2 // center
   ctx.scale(devicePixelRatio, devicePixelRatio)
   ctx.clearRect(0, 0, contentSizeFinalX, contentSizeFinalY)
 
@@ -66,6 +58,7 @@ function render() {
     else if (i === life - 1) ctx.fillStyle = 'red'
     else if (i === 0) ctx.fillStyle = 'hsl(120, 73%, 75%)'
 
+
     const x = i % countX * blockSize2
     const y = Math.floor(i / countX) * blockSize2
 
@@ -78,7 +71,6 @@ function render() {
     ctx.fill()
     ctx.stroke()
   }
-  document.body.style.width = `${countX * blockSize2}px`
 }
 
 render()
