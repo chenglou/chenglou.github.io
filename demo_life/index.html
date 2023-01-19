@@ -21,7 +21,8 @@ const leftBlockRadius = [99, 0, 0, 99], rightBlockRadius = [0, 99, 99, 0]
 const gridGap = 8
 
 // === state
-let customDot = null
+const customDot_ = localStorage.getItem('customDot')
+let customDot = customDot_ == null ? null : parseInt(customDot_)
 let inputs = {
   pointer: {x: -Infinity, y: -Infinity}, // btw, on page load, there's no way to render a first cursor state =(
   clicked: false,
@@ -116,7 +117,10 @@ function render() {
 
   // === step 6: update state & prepare for next frame
   inputs.clicked = false
-  customDot = newCustomDot
+  if (customDot !== newCustomDot) {
+    localStorage.setItem('customDot', newCustomDot) // TODO: validate (e.g. out of range)
+    customDot = newCustomDot
+  }
 }
 
 render()
