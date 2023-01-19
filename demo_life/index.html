@@ -31,6 +31,11 @@ let canvas = document.createElement('canvas')
 let ctx = canvas.getContext('2d')
 document.body.appendChild(canvas)
 
+let cacheCanvas1 = document.createElement('canvas')
+let cacheCtx1 = cacheCanvas1.getContext('2d')
+let cacheCanvas2 = document.createElement('canvas')
+let cacheCtx2 = cacheCanvas2.getContext('2d')
+
 // === events
 window.addEventListener('resize', () => render())
 window.addEventListener('mousemove', (e) => {
@@ -92,18 +97,79 @@ function render() {
   ctx.scale(devicePixelRatio, devicePixelRatio)
   ctx.clearRect(0, 0, gridFinalSizeX, gridFinalSizeY)
 
+  cacheCanvas1.width = blockSize * 7 * devicePixelRatio
+  cacheCanvas1.height = blockSize * devicePixelRatio
+  cacheCanvas1.style.width = blockSize * 7
+  cacheCanvas1.style.height = blockSize
+  cacheCtx1.scale(devicePixelRatio, devicePixelRatio)
+  cacheCtx1.clearRect(0, 0, blockSize * 7, blockSize)
+  //
+  cacheCtx1.fillStyle = 'hsl(120, 73%, 75%)'
+  cacheCtx1.beginPath()
+  cacheCtx1.roundRect(0, 0, blockSize * 7, blockSize, pillRadius)
+  cacheCtx1.fill()
+  cacheCtx1.stroke()
+  cacheCtx1.strokeStyle = 'hsl(120, 73%, 30%)'
+  cacheCtx1.lineWidth = 0.5
+  for (let i = 1; i < 7; i++) {
+    cacheCtx1.moveTo(blockSize * i, 0)
+    cacheCtx1.lineTo(blockSize * i, blockSize)
+    cacheCtx1.stroke()
+  }
+
+  cacheCanvas2.width = blockSize * 7 * devicePixelRatio
+  cacheCanvas2.height = blockSize * devicePixelRatio
+  cacheCanvas2.style.width = blockSize * 7
+  cacheCanvas2.style.height = blockSize
+  cacheCtx2.scale(devicePixelRatio, devicePixelRatio)
+  cacheCtx2.clearRect(0, 0, blockSize * 7, blockSize)
+  //
+  cacheCtx2.fillStyle = 'white'
+  cacheCtx2.beginPath()
+  cacheCtx2.roundRect(0, 0, blockSize * 7, blockSize, pillRadius)
+  cacheCtx2.fill()
+  cacheCtx2.stroke()
+  cacheCtx2.strokeStyle = 'hsl(120, 73%, 30%)'
+  cacheCtx2.lineWidth = 0.5
+  for (let i = 1; i < 7; i++) {
+    cacheCtx2.moveTo(blockSize * i, 0)
+    cacheCtx2.lineTo(blockSize * i, blockSize)
+    cacheCtx2.stroke()
+  }
+
   ctx.strokeStyle = 'hsl(120, 73%, 30%)'
   ctx.lineWidth = 0.5
+
   for (let i = 0; i < life; i++) {
+    const x = i % countX * blockSize
+    const y = Math.floor(i / countX) * blockSize
+
+    if (Math.floor(i / 7) < Math.floor(age / 7)) {
+      ctx.drawImage(cacheCanvas1, x, y, blockSize * 7, blockSize);
+      // ctx.fillStyle = 'hsl(120, 73%, 75%)'
+      // ctx.beginPath()
+      // ctx.roundRect(x, y, blockSize * 7, blockSize, pillRadius)
+      // ctx.fill()
+      // ctx.stroke()
+      // // for (let j = 1; j < 7; j++) {
+      // //   ctx.moveTo(x + blockSize * j, y)
+      // //   ctx.lineTo(x + blockSize * j, y + blockSize)
+      // //   ctx.stroke()
+      // // }
+      i += 6
+      continue
+    } else if (Math.floor(i / 7) > Math.floor(age / 7) + 1) {
+      ctx.drawImage(cacheCanvas2, x, y, blockSize * 7, blockSize);
+      i += 6
+      continue
+    }
+
     ctx.fillStyle =
       i === hover || i === newCustomDot ? 'orange'
       : i < age ? 'hsl(120, 73%, 75%)'
       : i === age ? 'hsl(120, 73%, 40%)'
       : i === life - 1 ? 'red'
       : 'white'
-
-    const x = i % countX * blockSize
-    const y = Math.floor(i / countX) * blockSize
 
     const radius =
       i % 7 === 0 ? leftBlockRadius
