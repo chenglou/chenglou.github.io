@@ -13,11 +13,11 @@
 'use strict'
 
 const life = Math.floor(75 * 365.25)
-const age = Math.floor(30 * 365.25)
-const today = new Date().getDay()
+const today = new Date().getDay() // sunday = 0
+const age = Math.floor((30 * 365.25 + 19) / 7) * 7 + today - 1 // rough days, rounded to week, 0-indexed
 
 // === constant layout metrics. The rest is dynamic
-const leftBlockRadius = [99, 0, 0, 99], rightBlockRadius = [0, 99, 99, 0]
+const leftBlockRadius = [99, 0, 0, 99], rightBlockRadius = [0, 99, 99, 0], pillRadius = [99, 99, 99, 99]
 const gridGap = 8
 
 // === state
@@ -95,11 +95,10 @@ function render() {
   ctx.strokeStyle = 'hsl(120, 73%, 30%)'
   ctx.lineWidth = 0.5
   for (let i = 0; i < life; i++) {
-    const todayOffset = i + 10 - today
     ctx.fillStyle =
       i === hover || i === newCustomDot ? 'orange'
-      : todayOffset < age ? 'hsl(120, 73%, 75%)'
-      : todayOffset === age ? 'hsl(120, 73%, 40%)'
+      : i < age ? 'hsl(120, 73%, 75%)'
+      : i === age ? 'hsl(120, 73%, 40%)'
       : i === life - 1 ? 'red'
       : 'white'
 
