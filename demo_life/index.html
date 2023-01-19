@@ -25,8 +25,13 @@ function hash(n) { // random for a seed value n. For fun coloring, debugging, et
 }
 
 // === constant layout metrics. The rest is dynamic
-const leftBlockRadius = [99, 0, 0, 99], rightBlockRadius = [0, 99, 99, 0], pillRadius = [99, 99, 99, 99]
 const gridGap = 8
+const leftBlockRadius = [99, 0, 0, 99], rightBlockRadius = [0, 99, 99, 0], pillRadius = [99, 99, 99, 99]
+function radius(i) {
+  if (i % 7 === 0) return leftBlockRadius
+  if (i % 7 === 6) return rightBlockRadius
+  return 0
+}
 
 // === state
 const customDot_ = localStorage.getItem('customDot')
@@ -102,88 +107,51 @@ function render() {
 
   ctx.strokeStyle = 'hsl(120, 73%, 30%)'
   ctx.lineWidth = 0.5
-  for (let i = 0; i < life - 1; i++) {
-    ctx.fillStyle =
-      i === hover || i === newCustomDot ? 'orange'
-      : i < age ? 'hsl(120, 73%, 75%)'
-      : i === age ? 'hsl(120, 73%, 40%)'
-      : i === life - 1 ? 'red'
-      : 'white'
-
+  for (let i = 0; i < life - 1; ) {
     const x = i % countX * blockSize
     const y = Math.floor(i / countX) * blockSize
 
-    const pillI = Math.floor(i / 7)
-    const ageI = Math.floor(age / 7)
-    if (pillI < ageI) {
-      ctx.fillStyle = 'hsl(120, 73%, 75%)'
-      ctx.beginPath()
-      ctx.roundRect(x, y, blockSize * 7, blockSize, pillRadius)
-      ctx.fill()
-      ctx.stroke()
-      i += 6
-      continue
-    } else if (pillI > ageI && pillI !== Math.floor(life / 7)) {
-      ctx.fillStyle = 'white'
-      ctx.beginPath()
-      ctx.roundRect(x, y, blockSize * 7, blockSize, pillRadius)
-      ctx.fill()
-      ctx.stroke()
-      i += 6
-      continue
-    } else {
-      const radius =
-        i % 7 === 0 ? leftBlockRadius
-        : i % 7 === 6 ? rightBlockRadius
-        : 0
-      ctx.beginPath()
-      ctx.roundRect(x, y, blockSize, blockSize, radius)
-      ctx.fill()
-      ctx.stroke()
-    }
-  }
-
-  if (hover != null) {
-    let i = hover
-    ctx.fillStyle = `hsl(${hash(i) * 360}, ${hash(i) * 30 + 70}%, 60%)`
-    const x = i % countX * blockSize
-    const y = Math.floor(i / countX) * blockSize
-    const radius =
-      i % 7 === 0 ? leftBlockRadius
-      : i % 7 === 6 ? rightBlockRadius
-      : 0
+    const iPill = Math.floor(i / 7), agePill = Math.floor(age / 7), lifePill = Math.floor(life / 7)
     ctx.beginPath()
-    ctx.roundRect(x, y, blockSize, blockSize, radius)
+    if (iPill < agePill) {
+      ctx.fillStyle = 'hsl(120, 73%, 75%)'
+      ctx.roundRect(x, y, blockSize * 7, blockSize, pillRadius)
+      i += 7
+    } else if (iPill > agePill && iPill !== lifePill) { // TODO: check condition
+      ctx.fillStyle = 'white'
+      ctx.roundRect(x, y, blockSize * 7, blockSize, pillRadius)
+      i += 7
+    } else {
+      ctx.fillStyle =
+        i < age ? 'hsl(120, 73%, 75%)'
+        : i === age ? 'hsl(120, 73%, 40%)'
+        : 'white'
+      ctx.roundRect(x, y, blockSize, blockSize, radius(i))
+      i++
+    }
     ctx.fill()
     ctx.stroke()
+  }
+
+  function drawOneDot(i) {
+    const x = i % countX * blockSize
+    const y = Math.floor(i / countX) * blockSize
+    ctx.beginPath()
+    ctx.roundRect(x, y, blockSize, blockSize, radius(i))
+    ctx.fill()
+    ctx.stroke()
+  }
+  if (hover != null) {
+    ctx.fillStyle = `hsl(${hash(hover) * 360}, ${hash(hover) * 30 + 70}%, 60%)`
+    drawOneDot(hover)
   }
   if (newCustomDot != null) {
-    let i = newCustomDot
-    ctx.fillStyle = `hsl(${hash(i) * 360}, ${hash(i) * 60 + 30}%, 60%)`
-    const x = i % countX * blockSize
-    const y = Math.floor(i / countX) * blockSize
-    const radius =
-      i % 7 === 0 ? leftBlockRadius
-      : i % 7 === 6 ? rightBlockRadius
-      : 0
-    ctx.beginPath()
-    ctx.roundRect(x, y, blockSize, blockSize, radius)
-    ctx.fill()
-    ctx.stroke()
+    ctx.fillStyle = `hsl(${hash(newCustomDot) * 360}, ${hash(newCustomDot) * 60 + 30}%, 60%)`
+    drawOneDot(newCustomDot)
   }
-  {
-    let i = life - 1
+  { // last dot
     ctx.fillStyle = 'red'
-    const x = i % countX * blockSize
-    const y = Math.floor(i / countX) * blockSize
-    const radius =
-      i % 7 === 0 ? leftBlockRadius
-      : i % 7 === 6 ? rightBlockRadius
-      : 0
-    ctx.beginPath()
-    ctx.roundRect(x, y, blockSize, blockSize, radius)
-    ctx.fill()
-    ctx.stroke()
+    drawOneDot(life - 1)
   }
 
   ctx.strokeStyle = 'hsl(120, 73%, 40%)'
