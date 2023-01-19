@@ -410,14 +410,14 @@ document.body.append(dummyPlaceholder)
 if (debug) document.documentElement.style.background = 'repeating-linear-gradient(#e66465 0px, #9198e5 300px)'
 
 // === hit testing logic. Boxes' hit area should be static and not follow their current animated state usually (but we can do either)
-function hit2DMode(data, pointerX, pointerY) {
+function hitTest2DMode(data, pointerX, pointerY) {
   for (let i = 0; i < data.length; i++) {
     let {x, y, sizeX, sizeY} = data[i]
     if (x.dest <= pointerX && pointerX < x.dest + sizeX.dest && y.dest <= pointerY && pointerY < y.dest + sizeY.dest) return i // pointer on this box
   }
   return null
 }
-function hit1DMode(data, focused, windowSizeX, pointerX) {
+function hitTest1DMode(data, focused, windowSizeX, pointerX) {
   // allow spamming clicks without accidentally clicking on an empty region on left/right side or newly focused image during transition (and dismiss 1D mode)
   return focused > 0 && 0 <= pointerX /* might be -Infinity */ && pointerX <= hitArea1DSizeX ? Math.max(0, focused - 1) // left
     : focused < data.length - 1 && pointerX >= windowSizeX - hitArea1DSizeX ? Math.min(data.length - 1, focused + 1) // right
@@ -454,10 +454,10 @@ function render(now) {
       selection.removeAllRanges()
       selection.addRange(range)
     } else if (focused == null) { // in 2D grid mode. Find the box the pointer's on
-      const hit = hit2DMode(data, pointerXLocal, pointerYLocal)
+      const hit = hitTest2DMode(data, pointerXLocal, pointerYLocal)
       if (hit != null) newFocused = hit
     } else { // 1D mode
-      newFocused = hit1DMode(data, focused, newWindowSizeX, pointerXLocal)
+      newFocused = hitTest1DMode(data, focused, newWindowSizeX, pointerXLocal)
     }
   }
 
@@ -509,7 +509,7 @@ function render(now) {
       d.fxFactor.dest = 1
     }
 
-    const hit = hit2DMode(data, pointerXLocal, pointerYLocal)
+    const hit = hitTest2DMode(data, pointerXLocal, pointerYLocal)
     if (hit == null) cursor = 'auto'
     else { // hovering over a box. Adjust position
       cursor = 'zoom-in'
@@ -558,7 +558,7 @@ function render(now) {
       currentLeft = i === newFocused ? newWindowSizeX - hitArea1DSizeX : currentLeft + imgSizeX + boxes1DGapX
     }
 
-    const hit = hit1DMode(data, newFocused, newWindowSizeX, pointerXLocal)
+    const hit = hitTest1DMode(data, newFocused, newWindowSizeX, pointerXLocal)
     if (hit == null) cursor = 'zoom-out'
     else { // hovering on left or right image
       cursor = 'zoom-in'
