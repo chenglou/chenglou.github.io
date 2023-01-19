@@ -16,6 +16,14 @@ const life = Math.floor(75 * 365.25)
 const today = new Date().getDay() // sunday = 0
 const age = Math.floor((30 * 365.25 + 19) / 7) * 7 + today - 1 // rough days, rounded to week, 0-indexed
 
+// === generic helpers
+function hash(n) { // random for a seed value n. For fun coloring, debugging, etc
+  n = (n * 0.1031) % 1;
+  n *= n + 33.33;
+  n *= n + n;
+  return n % 1;
+}
+
 // === constant layout metrics. The rest is dynamic
 const leftBlockRadius = [99, 0, 0, 99], rightBlockRadius = [0, 99, 99, 0], pillRadius = [99, 99, 99, 99]
 const gridGap = 8
@@ -136,8 +144,8 @@ function render() {
   }
 
   if (hover != null) {
-    ctx.fillStyle = 'orange'
     let i = hover
+    ctx.fillStyle = `hsl(${hash(i) * 360}, ${hash(i) * 30 + 70}%, 60%)`
     const x = i % countX * blockSize
     const y = Math.floor(i / countX) * blockSize
     const radius =
@@ -150,8 +158,8 @@ function render() {
     ctx.stroke()
   }
   if (newCustomDot != null) {
-    ctx.fillStyle = 'orange'
     let i = newCustomDot
+    ctx.fillStyle = `hsl(${hash(i) * 360}, ${hash(i) * 60 + 30}%, 60%)`
     const x = i % countX * blockSize
     const y = Math.floor(i / countX) * blockSize
     const radius =
