@@ -5,9 +5,40 @@
   <style>
     body {
       background-color: #22272e;
+      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
     }
     canvas {
       position: absolute;
+    }
+    #tooltip {
+      position: absolute;
+      display: none;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px 0 black;
+      padding: 8px 16px;
+      color: #ffffff;
+      background-color: #6e7681;
+      white-space: nowrap;
+      font-size: 14px;
+      border: none;
+      outline: none;
+      width: 220px;
+      text-align: center;
+    }
+    #tooltip::placeholder {
+      color: #bbbbbb;
+    }
+    #tooltip-after {
+      position: absolute;
+/*      bottom: -10px;*/
+/*      left: 50%;*/
+      width: 5px;
+      height: 5px;
+      box-sizing: border-box;
+      margin: 0 0 0 -4px;
+      content: " ";
+      border: 5px solid transparent;
+/*      border-top-color: var(--color-neutral-emphasis-plus);*/
     }
   </style>
 </head>
@@ -17,7 +48,8 @@
 
 const life = Math.floor(75 * 365.25)
 const today = new Date().getDay() // sunday = 0
-const age = Math.floor((30 * 365.25 + 19) / 7) * 7 + today - 1 // rough days, rounded to week, 0-indexed
+const age = Math.floor((30 * 365.25 + 6 * 30.5 - 10) / 7) * 7 + today - 1 // rough days, rounded to week, 0-indexed
+const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
 // === generic helpers
 function hash(n) { // random for a seed value n. For fun coloring, debugging, etc
@@ -42,10 +74,21 @@ let customDot = customDot_ == null ? null : parseInt(customDot_)
 let inputs = {
   pointer: {x: -Infinity, y: -Infinity}, // btw, on page load, there's no way to render a first cursor state =(
   clicked: false,
+  tooltipValue: null,
 }
 let canvas = document.createElement('canvas')
 let ctx = canvas.getContext('2d')
+
+let tooltip = document.createElement('input')
+tooltip.id = 'tooltip'
+tooltip.placeholder = 'Set goal...'
+
+let tooltipAfter = document.createElement('input')
+tooltipAfter.id = 'tooltip-after'
+
 document.body.appendChild(canvas)
+document.body.appendChild(tooltip)
+// document.body.appendChild(tooltipAfter)
 
 // === events
 window.addEventListener('resize', () => render())
@@ -60,6 +103,10 @@ window.addEventListener('click', (e) => {
   inputs.clicked = true
   // needed to update coords even when we already track mousemove. E.g. in Chrome, right click context menu, move elsewhere, then click to dismiss. BAM, mousemove triggers with stale/wrong (??) coordinates... Click again without moving, and now you're clicking on the wrong thing
   inputs.pointer.x = e.pageX - window.scrollX; inputs.pointer.y = e.pageY - window.scrollY
+  render()
+})
+tooltip.addEventListener('input', (e) => {
+  inputs.tooltipValue = e.target.value
   render()
 })
 
@@ -95,7 +142,10 @@ function render() {
     inputs.clicked && hover === customDot ? null
     : inputs.clicked ? hover
     : customDot
-  const cursor = hover == null ? 'auto' : 'pointer'
+  const cursor =
+    hover == null ? 'auto'
+    : hover === age || hover === newCustomDot ? 'move'
+    : 'pointer'
 
   // === step 5: render. Batch DOM writes
   // no blurry canvas: coderwall.com/p/vmkk6a/how-to-make-the-canvas-not-look-like-crap-on-retina
@@ -168,6 +218,20 @@ function render() {
   }
 
   document.body.style.cursor = cursor
+  // tooltipAfter.style.left = pointer.x
+  // tooltipAfter.style.top = pointer.y
+  tooltip.focus()
+  tooltip.style.left = pointer.x - 110
+  tooltip.style.top = pointer.y - 36
+  if (hover === age) {
+    tooltip.style.display = 'block'
+    tooltip.disabled = true
+    tooltip.value = `You're ${Math.floor(age / 365.25)}, born in ${months[Math.floor(age % 365.25 / 30)]}`
+  } else {
+    tooltip.style.display = hover === newCustomDot ? 'block' : 'none'
+    tooltip.disabled = false
+    tooltip.value = inputs.tooltipValue
+  }
 
   // === step 6: update state & prepare for next frame
   inputs.clicked = false
@@ -178,5 +242,11 @@ function render() {
 }
 
 render()
+/*
+TODOs:
+- drag today dot
+- tooltip
+- gl?
+*/
 </script>
 </body>
