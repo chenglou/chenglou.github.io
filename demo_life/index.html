@@ -3,6 +3,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Story of Your Life</title>
   <style>
+    body {
+      background-color: hsl(210, 38%, 95%);
+    }
     canvas {
       position: absolute;
     }
@@ -107,6 +110,8 @@ function render() {
 
   ctx.strokeStyle = 'hsl(120, 73%, 30%)'
   ctx.lineWidth = 0.5
+  const emptyColor = 'hsl(210, 38%, 95%)'
+  const filledColor = 'hsl(120, 73%, 75%)'
   for (let i = 0; i < life - 1; ) {
     const x = i % countX * blockSize
     const y = Math.floor(i / countX) * blockSize
@@ -114,18 +119,18 @@ function render() {
     const iPill = Math.floor(i / 7), agePill = Math.floor(age / 7), lifePill = Math.floor(life / 7)
     ctx.beginPath()
     if (iPill < agePill) {
-      ctx.fillStyle = 'hsl(120, 73%, 75%)'
+      ctx.fillStyle = filledColor
       ctx.roundRect(x, y, blockSize * 7, blockSize, pillRadius)
       i += 7
     } else if (iPill > agePill && iPill !== lifePill) { // TODO: check condition
-      ctx.fillStyle = 'white'
+      ctx.fillStyle = emptyColor
       ctx.roundRect(x, y, blockSize * 7, blockSize, pillRadius)
       i += 7
     } else {
       ctx.fillStyle =
-        i < age ? 'hsl(120, 73%, 75%)'
+        i < age ? filledColor
         : i === age ? 'hsl(120, 73%, 40%)'
-        : 'white'
+        : emptyColor
       ctx.roundRect(x, y, blockSize, blockSize, radius(i))
       i++
     }
