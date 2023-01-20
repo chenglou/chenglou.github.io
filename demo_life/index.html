@@ -28,18 +28,6 @@
     #tooltip::placeholder {
       color: #bbbbbb;
     }
-    #tooltip-after {
-      position: absolute;
-/*      bottom: -10px;*/
-/*      left: 50%;*/
-      width: 5px;
-      height: 5px;
-      box-sizing: border-box;
-      margin: 0 0 0 -4px;
-      content: " ";
-      border: 5px solid transparent;
-/*      border-top-color: var(--color-neutral-emphasis-plus);*/
-    }
   </style>
 </head>
 <body>
@@ -83,12 +71,8 @@ let tooltip = document.createElement('input')
 tooltip.id = 'tooltip'
 tooltip.placeholder = 'Set goal...'
 
-let tooltipAfter = document.createElement('input')
-tooltipAfter.id = 'tooltip-after'
-
 document.body.appendChild(canvas)
 document.body.appendChild(tooltip)
-// document.body.appendChild(tooltipAfter)
 
 // === events
 window.addEventListener('resize', () => render())
@@ -218,8 +202,6 @@ function render() {
   }
 
   document.body.style.cursor = cursor
-  // tooltipAfter.style.left = pointer.x
-  // tooltipAfter.style.top = pointer.y
   tooltip.focus()
   tooltip.style.left = pointer.x - 110
   tooltip.style.top = pointer.y - 36
