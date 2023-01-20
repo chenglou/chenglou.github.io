@@ -4,7 +4,7 @@
   <title>Story of Your Life</title>
   <style>
     body {
-      background-color: hsl(210, 38%, 95%);
+      background-color: #22272e;
     }
     canvas {
       position: absolute;
@@ -108,10 +108,10 @@ function render() {
   ctx.scale(devicePixelRatio, devicePixelRatio)
   ctx.clearRect(0, 0, gridFinalSizeX, gridFinalSizeY)
 
-  ctx.strokeStyle = 'hsl(120, 73%, 30%)'
+  ctx.strokeStyle = '#22272e'
   ctx.lineWidth = 0.5
-  const emptyColor = 'hsl(210, 38%, 95%)'
-  const filledColor = 'hsl(120, 73%, 75%)'
+  const emptyColor = 'hsl(214, 13%, 25%)'
+  const filledColor = '#39d353'
   for (let i = 0; i < life - 1; ) {
     const x = i % countX * blockSize
     const y = Math.floor(i / countX) * blockSize
@@ -129,7 +129,7 @@ function render() {
     } else {
       ctx.fillStyle =
         i < age ? filledColor
-        : i === age ? 'hsl(120, 73%, 40%)'
+        : i === age ? '#006d32'
         : emptyColor
       ctx.roundRect(x, y, blockSize, blockSize, radius(i))
       i++
@@ -159,7 +159,6 @@ function render() {
     drawOneDot(life - 1)
   }
 
-  ctx.strokeStyle = 'hsl(120, 73%, 40%)'
   for (let i = 1; i < countX; i++) {
     if (i % 7 === 0) continue
     ctx.moveTo(blockSize * i, 0)
