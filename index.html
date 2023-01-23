@@ -454,8 +454,7 @@ function render(now) {
       selection.removeAllRanges()
       selection.addRange(range)
     } else if (focused == null) { // in 2D grid mode. Find the box the pointer's on
-      const hit = hitTest2DMode(data, pointerXLocal, pointerYLocal)
-      if (hit != null) newFocused = hit
+      newFocused = hitTest2DMode(data, pointerXLocal, pointerYLocal) ?? newFocused
     } else { // 1D mode
       newFocused = hitTest1DMode(data, focused, newWindowSizeX, pointerXLocal)
     }
@@ -573,7 +572,7 @@ function render(now) {
   for (let {y} of data) y.pos += adjustedScrollTop - currentScrollTop
 
   // === step 4: run animation
-  let newAnimatedUntilTime = animatedUntilTime == null ? now : animatedUntilTime
+  let newAnimatedUntilTime = animatedUntilTime ?? now
   const steps = Math.floor((now - newAnimatedUntilTime) / msPerAnimationStep) // run x spring steps. Decouple physics simulation from framerate!
   newAnimatedUntilTime += steps * msPerAnimationStep
   let stillAnimating = false

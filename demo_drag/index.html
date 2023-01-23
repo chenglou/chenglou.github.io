@@ -209,7 +209,7 @@ function render(now) {
     : 'auto'
 
   // === step 4: run animation
-  let newAnimatedUntilTime = animatedUntilTime == null ? now : animatedUntilTime
+  let newAnimatedUntilTime = animatedUntilTime ?? now
   const steps = Math.floor((now - newAnimatedUntilTime) / msPerAnimationStep) // run x spring steps. Decouple physics simulation from framerate!
   newAnimatedUntilTime += steps * msPerAnimationStep
   let stillAnimating = false
