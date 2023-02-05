@@ -215,7 +215,6 @@ function render() {
   }
 
   document.body.style.cursor = cursor
-  tooltip.focus()
   tooltip.style.left = pointer.x - 110
   tooltip.style.top = pointer.y - 36
   if (hover === age) {
@@ -227,7 +226,7 @@ function render() {
     tooltip.disabled = false
     tooltip.value = inputs.tooltipValue
   }
-
+  tooltip.focus()
 
   // === step 6: update state & prepare for next frame
   inputs.clicked = false
