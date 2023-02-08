@@ -21,10 +21,11 @@ matchRoute(routes, 'shop/bla/blabla/10') // nested match
 matchRoute(routes, 'shop') // main shop page
 matchRoute(routes, 'bla') // 404
 matchRoute(routes, '') // main page
+matchRoute(routes, 'book/12/edita') // invalid operation
 
 function matchRoute(cases, url) {
   for (let regexString in cases) {
-    let match = url.match(new RegExp(regexString))
+    let match = url.match(new RegExp(regexString + '$'))
     if (match != null) {
       cases[regexString](...match.slice(1)) // Example: 'book/13/54' -> f('13', '54')
       break
