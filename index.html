@@ -655,7 +655,7 @@ function render(now) {
   // === step 6: update state & prepare for next frame
   if (adjustedScrollTop !== currentScrollTop) window.scrollTo({top: adjustedScrollTop}) // will trigger scrolling, thus next frame's render
   if (newFocused !== focused) {
-    window.history.pushState(null, null, `${window.location.pathname}${window.location.search}${newFocused == null ? '' : '#' + data[newFocused].id}`)
+    window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${newFocused == null ? '' : '#' + data[newFocused].id}`)
   }
   inputs.key = null
   inputs.clickedTarget = null
