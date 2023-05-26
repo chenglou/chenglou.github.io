@@ -510,7 +510,7 @@ function render(now) {
   let adjustedScrollTop = currentScrollTop
   const hoverMagnetFactor = 40
   if (newFocused == null) { // 2D mode
-    if (newFocused == null && focused != null) { // just dismissed 1D mode
+    if (focused != null) { // just dismissed 1D mode
       const focusedTop = rowsTop[Math.floor(focused / cols)]
       // if the dismissed box isn't fully shown, scroll to it (later after the render code block)
       if (focusedTop <= currentScrollTop || focusedTop + boxes2DSizeY[focused] >= currentScrollTop + windowSizeY) {
