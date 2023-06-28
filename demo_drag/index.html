@@ -62,13 +62,14 @@ function springGoToEnd(config) {
   config.v = 0
 }
 
+// === generic helper
+function center(containee, container) {
+  return (container - containee) / 2
+}
+
 // === constant layout metrics. The rest is dynamic
 const rowSizeX = 320
 const windowPaddingTop = 50
-
-function centerRow(windowSizeX) {
-  return (windowSizeX - rowSizeX) / 2
-}
 
 // === state
 let animatedUntilTime = null
@@ -94,7 +95,7 @@ let data = []; {
     data.push({
       id: i + '', // gonna drag rows around so we can't refer to a row by index. Assign a stable id
       sizeY,
-      x: spring(centerRow(windowSizeX)),
+      x: spring(center(rowSizeX, windowSizeX)),
       y: spring(0),
       scale: spring(1),
       node: node,
@@ -157,15 +158,12 @@ function render(now) {
   else if (inputs.pointerState === 'up') {
     if (dragged != null) {
       let dragIdx = data.findIndex(d => d.id === dragged.id)
-      let vx = 0, vy = 0, totalTime = 0
-      for (let i = pointer.length - 1; i >= 1 && totalTime < 100; i--) { // get last ~100ms of movements vectors/directions
-        vx += (pointer[i].x - pointer[i - 1].x)
-        vy += (pointer[i].y - pointer[i - 1].y)
-        totalTime += (pointer[i].time - pointer[i - 1].time)
-      }
-      vx = vx / totalTime * 1000 // average vector per time. Convert from ms to second
-      vy = vy / totalTime * 1000
-      data[dragIdx].x.v += vx; data[dragIdx].y.v += vy
+      let i = pointer.length - 1; while (i >= 0 && now - pointer[i].time <= 100) i-- // only consider last ~100ms of movements
+      let deltaTime = now - pointer[i].time
+      let vx = (pointerLast.x - pointer[i].x) / deltaTime * 1000 // speed over ~100ms, aka ~0.1s
+      let vy = (pointerLast.y - pointer[i].y) / deltaTime * 1000
+      data[dragIdx].x.v += vx
+      data[dragIdx].y.v += vy
     }
     newDragged = null
   } else {
@@ -179,7 +177,7 @@ function render(now) {
     let d = data[dragIdx]
     const x = pointerLast.x - newDragged.deltaX
     const y = pointerLast.y - newDragged.deltaY
-    d.x.pos = d.x.dest = x + (centerRow(windowSizeX) - x) / 1.5 // restrict horizontal drag a bit
+    d.x.pos = d.x.dest = x + (center(rowSizeX, windowSizeX) - x) / 1.5 // restrict horizontal drag a bit
     d.y.pos = d.y.dest = y
     d.scale.dest = 1.1
     // dragging row upward? Swap it with previous row if cursor is above the first half previous row
@@ -197,7 +195,7 @@ function render(now) {
   for (let d of data) {
     if (newDragged && d.id === newDragged.id) { // already modified above
     } else {
-      d.x.dest = centerRow(windowSizeX)
+      d.x.dest = center(rowSizeX, windowSizeX)
       d.y.dest = top
       d.scale.dest = 1
     }
