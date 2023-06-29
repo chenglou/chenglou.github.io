@@ -160,7 +160,7 @@ function render(now) {
       let dragIdx = data.findIndex(d => d.id === dragged.id)
       let i = pointer.length - 1; while (i >= 0 && now - pointer[i].time <= 100) i-- // only consider last ~100ms of movements
       let deltaTime = now - pointer[i].time
-      let vx = (pointerLast.x - pointer[i].x) / deltaTime * 1000 // speed over ~100ms, aka ~0.1s
+      let vx = (pointerLast.x - pointer[i].x) / deltaTime * 1000 // speed over ~1s
       let vy = (pointerLast.y - pointer[i].y) / deltaTime * 1000
       data[dragIdx].x.v += vx
       data[dragIdx].y.v += vy
