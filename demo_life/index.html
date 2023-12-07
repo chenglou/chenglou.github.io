@@ -36,7 +36,7 @@
 
 const life = Math.floor(75 * 365.25)
 const today = new Date().getDay() // sunday = 0
-const age = Math.floor((30 * 365.25 + 6 * 30.5 - 10) / 7) * 7 + today - 1 // rough days, rounded to week, 0-indexed
+const age = Math.floor((31 * 365.25 + 6 * 30.5 - 10) / 7) * 7 + today - 1 // rough days, rounded to week, 0-indexed
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
 // === generic helpers
@@ -221,6 +221,10 @@ function render() {
     tooltip.style.display = 'block'
     tooltip.disabled = true
     tooltip.value = `You're ${Math.floor(age / 365.25)}, born in ${months[Math.floor(age % 365.25 / 30)]}`
+  } else if (hover === life - 1) {
+    tooltip.style.display = 'block'
+    tooltip.disabled = true
+    tooltip.value = 'Good bye'
   } else {
     tooltip.style.display = hover != null && hover === newCustomDot ? 'block' : 'none'
     tooltip.disabled = false
