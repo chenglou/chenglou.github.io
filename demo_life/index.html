@@ -60,13 +60,10 @@ function radius(i) {
 const customDot_ = localStorage.getItem('customDot')
 let customDot = customDot_ == null ? null : parseInt(customDot_)
 let customDotValue = localStorage.getItem('customDotValue')
-let inputs = {
-  /** @type 'down' | 'up' | 'firstDown' */
-  pointerState: 'up',
-  pointer: {x: -Infinity, y: -Infinity}, // btw, on page load, there's no way to render a first cursor state =(
-  clicked: false,
-  tooltipValue: customDotValue,
-}
+/** @type 'down' | 'up' | 'firstDown' */
+let pointerState = 'up'
+let pointer = {x: -Infinity, y: -Infinity} // btw, on page load, there's no way to render a first cursor state =(,
+let events = {click: null, input: null, mouseup: null, mousemove: null, pointerdown: null}
 let canvas = document.createElement('canvas')
 let ctx = canvas.getContext('2d')
 
@@ -80,32 +77,11 @@ document.body.appendChild(tooltip)
 // === events
 // pointermove doesn't work on android, pointerdown isn't fired on Safari on the first left click after dismissing context menus, mousedown doesn't trigger properly on mobile, pointerup isn't triggered when pointer panned (at least on iOS), don't forget contextmenu event. Tldr there's no pointer event that works cross-browser that can replace mouse & touch events.
 window.addEventListener('resize', () => render())
-window.addEventListener('click', (e) => {
-  inputs.clicked = true
-  // needed to update coords even when we already track mousemove. E.g. in Chrome, right click context menu, move elsewhere, then click to dismiss. BAM, mousemove triggers with stale/wrong (??) coordinates... Click again without moving, and now you're clicking on the wrong thing
-  inputs.pointer.x = e.pageX - window.scrollX; inputs.pointer.y = e.pageY - window.scrollY
-  render()
-})
-tooltip.addEventListener('input', (e) => {
-  inputs.tooltipValue = e.target.value
-  render()
-})
-window.addEventListener("mouseup", (e) => {
-  inputs.pointerState = 'up'
-  render()
-})
-window.addEventListener('mousemove', (e) => {
-  // when scrolling (which might schedule a render), a container's mousemove doesn't trigger, so the pointer's local coordinates are stale
-  // this means we should only use pointer's global coordinates, which is always right (thus the subtraction of scroll)
-  inputs.pointer.x = e.pageX -/*toGlobal*/window.scrollX; inputs.pointer.y = e.pageY -/*toGlobal*/window.scrollY
-  // btw, pointer can exceed document bounds, e.g. dragging reports back out-of-bound, legal negative values
-  render()
-})
-window.addEventListener('pointerdown', (e) => {
-  inputs.pointerState = 'firstDown'
-  inputs.pointer.x = e.pageX - window.scrollX; inputs.pointer.y = e.pageY - window.scrollY
-  render()
-})
+window.addEventListener('click', (e) => {events.click = e; render()})
+tooltip.addEventListener('input', (e) => {events.input = e; render()})
+window.addEventListener("mouseup", (e) => {events.mouseup = e; render()})
+window.addEventListener('mousemove', (e) => {events.mousemove = e; render()})
+window.addEventListener('pointerdown', (e) => {events.pointerdown = e; render()})
 
 // === hit testing logic. Boxes' hit area should be static and not follow their current animated state usually (but we can do either). Use the dynamic area here for once
 function hitTest(blockSize, countX, countY, gridLeft, gridTop, gridFinalSizeX, gridFinalSizeY, pointer) {
@@ -116,13 +92,37 @@ function hitTest(blockSize, countX, countY, gridLeft, gridTop, gridFinalSizeX, g
 }
 
 function render() {
+  // === step 0: process events
+  // click
+  let clicked = false
+  if (events.click != null) {
+    clicked = true
+    // needed to update coords even when we already track mousemove. E.g. in Chrome, right click context menu, move elsewhere, then click to dismiss. BAM, mousemove triggers with stale/wrong (??) coordinates... Click again without moving, and now you're clicking on the wrong thing
+    pointer.x = events.click.pageX - window.scrollX; pointer.y = events.click.pageY - window.scrollY
+  }
+  // input
+  const newCustomDotValue = events.input == null ? null : events.input.target.value
+  // mouseup
+  if (events.mouseup != null) pointerState = 'up'
+  // mousemove
+  if (events.mousemove != null) {
+    // when scrolling (which might schedule a render), a container's mousemove doesn't trigger, so the pointer's local coordinates are stale
+    // this means we should only use pointer's global coordinates, which is always right (thus the subtraction of scroll)
+    pointer.x = events.mousemove.pageX -/*toGlobal*/window.scrollX; pointer.y = events.mousemove.pageY -/*toGlobal*/window.scrollY
+    // btw, pointer can exceed document bounds, e.g. dragging reports back out-of-bound, legal negative values
+  }
+  // pointerdown
+  if (events.pointerdown != null) {
+    pointerState = 'firstDown'
+    pointer.x = events.pointerdown.pageX - window.scrollX; pointer.y = events.pointerdown.pageY - window.scrollY
+  }
+
   // === step 1: batched DOM reads (to avoid accidental DOM read & write interleaving)
   const devicePixelRatio = window.devicePixelRatio
   const windowSizeX = document.documentElement.clientWidth
   const windowSizeY = window.innerHeight
   const gridSizeX = windowSizeX - gridGap
   const gridSizeY = windowSizeY - gridGap
-  let {pointer} = inputs
 
   const blockSize_ = (life * Math.sqrt((4*life*gridSizeX*gridSizeY + (7*gridSizeY)**2) / (life**2)) + 7 * gridSizeY) / 2 / life
   const countX = Math.floor((gridSizeX / blockSize_) / 7) * 7
@@ -136,8 +136,8 @@ function render() {
   // === step 2: handle inputs-related state change
   const hover = hitTest(blockSize, countX, countY, gridLeft, gridTop, gridFinalSizeX, gridFinalSizeY, pointer)
   const newCustomDot =
-    inputs.clicked && hover === customDot ? null
-    : inputs.clicked ? hover
+    clicked && hover === customDot ? null
+    : clicked ? hover
     : customDot
   const cursor =
     hover == null ? 'auto'
@@ -224,21 +224,20 @@ function render() {
   } else {
     tooltip.style.display = hover != null && hover === newCustomDot ? 'block' : 'none'
     tooltip.disabled = false
-    tooltip.value = inputs.tooltipValue
+    tooltip.value = newCustomDotValue == null ? customDotValue : newCustomDotValue
   }
   tooltip.focus()
 
   // === step 6: update state & prepare for next frame
-  inputs.clicked = false
-  // inputs.tooltipValue = null
   if (customDot !== newCustomDot) {
     localStorage.setItem('customDot', newCustomDot) // TODO: validate (e.g. out of range)
     customDot = newCustomDot
   }
-  if (customDotValue !== inputs.tooltipValue) {
-    localStorage.setItem('customDotValue', inputs.tooltipValue) // TODO: validate (e.g. out of range)
-    customDotValue = inputs.tooltipValue
+  if (newCustomDotValue != null && customDotValue !== newCustomDotValue) {
+    localStorage.setItem('customDotValue', newCustomDotValue) // TODO: validate (e.g. out of range)
+    customDotValue = newCustomDotValue
   }
+  events.click = events.input = events.mouseup = events.mousemove = events.pointerdown = null
 }
 
 render()
