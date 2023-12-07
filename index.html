@@ -74,18 +74,13 @@
 'use strict'
 
 // === generic scheduler & its debugger
-const debug = false // toggle this for manually stepping through animation frames (press key A)
-let debugTimestamp = 0
 let scheduledRender = false
-function scheduleRender(debugForceRender) {
-  if (debug && !debugForceRender) return
+function scheduleRender() {
   if (scheduledRender) return;
   scheduledRender = true
-
   requestAnimationFrame(function renderAndMaybeScheduleAnotherRender(now) { // eye-grabbing name. No "(anonymous)" function in the debugger & profiler
     scheduledRender = false
-    debugTimestamp += 1000 / 60
-    if (render(debug ? debugTimestamp : now)) scheduleRender()
+    if (render(now)) scheduleRender()
   })
 }
 
@@ -138,16 +133,15 @@ function colsBoxMaxSizeXF(containerSizeX) {
 }
 
 // === state. Plus one in the URL's hash
+const debug = false // toggle this for manually stepping through animation frames (press key A)
+let debugTimestamp = 0
 let animatedUntilTime = null
 let reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
 let anchor = 0 // keep a box stable during resize layout shifts
 let windowSizeX = document.documentElement.clientWidth
 let scrollTop = window.scrollY
-let inputs = {
-  pointer: {x: -Infinity, y: -Infinity}, // btw, on page load, there's no way to render a first cursor state =(
-  key: null,
-  clickedTarget: null,
-}
+let pointer = {x: -Infinity, y: -Infinity} // btw, on page load, there's no way to render a first cursor state =(
+let events = { keydown: null, click: null, mousemove: null }
 let data; {
   const windowSizeY = document.documentElement.clientHeight
   const {cols, boxMaxSizeX} = colsBoxMaxSizeXF(windowSizeX)
@@ -404,26 +398,9 @@ function springForEach(f) { // no spring ownership struggle between the spring l
 window.addEventListener('resize', () => scheduleRender())
 window.addEventListener('scroll', () => scheduleRender())
 window.addEventListener('popstate', () => scheduleRender())
-window.addEventListener('keydown', (e) => {
-  if (e.code === 'KeyA') scheduleRender(true) // debug
-  else if (e.code === 'Escape' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
-    inputs.key = e.code
-    scheduleRender()
-  }
-})
-window.addEventListener('click', (e) => {
-  inputs.clickedTarget = e.target
-  // needed to update coords even when we already track mousemove. E.g. in Chrome, right click context menu, move elsewhere, then click to dismiss. BAM, mousemove triggers with stale/wrong (??) coordinates... Click again without moving, and now you're clicking on the wrong thing
-  inputs.pointer.x = e.pageX - window.scrollX; inputs.pointer.y = e.pageY - window.scrollY
-  scheduleRender()
-})
-window.addEventListener('mousemove', (e) => {
-  // when scrolling (which might schedule a render), a container's mousemove doesn't trigger, so the pointer's local coordinates are stale
-  // this means we should only use pointer's global coordinates, which is always right (thus the subtraction of scroll)
-  inputs.pointer.x = e.pageX -/*toGlobal*/window.scrollX; inputs.pointer.y = e.pageY -/*toGlobal*/window.scrollY
-  // btw, pointer can exceed document bounds, e.g. dragging reports back out-of-bound, legal negative values
-  scheduleRender()
-})
+window.addEventListener('keydown', (e) => {events.keydown = e; scheduleRender()})
+window.addEventListener('click', (e) => {events.click = e; scheduleRender()})
+window.addEventListener('mousemove', (e) => {events.mousemove = e; scheduleRender()})
 
 // === static DOM initialization. Just 1 in this app. The more you have here the more your app looks like a PDF document. Minimize
 let dummyPlaceholder = document.createElement('div')
@@ -448,6 +425,30 @@ function hitTest1DMode(data, focused, windowSizeX, pointerX) {
 }
 
 function render(now) {
+  // === step 0: process events
+  // keydown
+  const inputCode = events.keydown == null ? null : events.keydown.code
+
+  // click
+  let clickedTarget = null
+  if (events.click != null) {
+    // needed to update coords even when we already track mousemove. E.g. in Chrome, right click context menu, move elsewhere, then click to dismiss. BAM, mousemove triggers with stale/wrong (??) coordinates... Click again without moving, and now you're clicking on the wrong thing
+    clickedTarget = events.click.target
+    pointer.x = events.click.pageX - window.scrollX; pointer.y = events.click.pageY - window.scrollY
+  }
+  // mousemove
+  if (events.mousemove != null) {
+    // when scrolling (which might schedule a render), a container's mousemove doesn't trigger, so the pointer's local coordinates are stale
+    // this means we should only use pointer's global coordinates, which is always right (thus the subtraction of scroll)
+    pointer.x = events.mousemove.pageX -/*toGlobal*/window.scrollX; pointer.y = events.mousemove.pageY -/*toGlobal*/window.scrollY
+    // btw, pointer can exceed document bounds, e.g. dragging reports back out-of-bound, legal negative values
+  }
+
+  if (debug) {
+    if (inputCode === 'KeyA') debugTimestamp += 1000 / 60
+    now = debugTimestamp
+  }
+
   // === step 1: batched DOM reads (to avoid accidental DOM read & write interleaving)
   const newWindowSizeX = document.documentElement.clientWidth // excludes scroll bar & invariant under safari pinch zoom
   const windowSizeY = document.documentElement.clientHeight // same
@@ -458,22 +459,22 @@ function render(now) {
 
   let focused = null; for (let i = 0; i < data.length; i++) if (data[i].id === hashImgId) focused = i
   // don't forget top & bottom safari UI chrome sizes when vertically occluding, since they're transluscent so we can't over-occlude by ignoring them
-  const pointerXLocal = inputs.pointer.x +/*toLocal*/window.scrollX, pointerYLocal = inputs.pointer.y +/*toLocal*/currentScrollTop
+  const pointerXLocal = pointer.x +/*toLocal*/window.scrollX, pointerYLocal = pointer.y +/*toLocal*/currentScrollTop
 
   // === step 2: handle inputs-related state change
   // keys
   let newFocused =
-    inputs.key === 'Escape' ? null
-    : inputs.key != null && focused == null ? 0
-    : inputs.key === 'ArrowLeft' ? Math.max(0, focused - 1)
-    : inputs.key === 'ArrowRight' ? Math.min(data.length - 1, focused + 1)
+    inputCode === 'Escape' ? null
+    : (inputCode === 'ArrowLeft' || inputCode === 'ArrowRight') && focused == null ? 0
+    : inputCode === 'ArrowLeft' ? Math.max(0, focused - 1)
+    : inputCode === 'ArrowRight' ? Math.min(data.length - 1, focused + 1)
     : focused
   // pointer
-  if (inputs.clickedTarget != null) { // clicked
-    if (inputs.clickedTarget.tagName === 'FIGCAPTION') { // select the whole prompt
+  if (clickedTarget != null) { // clicked
+    if (clickedTarget.tagName === 'FIGCAPTION') { // select the whole prompt
       let selection = window.getSelection()
       let range = document.createRange()
-      range.selectNodeContents(inputs.clickedTarget)
+      range.selectNodeContents(clickedTarget)
       selection.removeAllRanges()
       selection.addRange(range)
     } else if (focused == null) { // in 2D grid mode. Find the box the pointer's on
@@ -562,8 +563,8 @@ function render(now) {
     }
 
     const edgeRubberBandVelocityX = // feedback when you hit first/last image and keep pressing left/right key
-      inputs.key === 'ArrowLeft' && focused === 0 ? 2 * 1000 // 2 pixels per second
-      : inputs.key === 'ArrowRight' && focused === data.length - 1 ? -2 * 1000
+      inputCode === 'ArrowLeft' && focused === 0 ? 2 * 1000 // 2 pixels per second
+      : inputCode === 'ArrowRight' && focused === data.length - 1 ? -2 * 1000
       : 0
     for (let i = 0; i < data.length; i++) { // calculate boxes positions
       let d = data[i]
@@ -657,8 +658,7 @@ function render(now) {
   if (newFocused !== focused) {
     window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${newFocused == null ? '' : '#' + data[newFocused].id}`)
   }
-  inputs.key = null
-  inputs.clickedTarget = null
+  events.keydown = events.click = events.mousemove = null
   animatedUntilTime = stillAnimating ? newAnimatedUntilTime : null
   anchor = newAnchor
   windowSizeX = newWindowSizeX
