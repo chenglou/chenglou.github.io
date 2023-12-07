@@ -407,7 +407,10 @@ let dummyPlaceholder = document.createElement('div')
 dummyPlaceholder.style.position = 'absolute'
 dummyPlaceholder.style.width = '1px' // make it tiny in case it affects compositing... sigh lamport.azurewebsites.net/pubs/future-of-computing.pdf
 document.body.append(dummyPlaceholder)
-if (debug) document.documentElement.style.background = 'repeating-linear-gradient(#e66465 0px, #9198e5 300px)'
+if (debug) {
+  document.documentElement.style.background = 'repeating-linear-gradient(#e66465 0px, #9198e5 300px)'
+  document.documentElement.style.height = '100%'
+}
 
 // === hit testing logic. Boxes' hit area should be static and not follow their current animated state usually (but we can do either)
 function hitTest2DMode(data, pointerX, pointerY) {
