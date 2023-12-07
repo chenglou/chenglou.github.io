@@ -26,10 +26,9 @@
 
 // === generic scheduler & its debugger
 let scheduledRender = false
-function scheduleRender(debugForceRender) {
+function scheduleRender() {
   if (scheduledRender) return;
   scheduledRender = true
-
   requestAnimationFrame(function renderAndMaybeScheduleAnotherRender(now) { // eye-grabbing name. No "(anonymous)" function in the debugger & profiler
     scheduledRender = false
     if (render(now)) scheduleRender()
@@ -75,11 +74,10 @@ const windowPaddingTop = 50
 let animatedUntilTime = null
 let dragged = null
 let lastDragged = null
-let inputs = {
-  /** @type 'down' | 'up' | 'firstDown' */
-  pointerState: 'up',
-  pointer: [{x: 0, y: 0, time: 0}] // circular buffer. Btw, on page load, there's no way to render a first cursor state =(
-}
+/** @type 'down' | 'up' | 'firstDown' */
+let pointerState = 'up'
+let pointer = [{x: 0, y: 0, time: 0}] // circular buffer. Btw, on page load, there's no way to render a first cursor state =(
+let events = { mouseup: null, touchend: null, mousemove: null, touchmove: null, pointerdown: null }
 let data = []; {
   const windowSizeX = document.documentElement.clientWidth // excludes scroll bar & invariant under safari pinch zoom
   for (let i = 0; i < 5; i++) {
@@ -112,30 +110,11 @@ function springForEach(f) {
 // === events
 // pointermove doesn't work on android, pointerdown isn't fired on Safari on the first left click after dismissing context menus, mousedown doesn't trigger properly on mobile, pointerup isn't triggered when pointer panned (at least on iOS), don't forget contextmenu event. Tldr there's no pointer event that works cross-browser that can replace mouse & touch events.
 window.addEventListener('resize', () => scheduleRender())
-window.addEventListener("mouseup", (e) => {
-  inputs.pointerState = 'up'
-  scheduleRender()
-})
-window.addEventListener("touchend", (e) => {
-  inputs.pointerState = 'up'
-  scheduleRender()
-})
-window.addEventListener("mousemove", (e) => {
-  // when scrolling (which might schedule a render), a container's pointermove doesn't trigger, so the pointer's local coordinates are stale
-  // this means we should only use pointer's global coordinates, which is always right
-  inputs.pointer.push({x: e.pageX, y: e.pageY, time: performance.now()})
-  // btw, pointer can exceed document bounds, e.g. dragging reports back out-of-bound, legal negative values
-  scheduleRender()
-})
-window.addEventListener("touchmove", (e) => {
-  inputs.pointer.push({x: e.touches[0].pageX, y: e.touches[0].pageY, time: performance.now()})
-  scheduleRender()
-})
-window.addEventListener('pointerdown', (e) => {
-  inputs.pointerState = 'firstDown'
-  inputs.pointer.push({x: e.pageX, y: e.pageY, time: performance.now()})
-  scheduleRender()
-})
+window.addEventListener("mouseup", (e) => {events.mouseup = e; scheduleRender()})
+window.addEventListener("touchend", (e) => {events.touchend = e; scheduleRender()})
+window.addEventListener("mousemove", (e) => {events.mousemove = e; scheduleRender()})
+window.addEventListener("touchmove", (e) => {events.touchmove = e; scheduleRender()})
+window.addEventListener('pointerdown', (e) => {events.pointerdown = e; scheduleRender()})
 
 // === hit testing logic. Boxes' hit area should be static and not follow their current animated state usually (but we can do either). Use the dynamic area here for once
 function hitTest(data, pointer) {
@@ -146,16 +125,29 @@ function hitTest(data, pointer) {
 }
 
 function render(now) {
+  // === step 0: process events
+  // mouseup/touchend
+  if (events.mouseup || events.touchend) pointerState = 'up'
+  // move
+  // when scrolling (which might schedule a render), a container's pointermove doesn't trigger, so the pointer's local coordinates are stale
+  // this means we should only use pointer's global coordinates, which is always right
+  if (events.mousemove) pointer.push({x: events.mousemove.pageX, y: events.mousemove.pageY, time: performance.now()})
+  if (events.touchmove) pointer.push({x: events.touchmove.touches[0].pageX, y: events.touchmove.touches[0].pageY, time: performance.now()})
+  // down
+  if (events.pointerdown) {
+    pointerState = 'firstDown'
+    pointer.push({x: events.pointerdown.pageX, y: events.pointerdown.pageY, time: performance.now()})
+  }
+
   // === step 1: batched DOM reads (to avoid accidental DOM read & write interleaving)
   const windowSizeX = document.documentElement.clientWidth // excludes scroll bar & invariant under safari pinch zoom
-  let {pointer} = inputs
   const pointerLast = pointer.at(-1) // guaranteed non-null since pointer.length >= 1
 
   // === step 2: handle inputs-related state change
   let newDragged
   let releaseVelocity = null
-  if (inputs.pointerState === 'down') newDragged = dragged
-  else if (inputs.pointerState === 'up') {
+  if (pointerState === 'down') newDragged = dragged
+  else if (pointerState === 'up') {
     if (dragged != null) {
       let dragIdx = data.findIndex(d => d.id === dragged.id)
       let i = pointer.length - 1; while (i >= 0 && now - pointer[i].time <= 100) i-- // only consider last ~100ms of movements
@@ -236,12 +228,13 @@ function render(now) {
   document.body.style.cursor = cursor
 
   // === step 6: update state & prepare for next frame
-  if (inputs.pointerState === 'firstDown') inputs.pointerState = 'down'
+  if (pointerState === 'firstDown') pointerState = 'down'
   if (dragged && newDragged == null) lastDragged = dragged
   dragged = newDragged
   animatedUntilTime = stillAnimating ? newAnimatedUntilTime : null
-  if (inputs.pointerState === 'up') inputs.pointer = [{x: 0, y: 0, time: 0}]
-  if (inputs.pointer.length > 20) inputs.pointer.shift() // keep last ~20
+  if (pointerState === 'up') pointer = [{x: 0, y: 0, time: 0}]
+  if (pointer.length > 20) pointer.shift() // keep last ~20
+  events.mouseup = events.touchend = events.mousemove = events.touchmove = events.pointerdown = null
 
   return stillAnimating
 }
