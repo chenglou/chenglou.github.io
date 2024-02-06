@@ -3,7 +3,7 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "start": "bun --hot src/server.ts",
+    "start": "bun --watch src/server.ts",
     "check": "tsc --noEmit"
   },
   "devDependencies": {
