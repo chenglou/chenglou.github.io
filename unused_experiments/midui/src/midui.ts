@@ -1,15 +1,37 @@
 // === generic scheduler & its debugger
-export function makeScheduler(render: ((now: number) => boolean)) {
+export function makeScheduler<K extends keyof WindowEventMap>(
+  events: Array<K>,
+  render: ((now: number, events: { [K in keyof WindowEventMap]: WindowEventMap[K] | null }, animationSteps: number) => boolean),
+) {
   let scheduledRender = false
-  return function scheduleRender() {
+
+  let initEvents = {} as { [K in keyof WindowEventMap]: WindowEventMap[K] | null }
+  for (const key of events) {
+    initEvents[key] = null
+    window.addEventListener(key, (e) => { initEvents[key] = e; scheduleRender() })
+  }
+
+  let animatedUntilTime: number | null = null
+
+  function scheduleRender() {
     if (scheduledRender) return
     scheduledRender = true
 
     requestAnimationFrame(function renderAndMaybeScheduleAnotherRender(now) { // eye-grabbing name. No "(anonymous)" function in the debugger & profiler
       scheduledRender = false
-      if (render(now)) scheduleRender()
+
+      let newAnimatedUntilTime = animatedUntilTime ?? now
+      const animationSteps = Math.floor((now - newAnimatedUntilTime) / msPerAnimationStep) // run x animation steps. Decouple physics simulation from framerate!
+      newAnimatedUntilTime += animationSteps * msPerAnimationStep
+      const stillAnimating = render(now, initEvents, animationSteps)
+      animatedUntilTime = stillAnimating ? newAnimatedUntilTime : null
+
+      for (const key of events) initEvents[key] = null
+      if (stillAnimating) scheduleRender()
     })
   }
+
+  return scheduleRender
 }
 
 // === generic spring physics
