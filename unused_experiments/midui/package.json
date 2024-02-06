@@ -1,0 +1,15 @@
+{
+  "name": "midui",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "start": "bun --hot src/server.ts",
+    "check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
