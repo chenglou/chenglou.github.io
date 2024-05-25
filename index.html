@@ -132,6 +132,17 @@ function colsBoxMaxSizeXF(containerSizeX) {
   return {cols, boxMaxSizeX}
 }
 
+const isSafari = navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome') // Chrome also includes Safari in user-agent string
+if (isSafari) {
+  // alright *deep breath* Desktop Safari is fine, but iPad Safari behaves badly when items exceed the viewport in 1D mode (overflow hidden doesn't work!). This is prominent if you hold arrow right and check the GitHub logo move. It's especially pathological on Stage Manager and any other iPad Safari mode where the app window shrinks and bugs the browser more for whatever reason
+  // so we use contain: layout plus viewport width and height to force the clipping of items. Now every browser behaves well with these, BUT Chrome doesn't have rubberbanding of inner elements (only page-wide one). So YES I'm switching to scrolling page instead of document body for Chrome JUST FOR THE RUBBER BANDING on macOS.
+  // this is how much I care about edge scroll rubber banding. Thanks Bas Ording & old Apple. If browser specs folks were more visual & interactions-driven as opposed to being static document-driven then we wouldn't have a decade-long decline of visual & interaction design as a discipline.
+  // it's a good thing these hacks are easy to pull off under this architecture, and quite readable and even robust despite changing whole container logics
+  document.body.style.contain = 'layout'
+  document.body.style.width = '100vw'
+  document.body.style.height = '100vh'
+}
+
 // === state. Plus one in the URL's hash
 const debug = false // toggle this for manually stepping through animation frames (press key A)
 let debugTimestamp = 0
@@ -139,7 +150,7 @@ let animatedUntilTime = null
 let reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
 let anchor = 0 // keep a box stable during resize layout shifts
 let windowSizeX = document.documentElement.clientWidth
-let scrollY = window.scrollY
+let scrollY = isSafari ? document.body.scrollTop : window.scrollY
 let pointer = {x: -Infinity, y: -Infinity} // btw, on page load, there's no way to render a first cursor state =(
 let events = { keydown: null, click: null, mousemove: null }
 let data; {
@@ -406,7 +417,7 @@ function springForEach(f) { // no spring ownership struggle between the spring l
 // === events
 // pointermove doesn't work on android, pointerdown isn't fired on Safari on the first left click after dismissing context menus, mousedown doesn't trigger properly on mobile, pointerup isn't triggered when pointer panned (at least on iOS), don't forget contextmenu event. Tldr there's no pointer event that works cross-browser that can replace mouse & touch events.
 window.addEventListener('resize', () => scheduleRender())
-window.addEventListener('scroll', () => scheduleRender())
+window.addEventListener('scroll', () => scheduleRender(), true) // capture is needed for iPad Safari...
 window.addEventListener('popstate', () => scheduleRender())
 window.addEventListener('keydown', (e) => {events.keydown = e; scheduleRender()})
 window.addEventListener('click', (e) => {events.click = e; scheduleRender()})
@@ -447,11 +458,12 @@ function render(now) {
   if (events.click != null) {
     // needed to update coords even when we already track mousemove. E.g. in Chrome, right click context menu, move elsewhere, then click to dismiss. BAM, mousemove triggers with stale/wrong (??) coordinates... Click again without moving, and now you're clicking on the wrong thing
     clickedTarget = events.click.target
-    pointer.x = events.click.pageX - window.scrollX; pointer.y = events.click.pageY - window.scrollY
+    pointer.x = events.click.clientX; pointer.y = events.click.clientY
   }
   // mousemove
   if (events.mousemove != null) {
-    pointer.x = events.mousemove.pageX -/*toGlobal*/window.scrollX; pointer.y = events.mousemove.pageY -/*toGlobal*/window.scrollY
+    // we only use clientX/Y, not pageX/Y, because we want to ignore scrolling. See comment around isSafari above; we either scroll body or window depending on the browser, so pageX/Y might be meaningless (if Safari)
+    pointer.x = events.mousemove.clientX; pointer.y = events.mousemove.clientY
     // btw, pointer can exceed document bounds, e.g. dragging reports back out-of-bound, legal negative values
   }
 
@@ -465,8 +477,8 @@ function render(now) {
   const windowSizeY = document.documentElement.clientHeight // same
   // this way, when pinch zooming in, we don't occlude away rows outside of the view; if we did, when we zoom out again we wouldn't see those occluded rows until we release our fingers. During safari pinch, no event is triggered so we couldn't have updated the occlusion in real time
   const animationDisabled = reducedMotion.matches
-  const currentScrollY = window.scrollY
-  const currentScrollX = window.scrollX
+  const currentScrollY = isSafari ? document.body.scrollTop : window.scrollY
+  const currentScrollX = isSafari ? document.body.scrollLeft : window.scrollX
   const hashImgId = window.location.hash.slice(1)
 
   let focused = null; for (let i = 0; i < data.length; i++) if (data[i].id === hashImgId) focused = i
@@ -666,7 +678,11 @@ function render(now) {
   dummyPlaceholder.style.height = `${rowsTop.at(-1)}px` // Chrome has race conditon if scrollTo is called before setting a longer dummy height
 
   // === step 6: update state & prepare for next frame
-  if (adjustedScrollTop !== currentScrollY) window.scrollTo({top: adjustedScrollTop}) // will trigger scrolling, thus next frame's render
+  // if (adjustedScrollTop !== currentScrollTop) window.scrollTo({top: adjustedScrollTop}) // will trigger scrolling, thus next frame's render
+  if (adjustedScrollTop !== currentScrollY) {
+    // see comment about isSafari above
+    (isSafari ? document.body : window).scrollTo({top: adjustedScrollTop}) // will trigger scrolling, thus next frame's render
+  }
   if (newFocused !== focused) {
     window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${newFocused == null ? '' : '#' + data[newFocused].id}`)
   }
