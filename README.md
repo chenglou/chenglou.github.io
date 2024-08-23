@@ -34,25 +34,4 @@ For developers:
 - **Minimal DOM nodes**. A clean, wrapper-divs-free inspector experience.
 
 ## Architecture
-
-```mermaid
-flowchart TB
-  subgraph Initialization
-    ISstate["State declaration"]
-    IDOM["Static DOM chunks"]
-    IEvents["Events Registration (all static)"]
-  end
-  IEvents -- triggers --> Render
-  subgraph Render["Render (1 frame)"]
-    direction TB
-    A("DOM reads (batched)") --> State
-    subgraph State["State changes"]
-      direction TB
-      B("Handle inputs") --> C("New layout & cursor")
-      C --> D("Animation tick")
-      D --> E("Occlusion & render DOM writes (batched)")
-    end
-    State --> F("Commit state changes")
-  end
-  Render -- "\nProgrammatic scroll/more animation?" --> Render
-```
+![IMG_6937](https://github.com/user-attachments/assets/caee340e-cc75-4611-9d81-bc31aca0457b)
