@@ -17,7 +17,7 @@
     "verbatimModuleSyntax": true,
     "noEmit": true,
 
-    // turned on almost all type checking options because this codebase needs Jesus
+    // turned on all useful type checking options and none of the nitpicky ones. If a rule isn't here, it's deemed unnecessary
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitReturns": true,
@@ -25,7 +25,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "exactOptionalPropertyTypes": true,
-    "allowUnreachableCode": true, // we allow this because our editor settings' uses "source.fixAll", which fixes everything on save. But then temporarily dead code gets removed during iteration, which sucks
+    "allowUnreachableCode": true, // we allow this because our editor settings uses "source.fixAll", which fixes everything on save. But then temporarily dead code gets removed during iteration, which sucks
     // so we replace this with eslint's "no-unreachable" rule, which isn't auto-fixed
     "noFallthroughCasesInSwitch": true,
     "noPropertyAccessFromIndexSignature": true, // don't disable this. This is our life-saver

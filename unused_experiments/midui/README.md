@@ -5,7 +5,7 @@ bun install
 bun start
 ```
 
-Check type errors
+Check type & lint errors
 
 ```sh
 bun check
