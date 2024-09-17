@@ -1,11 +1,15 @@
 {
   "compilerOptions": {
-    "lib": ["ESNext", "dom"],
+    "lib": [
+      "ESNext",
+      "dom",
+    ],
     "target": "ESNext",
     "module": "ESNext",
     "moduleDetection": "force",
     "jsx": "react-jsx",
-    "allowJs": true,
+    "incremental": false, // this causes subtle wrong caching at module boundaries
+    "skipLibCheck": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -13,10 +17,20 @@
     "verbatimModuleSyntax": true,
     "noEmit": true,
 
-    /* Linting */
-    "skipLibCheck": true,
+    // turned on almost all type checking options because this codebase needs Jesus
     "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    "allowUnreachableCode": true, // we allow this because our editor settings' uses "source.fixAll", which fixes everything on save. But then temporarily dead code gets removed during iteration, which sucks
+    // so we replace this with eslint's "no-unreachable" rule, which isn't auto-fixed
     "noFallthroughCasesInSwitch": true,
-    "forceConsistentCasingInFileNames": true
+    "noPropertyAccessFromIndexSignature": true, // don't disable this. This is our life-saver
+    "allowSyntheticDefaultImports": true,
+    "allowJs": false,
+    "forceConsistentCasingInFileNames": true,
   }
 }

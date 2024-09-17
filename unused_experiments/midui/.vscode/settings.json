@@ -10,14 +10,18 @@
   // Multiple language settings for json and jsonc files
   "[json][jsonc]": {
     "editor.formatOnSave": true,
-    "editor.defaultFormatter": "vscode.json-language-features"
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "files.exclude": {
     "**/.git": true,
     "**/.DS_Store": true,
     "**/node_modules": false
   },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
   "[typescript]": {
-    "editor.defaultFormatter": "vscode.typescript-language-features"
-  }
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "typescript.tsserver.experimental.enableProjectDiagnostics": true,
 }
