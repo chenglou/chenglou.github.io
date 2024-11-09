@@ -1,0 +1,147 @@
+<html>
+
+<body>
+
+<script>
+
+const msPerAnimationStep = 1000 / 120
+const BASE_WIDTH = 1536
+const BASE_HEIGHT = 768
+const SCALE = 0.5
+const WIDTH = BASE_WIDTH * SCALE
+const HEIGHT = BASE_HEIGHT * SCALE
+
+function springStep2(config) {
+  const t = msPerAnimationStep / 1000 // convert to seconds for the physics equation
+  const { pos, dest, v, k, b } = config
+
+  // Calculate the initial force (acceleration)
+  const Fspring = -k * (pos - dest) // Spring stiffness, in kg / s^2
+  const Fdamper = -b * v // Damping, in kg / s
+  const a = Fspring + Fdamper // a needs to be divided by mass, but we'll assume mass of 1. Adjust k and b to change spring curve instead
+
+  // Perform the first half of the velocity Verlet integration
+  const newV_half = v + 0.5 * a * t
+
+  // Update the position using the half-step velocity
+  const newPos = pos + newV_half * t
+
+  // Calculate the new force (acceleration) at the new position
+  const newFspring = -k * (newPos - dest)
+  const newFdamper = -b * newV_half
+  const newA = newFspring + newFdamper
+
+  // Complete the velocity Verlet integration
+  const newV = newV_half + 0.5 * newA * t
+
+  config.pos = newPos
+  config.v = newV
+}
+
+function isDone(s) {
+  return Math.abs(s.pos - s.dest) < 0.01 && Math.abs(s.v) < 0.01
+}
+
+// Create 20 divs instead of one
+const divs = Array.from({ length: 40 }, () => {
+  const div = document.createElement('div')
+  document.body.appendChild(div)
+  div.style.width = `${WIDTH}px`;
+  div.style.height = `${HEIGHT}px`;
+  div.style.position = "absolute";
+  div.style.backgroundSize = "cover";
+  div.style.transformOrigin = 'top left'
+  return div;
+});
+
+function mix(a, b, pct) {
+  return a + (b - a) * pct
+}
+
+function interpolateAnimationValue(animation, time) {
+  const keyframes = animation.effect.getKeyframes();
+  const duration = animation.effect.getTiming().duration;
+  const progress = time / duration;
+
+  // Find the surrounding keyframes
+  const frameIndex = Math.floor(progress * (keyframes.length - 1));
+  const nextFrameIndex = Math.min(frameIndex + 1, keyframes.length - 1);
+
+  const frame1 = new DOMMatrix(keyframes[frameIndex].transform);
+  const frame2 = new DOMMatrix(keyframes[nextFrameIndex].transform);
+
+  // Calculate sub-progress between these two frames
+  const subProgress = (progress * (keyframes.length - 1)) % 1;
+
+  // Linearly interpolate between the frames
+  return {
+    x: mix(frame1.m41, frame2.m41, subProgress),
+    y: mix(frame1.m42, frame2.m42, subProgress),
+    scale: mix(frame1.m11, frame2.m11, subProgress),
+    // Calculate velocities using the difference between frames
+    vx: (frame2.m41 - frame1.m41) / (msPerAnimationStep / 1000),
+    vy: (frame2.m42 - frame1.m42) / (msPerAnimationStep / 1000),
+    vscale: (frame2.m11 - frame1.m11) / (msPerAnimationStep / 1000)
+  };
+}
+
+function animateToNewPosition() {
+  divs.forEach(div => {
+    const frames = []
+
+    // Get current values from active animation
+    const activeAnimation = div.getAnimations()[0];
+    let currentX = 0, currentY = 0, currentScale = 1;
+    let currentVX = 0, currentVY = 0, currentVScale = 0;
+
+    if (activeAnimation && activeAnimation.currentTime !== null) {
+      const current = interpolateAnimationValue(activeAnimation, activeAnimation.currentTime);
+      currentX = current.x;
+      currentY = current.y;
+      currentScale = current.scale;
+      currentVX = current.vx;
+      currentVY = current.vy;
+      currentVScale = current.vscale;
+      activeAnimation.cancel();
+    }
+
+    const xSpring = { pos: currentX, dest: Math.random() * 800, v: currentVX, k: 160, b: 12 }
+    const ySpring = { pos: currentY, dest: Math.random() * 800, v: currentVY, k: 160, b: 12 }
+    const scaleSpring = { pos: currentScale, dest: 0.5 + Math.random() * 0.5, v: currentVScale, k: 160, b: 12 }
+
+    for (let i = 0; i < 240; i++) {
+      springStep2(xSpring)
+      springStep2(ySpring)
+      springStep2(scaleSpring)
+
+      frames.push({
+        transform: `translate3d(${xSpring.pos}px, ${ySpring.pos}px, 0) scale3d(${scaleSpring.pos}, ${scaleSpring.pos}, 1)`
+      })
+    }
+
+    const options = {
+      duration: 2000,
+      fill: 'forwards'
+    };
+    div.animate(frames, options);
+  });
+}
+
+// Initial animation
+const bgImage = new Image();
+bgImage.onload = () => {
+  console.log('loaded')
+  divs.forEach(div => {
+    div.style.backgroundImage = "url('https://i.mj.run/81d2bba0-2b79-435d-b38f-043635bb2b96/0_1.jpeg')"
+  });
+  animateToNewPosition();
+};
+bgImage.src = 'https://i.mj.run/81d2bba0-2b79-435d-b38f-043635bb2b96/0_1.jpeg';
+
+// Add click handler
+window.addEventListener('click', animateToNewPosition);
+
+</script>
+
+</body>
+</html>
