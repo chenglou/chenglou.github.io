@@ -10,6 +10,7 @@ body {
 <body>
 
 <script>
+// animate a bunch of divs to random positions and scales with spring physics, leveraging JS keyframes api to generate frames
 
 const msPerAnimationStep = 1000 / 120
 const BASE_WIDTH = 1536
@@ -49,23 +50,26 @@ function isDone(s) {
   return Math.abs(s.pos - s.dest) < 0.01 && Math.abs(s.v) < 0.01
 }
 
-// Create 20 divs instead of one
-const divs = Array.from({ length: 40 }, () => {
-  const div = document.createElement('div')
-  document.body.appendChild(div)
-  div.style.width = `${WIDTH}px`;
-  div.style.height = `${HEIGHT}px`;
-  div.style.position = "absolute";
-  div.style.backgroundSize = "cover";
-  div.style.transformOrigin = 'top left'
-  return div;
-});
-
 function mix(a, b, pct) {
   return a + (b - a) * pct
 }
 
-function interpolateAnimationValue(animation, time) {
+function makeScheduler(render) {
+  let scheduledRender = false
+
+  const scheduleRender = () => {
+    if (scheduledRender) return
+    scheduledRender = true
+    requestAnimationFrame(function renderAndMaybeScheduleAnotherRender(now) { // eye-grabbing name. No "(anonymous)" function in the debugger & profiler
+      scheduledRender = false
+      render(now)
+    })
+  }
+
+  return scheduleRender
+}
+
+function getInterpolationFrames(animation, time) {
   const keyframes = animation.effect.getKeyframes();
   const duration = animation.effect.getTiming().duration;
   const progress = time / duration;
@@ -74,58 +78,64 @@ function interpolateAnimationValue(animation, time) {
   const frameIndex = Math.floor(progress * (keyframes.length - 1));
   const nextFrameIndex = Math.min(frameIndex + 1, keyframes.length - 1);
 
-  const frame1 = new DOMMatrix(keyframes[frameIndex].transform);
-  const frame2 = new DOMMatrix(keyframes[nextFrameIndex].transform);
-
-  // Calculate sub-progress between these two frames
-  const subProgress = (progress * (keyframes.length - 1)) % 1;
-
-  // Linearly interpolate between the frames
   return {
-    x: mix(frame1.m41, frame2.m41, subProgress),
-    y: mix(frame1.m42, frame2.m42, subProgress),
-    scale: mix(frame1.m11, frame2.m11, subProgress),
-    // Calculate velocities using the difference between frames
-    vx: (frame2.m41 - frame1.m41) / (msPerAnimationStep / 1000),
-    vy: (frame2.m42 - frame1.m42) / (msPerAnimationStep / 1000),
-    vscale: (frame2.m11 - frame1.m11) / (msPerAnimationStep / 1000)
+    frame1: keyframes[frameIndex],
+    frame2: keyframes[nextFrameIndex],
+    subProgress: (progress * (keyframes.length - 1)) % 1
   };
 }
+
+// === end generic utils
+
+const springs = Array.from({ length: 40 }, () => {
+  const div = document.createElement('div')
+  document.body.appendChild(div)
+  div.style.width = `${WIDTH}px`;
+  div.style.height = `${HEIGHT}px`;
+  div.style.position = "absolute";
+  div.style.backgroundSize = "cover";
+  div.style.transformOrigin = 'top left'
+
+  return {
+    node: div,
+    x: { pos: 0, dest: 0, v: 0, k: 160, b: 12 },
+    y: { pos: 0, dest: 0, v: 0, k: 160, b: 12 },
+    scale: { pos: 1, dest: 1, v: 0, k: 160, b: 12 }
+  };
+});
 
 function animateToNewPosition() {
   const containerW = document.documentElement.clientWidth
   const containerH = document.documentElement.clientHeight
 
-  divs.forEach(div => {
+  springs.forEach(spring => {
     const frames = []
 
     // Get current values from active animation
-    const activeAnimation = div.getAnimations()[0];
-    let currentX = 0, currentY = 0, currentScale = 1;
-    let currentVX = 0, currentVY = 0, currentVScale = 0;
+    const activeAnimation = spring.node.getAnimations()[0];
 
     if (activeAnimation && activeAnimation.currentTime !== null) {
-      const current = interpolateAnimationValue(activeAnimation, activeAnimation.currentTime);
-      currentX = current.x;
-      currentY = current.y;
-      currentScale = current.scale;
-      currentVX = current.vx;
-      currentVY = current.vy;
-      currentVScale = current.vscale;
+      // Get the current interpolated values from the animation
+      const { frame1, frame2, subProgress } = getInterpolationFrames(activeAnimation, activeAnimation.currentTime);
+
+      // Update spring state to match the current interpolated position
+      const currentTransform = frame1.transform; // or interpolate between frame1 and frame2 if needed
+      // TODO: Parse the transform to update spring.x.pos, spring.y.pos, spring.scale.pos
+
       activeAnimation.cancel();
     }
 
-    const xSpring = { pos: currentX, dest: Math.random() * containerW, v: currentVX, k: 160, b: 12 }
-    const ySpring = { pos: currentY, dest: Math.random() * containerH, v: currentVY, k: 160, b: 12 }
-    const scaleSpring = { pos: currentScale, dest: 0.5 + Math.random() * 0.5, v: currentVScale, k: 160, b: 12 }
+    spring.x.dest = Math.random() * containerW;
+    spring.y.dest = Math.random() * containerH;
+    spring.scale.dest = 0.5 + Math.random() * 0.5;
 
     for (let i = 0; i < 240; i++) {
-      springStep2(xSpring)
-      springStep2(ySpring)
-      springStep2(scaleSpring)
+      springStep2(spring.x)
+      springStep2(spring.y)
+      springStep2(spring.scale)
 
       frames.push({
-        transform: `translate3d(${xSpring.pos}px, ${ySpring.pos}px, 0) scale3d(${scaleSpring.pos}, ${scaleSpring.pos}, 1)`
+        transform: `translate3d(${spring.x.pos}px, ${spring.y.pos}px, 0) scale3d(${spring.scale.pos}, ${spring.scale.pos}, 1)`
       })
     }
 
@@ -133,7 +143,7 @@ function animateToNewPosition() {
       duration: 2000,
       fill: 'forwards'
     };
-    div.animate(frames, options);
+    spring.node.animate(frames, options);
   });
 }
 
@@ -141,15 +151,30 @@ function animateToNewPosition() {
 const bgImage = new Image();
 bgImage.onload = () => {
   console.log('loaded')
-  divs.forEach(div => {
-    div.style.backgroundImage = "url('https://i.mj.run/81d2bba0-2b79-435d-b38f-043635bb2b96/0_1.jpeg')"
+  springs.forEach(spring => {
+    spring.node.style.backgroundImage = "url('https://i.mj.run/81d2bba0-2b79-435d-b38f-043635bb2b96/0_1.jpeg')"
   });
   animateToNewPosition();
 };
 bgImage.src = 'https://i.mj.run/81d2bba0-2b79-435d-b38f-043635bb2b96/0_1.jpeg';
 
-// Add click handler
-window.addEventListener('pointerdown', animateToNewPosition);
+
+const events = {
+  pointerdown: null,
+}
+window.addEventListener('pointerdown', (e) => {
+  pointerdown = e
+  scheduleRender()
+});
+
+const scheduleRender = makeScheduler(render)
+function render(now) {
+  if (pointerdown != null) {
+    animateToNewPosition()
+  }
+  pointerdown = null
+  scheduleRender()
+}
 
 </script>
 
