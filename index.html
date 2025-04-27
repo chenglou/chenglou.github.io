@@ -48,7 +48,7 @@
       padding: 8px 12px 0px 12px;
       font-family: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; /* same as midjourney's */
       color: rgb(192, 198, 205);
-      font-size: 16px;
+      font-size: 14px;
       cursor: text; /* overrides document's cursor when needed (see JS code below) */
       /* for programmatic multiline clamping */
       display: -webkit-box;
@@ -117,7 +117,7 @@ function clamp(min, v, max) {
 
 // === constant layout metrics. The rest is dynamic
 const promptPaddingBottom = 8
-const promptSizeY = 47 + promptPaddingBottom // 47 is a magic number. Doesn't show the 3rd line nor cuts the 2nd line on safari, mobile safari and chrome
+const promptSizeY = 44 + promptPaddingBottom // 44 is a magic number. Doesn't show the 3rd line nor cuts the 2nd line on safari, mobile safari and chrome
 const prompt1DSizeY = 64 + promptPaddingBottom // size in 1d mode
 const boxesGapX = 24, boxesGapY = 24
 const boxes1DGapX = 52, boxes1DGapY = 28
