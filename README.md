@@ -1,4 +1,4 @@
-My [MidJourney AI art gallery](https://chenglou.me), made to show shiny UI/UX details. As seen in the [tweet](https://twitter.com/_chenglou/status/1599071638250606592).
+My [Midjourney AI art gallery](https://chenglou.me), made to show shiny UI/UX details. As seen in the [tweet](https://twitter.com/_chenglou/status/1599071638250606592).
 
 [![Demo](https://user-images.githubusercontent.com/1909539/205446527-862d2324-a729-4de9-90d7-5fc9c1b63c9f.png)](https://youtu.be/OwzPOJnj2Vw)
 
