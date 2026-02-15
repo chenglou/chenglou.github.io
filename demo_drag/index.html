@@ -61,7 +61,12 @@ function springGoToEnd(config) {
   config.v = 0
 }
 
-// === generic helper
+// === generic helpers
+function hash(n) {
+  n = Math.imul((n >>> 16) ^ n, 0x21f0aaad);
+  n = Math.imul((n >>> 15) ^ n, 0x735a2d97);
+  return (((n >>> 15) ^ n) >>> 0) / 0x100000000;
+}
 function center(containee, container) {
   return (container - containee) / 2
 }
@@ -82,12 +87,12 @@ let data = []; {
   const windowSizeX = document.documentElement.clientWidth // excludes scroll bar & invariant under safari pinch zoom
   for (let i = 0; i < 5; i++) {
     let node = document.createElement("div")
-    const sizeY = 30 + Math.random() * 150 // [30, 180)
+    const sizeY = 30 + hash(i * 2) * 150 // [30, 180)
     node.className = "row"
     node.innerHTML = "Drag Me " + i
     node.style.width = rowSizeX
     node.style.height = sizeY
-    const rand = Math.random() * 40 + 40 // Range: [40, 80]
+    const rand = hash(i * 2 + 1) * 40 + 40 // Range: [40, 80]
     node.style.outline = `1px solid hsl(205, 100%, ${rand}%)` // blue hue
     node.style.backgroundColor = `hsl(205, 100%, ${rand + 10}%)` // lighter blue hue
     data.push({
