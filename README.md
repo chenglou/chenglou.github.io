@@ -54,3 +54,17 @@ Render:
   schedule next render (e.g. if animating)
 ```
 Only events and render's final step can schedule a next render
+
+## Development
+
+TypeScript + modules, bundled by Bun. No runtime dependencies.
+
+- `bun install` — once, in a fresh checkout
+- `bun start` — dev server (Bun transpiles `index.ts` on the fly, no build step)
+- `bun run check` — `tsgo` typecheck + oxlint
+- `bun run build` — bundle into `dist/` (emits `index.html` + a hashed JS file)
+
+`index.ts` is the logic, `data.ts` is the photo list, `index.html` is the shell that loads them.
+
+Deploy is automatic: pushing to `master` runs `.github/workflows/deploy.yml`, which builds, copies the static routes (`demo_drag/`, `demo_life/`, `CNAME`) into `dist/`, and publishes that to GitHub Pages. Pages source must be set to "GitHub Actions" in repo settings.
+
