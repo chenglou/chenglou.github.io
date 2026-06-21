@@ -76,7 +76,7 @@ const gapTopPeek = 40 // used when programmatically scrolling and wanting to sho
 const hitArea1DSizeX = 100 // left and right click region in 1D mode
 
 /** @fit
- * given containerSizeX: int 0..Infinity
+ * given containerSizeX: int 0..<Infinity
  * return.cols: int 1..7
  * return.boxMaxSizeX > 0
  */
