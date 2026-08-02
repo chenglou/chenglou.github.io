@@ -31,7 +31,7 @@ function spring(
 ): Spring {
   return {pos, dest: pos, v, k, b} // k = stiffness, b = damping. Try https://chenglou.me/react-motion/demos/demo5-spring-parameters-chooser/
 }
-function springStep(config: Spring): void {
+function springStep(config: Spring): Spring {
   // https://blog.maximeheckel.com/posts/the-physics-behind-spring-animations/
   // this seems inspired by https://github.com/chenglou/react-motion/blob/9e3ce95bacaa9a1b259f969870a21c727232cc68/src/stepper.js
   // convert to seconds for the physics equation
@@ -44,25 +44,23 @@ function springStep(config: Spring): void {
   const newV = v + a * t
   const newPos = pos + newV * t
 
-  config.pos = newPos; config.v = newV
+  return {pos: newPos, dest, v: newV, k, b}
 }
-function springGoToEnd(config: Spring): void {
-  config.pos = config.dest
-  config.v = 0
+function springGoToEnd(config: Spring): Spring {
+  return {pos: config.dest, dest: config.dest, v: 0, k: config.k, b: config.b}
 }
 
 // === generic helpers
-/** @fit
- * given max >= min
- * return >= min
- * return <= max
- */
 function clamp(
   min: number,
   v: number,
   max: number,
 ): number {
-  return v > max ? max : v < min ? min : v
+  console.assert(min <= max)
+  const result = Math.min(max, Math.max(min, v))
+  console.assert(min <= result)
+  console.assert(result <= max)
+  return result
 }
 
 // === constant layout metrics. The rest is dynamic
@@ -129,7 +127,7 @@ type BoxData = {
   promptNode: HTMLElement
 }
 
-const data: BoxData[] = (() => {
+let data: BoxData[] = (() => {
   const windowSizeY = document.documentElement.clientHeight
   const {cols, boxMaxSizeX} = colsBoxMaxSizeXF(windowSizeX)
   const imgMaxSizeY = boxMaxSizeX + 100 // TODO: adjust this better
@@ -164,33 +162,37 @@ const data: BoxData[] = (() => {
     }
   })
 })()
-function springForEach(f: (s: Spring) => void): void { // no spring ownership struggle between the spring library above vs consumer; un-inversion of control!
-  for (let d of data) {
-    f(d.sizeX); f(d.sizeY); f(d.x); f(d.y); f(d.scale); f(d.fxFactor) // no different than [a, b, c].forEach(f)
-  }
+function springForEach(f: (s: Spring) => Spring): void { // no spring ownership struggle between the spring library above vs consumer; un-inversion of control!
+  data = data.map(d => ({...d, sizeX: f(d.sizeX), sizeY: f(d.sizeY), x: f(d.x), y: f(d.y), scale: f(d.scale), fxFactor: f(d.fxFactor)})) // no different than [a, b, c].map(f)
 }
 function stepSprings(steps: number): boolean {
   let stillAnimating = false
-  for (let d of data) {
-    if (stepSpring(d.sizeX, steps)) stillAnimating = true
-    if (stepSpring(d.sizeY, steps)) stillAnimating = true
-    if (stepSpring(d.x, steps)) stillAnimating = true
-    if (stepSpring(d.y, steps)) stillAnimating = true
-    if (stepSpring(d.scale, steps)) stillAnimating = true
-    if (stepSpring(d.fxFactor, steps)) stillAnimating = true
-  }
+  data = data.map(d => {
+    const sizeX = stepSpring(d.sizeX, steps)
+    const sizeY = stepSpring(d.sizeY, steps)
+    const x = stepSpring(d.x, steps)
+    const y = stepSpring(d.y, steps)
+    const scale = stepSpring(d.scale, steps)
+    const fxFactor = stepSpring(d.fxFactor, steps)
+    if (springStillAnimating(sizeX) || springStillAnimating(sizeY) || springStillAnimating(x) || springStillAnimating(y) || springStillAnimating(scale) || springStillAnimating(fxFactor)) stillAnimating = true
+    return {...d, sizeX, sizeY, x, y, scale, fxFactor}
+  })
   return stillAnimating
+}
+function springStillAnimating(s: Spring): boolean {
+  return Math.abs(s.v) >= 0.01 || Math.abs(s.dest - s.pos) >= 0.01
 }
 function stepSpring(
   s: Spring,
   steps: number, // @fit int 0..Infinity
-): boolean {
-  for (let i = 0; i < steps; i++) springStep(s)
-  if (Math.abs(s.v) < 0.01 && Math.abs(s.dest - s.pos) < 0.01) {
-    springGoToEnd(s) // close enough, done
-    return false
+): Spring {
+  let stepped = s
+  for (let i = 0; i < steps; i++) {
+    const next = springStep(stepped)
+    if (!Number.isFinite(next.pos) || !Number.isFinite(next.v)) return springGoToEnd(s)
+    stepped = next
   }
-  return true
+  return springStillAnimating(stepped) ? stepped : springGoToEnd(stepped) // close enough? Snap to done
 }
 
 // === events
@@ -237,12 +239,12 @@ function render(now: number): boolean {
   if (events.click != null) {
     // needed to update coords even when we already track mousemove. E.g. in Chrome, right click context menu, move elsewhere, then click to dismiss. BAM, mousemove triggers with stale/wrong (??) coordinates... Click again without moving, and now you're clicking on the wrong thing
     clickedTarget = events.click.target
-    pointer.x = events.click.clientX; pointer.y = events.click.clientY
+    pointer = {x: events.click.clientX, y: events.click.clientY}
   }
   // mousemove
   if (events.mousemove != null) {
     // we only use clientX/Y, not pageX/Y, because we want to ignore scrolling. See comment around isSafari above; we either scroll body or window depending on the browser, so pageX/Y might be meaningless (if Safari)
-    pointer.x = events.mousemove.clientX; pointer.y = events.mousemove.clientY
+    pointer = {x: events.mousemove.clientX, y: events.mousemove.clientY}
     // btw, pointer can exceed document bounds, e.g. dragging reports back out-of-bound, legal negative values
   }
 
