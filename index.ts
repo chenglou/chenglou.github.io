@@ -351,7 +351,7 @@ function render(now: number): boolean {
     const anchorY = data[anchor]!.y.dest - gapTopPeek
     if (newWindowSizeX !== windowSizeX) adjustedScrollTop = Math.max(0, anchorY) // resized; maintain position!
     if (adjustedScrollTop !== scrollY && Math.abs(anchorY -/*toLocal*/adjustedScrollTop) > windowSizeY / 10) { // find new anchor if the current one moved too much
-      for (newAnchor = 0; newAnchor < data.length; newAnchor += cols) { // new anchor is picked from leftmost column. Btw old anchor might not be from leftmost col due to resize layout shifts
+      for (newAnchor = 0; newAnchor + cols < data.length; newAnchor += cols) { // new anchor is picked from leftmost column. Btw old anchor might not be from leftmost col due to resize layout shifts
         let d = data[newAnchor]!
         // find 1st box whose bottom exceeds 20% of window height
         if (d.y.dest + d.sizeY.dest -/*toLocal*/adjustedScrollTop > windowSizeY / 5) break
