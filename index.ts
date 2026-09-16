@@ -107,9 +107,9 @@ function isDebug(): boolean {
 let debugTimestamp = 0
 let animatedUntilTime: number | null = null
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
-let anchor = 0 // keep a box stable during resize layout shifts
+let anchor = {index: 0, screenY: 0} // keep this box at the same place on screen while the layout shifts. screenY is its y minus scrollY when it was picked
 let windowSizeX = document.documentElement.clientWidth
-let scrollY = isSafari ? document.body.scrollTop : window.scrollY
+let scrollY = NaN // what the browser reported after the last render's scrollTo. NaN so that the first render picks an anchor
 let pointer: {x: number; y: number} = {x: -Infinity, y: -Infinity} // btw, on page load, there's no way to render a first cursor state =(
 let events: {keydown: KeyboardEvent | null; click: MouseEvent | null; mousemove: MouseEvent | null} = {keydown: null, click: null, mousemove: null}
 type BoxData = {
@@ -313,7 +313,7 @@ function render(now: number): boolean {
     }
   }
   let cursor = 'auto'
-  let newAnchor = anchor
+  let newAnchor: {index: number; y: number} | null = null // set when a new anchor is picked. Its screenY is measured after the scroll read-back
   let adjustedScrollTop = currentScrollY
   const hoverMagnetFactor = 40
   if (newFocused == null) { // 2D mode
@@ -338,6 +338,18 @@ function render(now: number): boolean {
       d.fxFactor.dest = 1
     }
 
+    // if layout shifted, keep the anchor box at the same place on screen to prevent annoying layout jumps while viewing. Done before the hover effect below moves a box
+    if (currentScrollY !== scrollY || focused != null) { // user scrolled, or just dismissed 1D mode (maybe scrolling to the dismissed box): pick a new anchor
+      let index = 0
+      for (; index + cols < data.length; index += cols) { // new anchor is picked from leftmost column. Btw old anchor might not be from leftmost col due to resize layout shifts
+        if (data[index]!.y.dest >= adjustedScrollTop) break // 1st box below the window's top
+      }
+      newAnchor = {index, y: data[index]!.y.dest}
+    } else if (newWindowSizeX !== windowSizeX) { // resized; maintain position!
+      // absolute from where the anchor was picked, so scrollTop rounding doesn't add up over a continuous resize
+      adjustedScrollTop = Math.max(0, data[anchor.index]!.y.dest - anchor.screenY)
+    }
+
     const hit = hitTest2DMode(data, pointerXLocal, pointerYLocal)
     if (hit == null) cursor = 'auto'
     else { // hovering over a box. Adjust position
@@ -346,16 +358,6 @@ function render(now: number): boolean {
       x.dest += (pointerXLocal - (x.dest + sizeX.dest / 2)) / hoverMagnetFactor
       y.dest += (pointerYLocal - (y.dest + sizeY.dest / 2)) / hoverMagnetFactor
       scale.dest = 1.02
-    }
-    // if layout shifted, keep the boxes near the same place to prevent annoying layout jumps while viewing
-    const anchorY = data[anchor]!.y.dest - gapTopPeek
-    if (newWindowSizeX !== windowSizeX) adjustedScrollTop = Math.max(0, anchorY) // resized; maintain position!
-    if (adjustedScrollTop !== scrollY && Math.abs(anchorY -/*toLocal*/adjustedScrollTop) > windowSizeY / 10) { // find new anchor if the current one moved too much
-      for (newAnchor = 0; newAnchor + cols < data.length; newAnchor += cols) { // new anchor is picked from leftmost column. Btw old anchor might not be from leftmost col due to resize layout shifts
-        let d = data[newAnchor]!
-        // find 1st box whose bottom exceeds 20% of window height
-        if (d.y.dest + d.sizeY.dest -/*toLocal*/adjustedScrollTop > windowSizeY / 5) break
-      }
     }
   } else { // 1D mode
     const img1DSizeY = Math.max(1, windowSizeY - windowPaddingTop - prompt1DSizeY - boxes1DGapY)
@@ -426,7 +428,7 @@ function render(now: number): boolean {
       node.style.filter = newFocused != null && (i === newFocused - 1 || i === newFocused || i === newFocused + 1)
         ? `brightness(${d.fxFactor.pos * 100}%) blur(${Math.max(0, 6 - d.fxFactor.pos * 6)}px)` // blur these 3 only
         : `brightness(${d.fxFactor.pos * 100}%)` // blur of unrelated pics is too fast during transition from/to 1D mode to be seen anyway
-      if (debug) node.style.outline = i === newAnchor ? '2px solid rgba(255, 255, 0, 0.8)' : 'none'
+      if (debug) node.style.outline = i === (newAnchor ?? anchor).index ? '2px solid rgba(255, 255, 0, 0.8)' : 'none'
       promptNode.style.top = `${d.sizeX.pos / d.ar}px` // right below img's sizeY
 
       if (i === newFocused) {
@@ -458,7 +460,7 @@ function render(now: number): boolean {
   // if (adjustedScrollTop !== currentScrollTop) window.scrollTo({top: adjustedScrollTop}) // will trigger scrolling, thus next frame's render
   if (adjustedScrollTop !== currentScrollY) {
     // see comment about isSafari above
-    (isSafari ? document.body : window).scrollTo({top: adjustedScrollTop}) // will trigger scrolling, thus next frame's render
+    (isSafari ? document.body : window).scrollTo({top: adjustedScrollTop, behavior: 'instant'}) // will trigger scrolling, thus next frame's render
   }
   if (newFocused !== focused) {
     window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${newFocused == null ? '' : '#' + data[newFocused]!.id}`)
@@ -467,9 +469,10 @@ function render(now: number): boolean {
   events.click = null
   events.mousemove = null
   animatedUntilTime = stillAnimating ? newAnimatedUntilTime : null
-  anchor = newAnchor
   windowSizeX = newWindowSizeX
-  scrollY = adjustedScrollTop
+  // store where the browser actually scrolled (rounded, or clamped to the content), not what we asked for, so the next render doesn't mistake the difference for a user scroll. This read can force layout, so keep it last
+  scrollY = adjustedScrollTop !== currentScrollY ? (isSafari ? document.body.scrollTop : window.scrollY) : currentScrollY
+  if (newAnchor != null) anchor = {index: newAnchor.index, screenY: newAnchor.y - scrollY} // measured against the read-back, so a clamped scroll doesn't skew where the anchor sits
 
   return stillAnimating
 }
