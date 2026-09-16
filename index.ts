@@ -107,9 +107,9 @@ function isDebug(): boolean {
 let debugTimestamp = 0
 let animatedUntilTime: number | null = null
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
-let anchor = {index: 0, screenY: 0} // keep this box at the same place on screen while the layout shifts. screenY is its y minus scrollY when it was picked
+let anchor: {index: number; screenY: number} | null = null // keep this box at the same place on screen while the layout shifts. screenY is its y minus scrollY when it was picked. null until the first 2D render, and in 1D mode
 let windowSizeX = document.documentElement.clientWidth
-let scrollY = NaN // what the browser reported after the last render's scrollTo. NaN so that the first render picks an anchor
+let scrollY = isSafari ? document.body.scrollTop : window.scrollY // what the browser reported after the last render's scrollTo
 let pointer: {x: number; y: number} = {x: -Infinity, y: -Infinity} // btw, on page load, there's no way to render a first cursor state =(
 let events: {keydown: KeyboardEvent | null; click: MouseEvent | null; mousemove: MouseEvent | null} = {keydown: null, click: null, mousemove: null}
 type BoxData = {
@@ -339,7 +339,7 @@ function render(now: number): boolean {
     }
 
     // if layout shifted, keep the anchor box at the same place on screen to prevent annoying layout jumps while viewing. Done before the hover effect below moves a box
-    if (currentScrollY !== scrollY || focused != null) { // user scrolled, or just dismissed 1D mode (maybe scrolling to the dismissed box): pick a new anchor
+    if (anchor == null || currentScrollY !== scrollY || adjustedScrollTop !== currentScrollY) { // no anchor (first render, or just left 1D mode by dismissing or through history), user scrolled, or scrolling to the dismissed box: pick a new anchor
       let index = 0
       for (; index + cols < data.length; index += cols) { // new anchor is picked from leftmost column. Btw old anchor might not be from leftmost col due to resize layout shifts
         if (data[index]!.y.dest >= adjustedScrollTop) break // 1st box below the window's top
@@ -428,7 +428,7 @@ function render(now: number): boolean {
       node.style.filter = newFocused != null && (i === newFocused - 1 || i === newFocused || i === newFocused + 1)
         ? `brightness(${d.fxFactor.pos * 100}%) blur(${Math.max(0, 6 - d.fxFactor.pos * 6)}px)` // blur these 3 only
         : `brightness(${d.fxFactor.pos * 100}%)` // blur of unrelated pics is too fast during transition from/to 1D mode to be seen anyway
-      if (debug) node.style.outline = i === (newAnchor ?? anchor).index ? '2px solid rgba(255, 255, 0, 0.8)' : 'none'
+      if (debug) node.style.outline = i === (newAnchor ?? anchor)?.index ? '2px solid rgba(255, 255, 0, 0.8)' : 'none'
       promptNode.style.top = `${d.sizeX.pos / d.ar}px` // right below img's sizeY
 
       if (i === newFocused) {
@@ -472,7 +472,8 @@ function render(now: number): boolean {
   windowSizeX = newWindowSizeX
   // store where the browser actually scrolled (rounded, or clamped to the content), not what we asked for, so the next render doesn't mistake the difference for a user scroll. This read can force layout, so keep it last
   scrollY = adjustedScrollTop !== currentScrollY ? (isSafari ? document.body.scrollTop : window.scrollY) : currentScrollY
-  if (newAnchor != null) anchor = {index: newAnchor.index, screenY: newAnchor.y - scrollY} // measured against the read-back, so a clamped scroll doesn't skew where the anchor sits
+  if (newFocused != null) anchor = null // in 1D mode a resize moves the grid without scrolling to hold the anchor, so the next 2D render picks a new one
+  else if (newAnchor != null) anchor = {index: newAnchor.index, screenY: newAnchor.y - scrollY} // measured against the read-back, so a clamped scroll doesn't skew where the anchor sits
 
   return stillAnimating
 }
