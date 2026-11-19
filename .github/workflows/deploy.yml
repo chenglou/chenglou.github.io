@@ -26,7 +26,7 @@ jobs:
       - run: bun run build          # → dist/index.html + dist/index-<hash>.js
       # Carry the non-built routes verbatim into the published tree. This cp list
       # is the allowlist of what survives — anything not built and not here won't deploy.
-      - run: cp -r demo_drag demo_life CNAME dist/
+      - run: cp -r demo_drag demo_life CNAME robots.txt sitemap.xml social-preview.jpg dist/
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist

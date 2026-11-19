@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://chenglou.me/sitemap.xml
+Sitemap: https://chenglou.me/pretext/sitemap.xml
+Sitemap: https://chenglou.me/handwired/sitemap.xml
